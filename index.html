@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.4 (Vol-Drag Fixed)</title>
+  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.5 (Engine Refined)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,7 +13,7 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.4</h1>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.5</h1>
         <p class="text-slate-400 text-xs mt-1">Realistic Volatility-Drag Engine · Newton-Raphson MWRR/IRR · Step-up Tax Protocol</p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
@@ -125,7 +125,7 @@
   <script>
     'use strict';
 
-    // 자산 유니버스: 현실적인 일간 변동성(sigma) 및 운용 마찰비용(fee) 재정의
+    // 자산 유니버스: divFreq 옵션 추가 (monthly: 월배당, 기본값: 분기배당)
     const TICKER_UNIVERSE = {
       'QQQ':  { type: 'direct', baseMu: 0.00055, sigma: 0.014, marketCorr: 0.95, divYield: 0.006, name: 'Invesco QQQ (나스닥100)' },
       'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0110, divYield: 0.001, name: 'ProShares QLD (나스닥 2배)' },
@@ -148,8 +148,8 @@
       'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0160, divYield: 0.001, name: 'Direxion Biotech 3x Bull' },
       'ARKK': { type: 'direct', baseMu: 0.00025, sigma: 0.026, marketCorr: 0.65, divYield: 0.000, name: 'ARK Innovation ETF' },
       'SCHG': { type: 'direct', baseMu: 0.00055, sigma: 0.013, marketCorr: 0.94, divYield: 0.005, name: 'Schwab U.S. Large-Cap Growth' },
-      'JEPI': { type: 'direct', baseMu: 0.00030, sigma: 0.007, marketCorr: 0.70, divYield: 0.075, name: 'JPMorgan Equity Premium Income' },
-      'TLT':  { type: 'direct', baseMu: -0.0001, sigma: 0.009, marketCorr: -0.30, divYield: 0.035, name: 'iShares 20+ Year Treasury Bond' },
+      'JEPI': { type: 'direct', baseMu: 0.00030, sigma: 0.007, marketCorr: 0.70, divYield: 0.075, divFreq: 'monthly', name: 'JPMorgan Equity Premium Income' },
+      'TLT':  { type: 'direct', baseMu: -0.0001, sigma: 0.009, marketCorr: -0.30, divYield: 0.035, divFreq: 'monthly', name: 'iShares 20+ Year Treasury Bond' },
       'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0130, divYield: 0.002, name: 'Direxion 20+ Yr Bull 3x' },
       'GLD':  { type: 'direct', baseMu: 0.00025, sigma: 0.008, marketCorr: 0.05, divYield: 0.000, name: 'SPDR Gold Shares' },
       'XLP':  { type: 'direct', baseMu: 0.00030, sigma: 0.007, marketCorr: 0.55, divYield: 0.026, name: 'Consumer Staples Select SPDR' },
@@ -258,41 +258,55 @@
     }
 
     class QuantStochasticEngine {
+      // [수정 2번] 2025~2026년 SOFR 금리 반영 (4.2%)
       static getHistoricalSOFR(year) {
+        if (year >= 2025) return 0.042;
         if (year >= 2022 && year <= 2024) return 0.048;
         if (year >= 2020 && year <= 2021) return 0.001;
         if (year >= 2018 && year <= 2019) return 0.022;
         return 0.005;
       }
 
+      // [수정 1번] 종목 고유 시드 생성을 위한 해시 함수
+      static getTickerSeed(ticker, baseSeed = 424242) {
+        let hash = 0;
+        for (let i = 0; i < ticker.length; i++) {
+          hash = (hash << 5) - hash + ticker.charCodeAt(i);
+        }
+        return (baseSeed ^ Math.abs(hash)) >>> 0;
+      }
+
       static simulate(calendar, tickers, fxMode) {
         const N = calendar.count;
-        const prng = new PseudoRandomEngine(424242);
-        
         const sortedTickers = [...tickers].sort();
 
-        const marketShocks = new Float64Array(N);
-        for (let i = 0; i < N; i++) marketShocks[i] = prng.getGaussian();
-
+        // FX 전용 독립 PRNG 인스턴스
+        const fxPrng = new PseudoRandomEngine(424242);
         const fxPrices = new Float64Array(N);
         let currentFx = 1150.0;
         for (let i = 0; i < N; i++) {
           if (fxMode === 'fixed') {
             fxPrices[i] = 1350.0;
           } else {
-            const zFx = prng.getGaussian();
+            const zFx = fxPrng.getGaussian();
             const drift = 0.00003 - 0.5 * (0.0035 ** 2);
             currentFx *= Math.exp(drift + 0.0035 * zFx);
             fxPrices[i] = currentFx;
           }
         }
 
+        // 시장 공통 충격(Market Shock) 전용 독립 PRNG 인스턴스
+        const marketPrng = new PseudoRandomEngine(888888);
+        const marketShocks = new Float64Array(N);
+        for (let i = 0; i < N; i++) marketShocks[i] = marketPrng.getGaussian();
+
         const priceMap = {};
 
-        // 1단계: 기초 자산 확률과정 시뮬레이션
+        // [수정 1번] 1단계: 기초 자산 시뮬레이션 (종목별 독립 Seed 사용으로 난수 간섭 제거)
         sortedTickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
           if (config && config.type === 'direct') {
+            const prng = new PseudoRandomEngine(this.getTickerSeed(ticker));
             const prices = new Float64Array(N);
             let price = ticker.includes('QQQ') ? 100 : ticker.includes('SPMO') ? 35 : 50;
             const rho = config.marketCorr || 0.8;
@@ -303,19 +317,19 @@
               let mu = config.baseMu;
               let sigma = config.sigma;
 
-              // 국면별(Regime) 변동성 및 추세 정밀 반영
+              // 국면별(Regime) 변동성 및 추세 반영
               if (year === 2018) { 
                 mu -= 0.0008; 
-                sigma *= 1.5; // 미중 무역분쟁 및 반도체 다운사이클 Vol 스파이크
+                sigma *= 1.5; 
               } else if (year === 2020) { 
                 mu = 0.0004; 
-                sigma *= 2.2; // 코로나 폭락장
+                sigma *= 2.2; 
               } else if (year === 2022) { 
                 mu = -0.0015; 
-                sigma *= 2.0; // 스태그플레이션 폭락장 (SOXL -90% 궤멸의 원인)
+                sigma *= 2.0; 
               } else if (year >= 2023) { 
                 mu += 0.0002; 
-                sigma *= 1.15; // AI 붐 고변동성 유지
+                sigma *= 1.15; 
               }
 
               const zIndiv = prng.getGaussian();
@@ -392,19 +406,28 @@
               const buyFx = fxRate * (1 + FRICTION_RATE);
               const buyPrice = prices[i] * (1 + FRICTION_RATE);
 
+              // [수정 3번] 기존 보유 주식 대상 분기/월별 배당금 정산 및 재투자
+              if (shares > 0 && config.divYield > 0) {
+                const monthNum = parseInt(calendar.months[i].split('-')[1], 10);
+                const isMonthlyPayer = config.divFreq === 'monthly';
+                const isQuarterlyMonth = [3, 6, 9, 12].includes(monthNum);
+
+                // 월배당 종목이거나 분기배당 해당 월(3,6,9,12월)인 경우에만 집행
+                if (isMonthlyPayer || isQuarterlyMonth) {
+                  const divRate = isMonthlyPayer ? (config.divYield / 12) : (config.divYield / 4);
+                  const grossDivUsd = shares * prices[i] * divRate;
+                  const netDivUsd = grossDivUsd * (1 - 0.154); // 배당소득세 15.4% 원천징수
+                  shares += netDivUsd / buyPrice; // 배당금 재투자 매수
+                  costBasisKrw += netDivUsd * fxRate;
+                }
+              }
+
+              // 신규 월 적립금 납입 및 주식 매수
               const investedUsd = monthlyKrw / buyFx;
               shares += investedUsd / buyPrice;
               investedKrw += monthlyKrw;
               costBasisKrw += monthlyKrw;
               monthlyCashFlows.push(monthlyKrw);
-
-              if (shares > 0 && config.divYield > 0) {
-                const monthlyDivYield = config.divYield / 12;
-                const grossDivUsd = shares * prices[i] * monthlyDivYield;
-                const netDivUsd = grossDivUsd * (1 - 0.154);
-                shares += netDivUsd / buyPrice;
-                costBasisKrw += netDivUsd * fxRate;
-              }
             }
 
             let currentValKrw = shares * prices[i] * fxPrices[i];
