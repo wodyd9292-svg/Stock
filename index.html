@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 (High-Performance Engine)</title>
+  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 (DRIP & 절세 반영)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,8 +13,8 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Backtester (High-Performance Engine)</h1>
-        <p class="text-slate-400 text-xs mt-1">이토 보정항 반영 GBM · Irwin-Hall 정규화 · SOFR Decay · 高속 시계열 연산 Engine</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Backtester (DRIP & Tax-Harvesting Engine)</h1>
+        <p class="text-slate-400 text-xs mt-1">Box-Muller 정규분포 · 연 250만 원 절세 공제 · 15.4% 배당소득세 차감 후 DRIP 재투자</p>
       </div>
       <div id="apiStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
         엔진 대기 중
@@ -45,7 +45,7 @@
       <div>
         <label class="block text-xs font-semibold text-slate-400 mb-1">양도세 산출</label>
         <select id="taxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
-          <option value="enabled">세후 (22% 과세 반영)</option>
+          <option value="enabled">세후 (연 250만 절세 매도 반영)</option>
           <option value="disabled">세전 (Gross)</option>
         </select>
       </div>
@@ -73,7 +73,7 @@
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-          <h3 class="font-bold text-sm text-emerald-400">30개 ETF 종목 선택 (SPMO 포함)</h3>
+          <h3 class="font-bold text-sm text-emerald-400">30개 ETF 종목 선택 (DRIP 지원)</h3>
           <button onclick="toggleAssetModal()" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
         </div>
         
@@ -126,40 +126,41 @@
   <script>
     let chartInstance = null;
 
+    // ETF별 연간 배당수익률(divYield) 반영
     const TICKER_CONFIG = {
-      'QQQ':  { type: 'direct', baseMu: 0.00065, sigma: 0.012, name: 'Invesco QQQ (나스닥100)' },
-      'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, name: 'ProShares QLD (나스닥 2배)' },
-      'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0098, name: 'ProShares TQQQ (나스닥 3배)' },
-      'SPMO': { type: 'direct', baseMu: 0.00062, sigma: 0.011, name: 'Invesco S&P 500 Momentum ETF' },
-      'SMH':  { type: 'direct', baseMu: 0.00085, sigma: 0.018, name: 'VanEck Semiconductor ETF' },
-      'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0094, name: 'Direxion Semi 3x Bull' },
+      'QQQ':  { type: 'direct', baseMu: 0.00065, sigma: 0.012, divYield: 0.006, name: 'Invesco QQQ (나스닥100)' },
+      'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, divYield: 0.001, name: 'ProShares QLD (나스닥 2배)' },
+      'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0098, divYield: 0.001, name: 'ProShares TQQQ (나스닥 3배)' },
+      'SPMO': { type: 'direct', baseMu: 0.00062, sigma: 0.011, divYield: 0.008, name: 'Invesco S&P 500 Momentum ETF' },
+      'SMH':  { type: 'direct', baseMu: 0.00085, sigma: 0.018, divYield: 0.005, name: 'VanEck Semiconductor ETF' },
+      'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0094, divYield: 0.001, name: 'Direxion Semi 3x Bull' },
       
-      'SPY':  { type: 'direct', baseMu: 0.00048, sigma: 0.010, name: 'SPDR S&P 500 ETF Trust' },
-      'VOO':  { type: 'direct', baseMu: 0.00048, sigma: 0.010, name: 'Vanguard S&P 500 ETF' },
-      'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0089, name: 'ProShares Ultra S&P500 2x' },
-      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0091, name: 'ProShares UltraPro S&P500 3x' },
-      'SCHD': { type: 'direct', baseMu: 0.00042, sigma: 0.009, name: 'Schwab US Dividend Equity' },
-      'IWM':  { type: 'direct', baseMu: 0.00035, sigma: 0.013, name: 'iShares Russell 2000 ETF' },
-      'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0108, name: 'Direxion Small Cap 3x Bull' },
-      'DIA':  { type: 'direct', baseMu: 0.00040, sigma: 0.009, name: 'SPDR Dow Jones Industrial Average' },
+      'SPY':  { type: 'direct', baseMu: 0.00048, sigma: 0.010, divYield: 0.013, name: 'SPDR S&P 500 ETF Trust' },
+      'VOO':  { type: 'direct', baseMu: 0.00048, sigma: 0.010, divYield: 0.013, name: 'Vanguard S&P 500 ETF' },
+      'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0089, divYield: 0.002, name: 'ProShares Ultra S&P500 2x' },
+      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0091, divYield: 0.002, name: 'ProShares UltraPro S&P500 3x' },
+      'SCHD': { type: 'direct', baseMu: 0.00042, sigma: 0.009, divYield: 0.035, name: 'Schwab US Dividend Equity' },
+      'IWM':  { type: 'direct', baseMu: 0.00035, sigma: 0.013, divYield: 0.012, name: 'iShares Russell 2000 ETF' },
+      'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0108, divYield: 0.001, name: 'Direxion Small Cap 3x Bull' },
+      'DIA':  { type: 'direct', baseMu: 0.00040, sigma: 0.009, divYield: 0.018, name: 'SPDR Dow Jones Industrial Average' },
       
-      'XLK':  { type: 'direct', baseMu: 0.00070, sigma: 0.013, name: 'Technology Select Sector SPDR' },
-      'XLF':  { type: 'direct', baseMu: 0.00042, sigma: 0.012, name: 'Financial Select Sector SPDR' },
-      'XLE':  { type: 'direct', baseMu: 0.00030, sigma: 0.018, name: 'Energy Select Sector SPDR' },
-      'XBI':  { type: 'direct', baseMu: 0.00038, sigma: 0.017, name: 'SPDR S&P Biotech ETF' },
-      'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0101, name: 'Direxion Biotech 3x Bull' },
-      'ARKK': { type: 'direct', baseMu: 0.00035, sigma: 0.024, name: 'ARK Innovation ETF' },
-      'SCHG': { type: 'direct', baseMu: 0.00062, sigma: 0.012, name: 'Schwab U.S. Large-Cap Growth' },
-      'JEPI': { type: 'direct', baseMu: 0.00032, sigma: 0.007, name: 'JPMorgan Equity Premium Income' },
+      'XLK':  { type: 'direct', baseMu: 0.00070, sigma: 0.013, divYield: 0.007, name: 'Technology Select Sector SPDR' },
+      'XLF':  { type: 'direct', baseMu: 0.00042, sigma: 0.012, divYield: 0.014, name: 'Financial Select Sector SPDR' },
+      'XLE':  { type: 'direct', baseMu: 0.00030, sigma: 0.018, divYield: 0.032, name: 'Energy Select Sector SPDR' },
+      'XBI':  { type: 'direct', baseMu: 0.00038, sigma: 0.017, divYield: 0.004, name: 'SPDR S&P Biotech ETF' },
+      'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0101, divYield: 0.001, name: 'Direxion Biotech 3x Bull' },
+      'ARKK': { type: 'direct', baseMu: 0.00035, sigma: 0.024, divYield: 0.000, name: 'ARK Innovation ETF' },
+      'SCHG': { type: 'direct', baseMu: 0.00062, sigma: 0.012, divYield: 0.005, name: 'Schwab U.S. Large-Cap Growth' },
+      'JEPI': { type: 'direct', baseMu: 0.00032, sigma: 0.007, divYield: 0.075, name: 'JPMorgan Equity Premium Income' },
       
-      'TLT':  { type: 'direct', baseMu: -0.0001, sigma: 0.009, name: 'iShares 20+ Year Treasury Bond' },
-      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0102, name: 'Direxion 20+ Yr Bull 3x' },
-      'GLD':  { type: 'direct', baseMu: 0.00030, sigma: 0.008, name: 'SPDR Gold Shares' },
-      'XLP':  { type: 'direct', baseMu: 0.00032, sigma: 0.007, name: 'Consumer Staples Select SPDR' },
-      'XLU':  { type: 'direct', baseMu: 0.00030, sigma: 0.009, name: 'Utilities Select Sector SPDR' },
-      'IEMG': { type: 'direct', baseMu: 0.00020, sigma: 0.012, name: 'iShares Core MSCI Emerging' },
-      'VUG':  { type: 'direct', baseMu: 0.00060, sigma: 0.012, name: 'Vanguard Growth ETF' },
-      'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0095, name: 'ProShares Short QQQ (-3x)' }
+      'TLT':  { type: 'direct', baseMu: -0.0001, sigma: 0.009, divYield: 0.035, name: 'iShares 20+ Year Treasury Bond' },
+      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0102, divYield: 0.002, name: 'Direxion 20+ Yr Bull 3x' },
+      'GLD':  { type: 'direct', baseMu: 0.00030, sigma: 0.008, divYield: 0.000, name: 'SPDR Gold Shares' },
+      'XLP':  { type: 'direct', baseMu: 0.00032, sigma: 0.007, divYield: 0.026, name: 'Consumer Staples Select SPDR' },
+      'XLU':  { type: 'direct', baseMu: 0.00030, sigma: 0.009, divYield: 0.031, name: 'Utilities Select Sector SPDR' },
+      'IEMG': { type: 'direct', baseMu: 0.00020, sigma: 0.012, divYield: 0.028, name: 'iShares Core MSCI Emerging' },
+      'VUG':  { type: 'direct', baseMu: 0.00060, sigma: 0.012, divYield: 0.005, name: 'Vanguard Growth ETF' },
+      'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0095, divYield: 0.000, name: 'ProShares Short QQQ (-3x)' }
     };
 
     let selectedTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
@@ -169,12 +170,18 @@
       '#38bdf8', '#a3e635', '#f43f5e', '#818cf8', '#e879f9', '#2dd4bf'
     ];
 
-    // 비트연산 LCG PRNG (고속 의사난수 생성기)
-    function fastRandom(seed) {
-      let s = seed | 0;
-      s = Math.imul(s ^ (s >>> 15), s | 1);
-      s ^= s + Math.imul(s ^ (s >>> 7), s | 61);
-      return ((s ^ (s >>> 14)) >>> 0) / 4294967296;
+    // 무편향 Box-Muller 변환 기반 정규분포 PRNG
+    function getBoxMullerNormal(seedIndex) {
+      let a = seedIndex * 1597334677 + 2860486313;
+      function next() {
+        a = (a ^ (a >>> 15)) * 0x85ebca6b;
+        a = (a ^ (a >>> 13)) * 0xc2b2ae35;
+        return ((a ^ (a >>> 16)) >>> 0) / 4294967296;
+      }
+      let u1 = next();
+      let u2 = next();
+      while (u1 === 0) u1 = next();
+      return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
     }
 
     function getHistoricalSOFR(year) {
@@ -184,7 +191,6 @@
       return 0.005;
     }
 
-    // 1. 거래일 메타데이터 선제 산출 (Vectorization)
     function generateTradingCalendar(startYear, endYear) {
       const dates = [];
       const years = [];
@@ -218,31 +224,21 @@
       return { dates, years, months, isNewMonth, count: dates.length };
     }
 
-    // 2. 고속 벡터화 시계열 생성 엔진
     function generateOptimizedEngineData(calendar, selectedTickers, fxMode) {
       const N = calendar.count;
-      const SQRT_6 = 2.449489742783178; // Irwin-Hall 정규화 정확 상수 (sqrt(6))
 
-      // 공통 시장 충격 산출 (1회만 생성)
       const commonShocks = new Float64Array(N);
       for (let i = 0; i < N; i++) {
-        const u1 = fastRandom(i * 3 + 100000);
-        const u2 = fastRandom(i * 3 + 100001);
-        commonShocks[i] = (u1 + u2 - 1.0) * SQRT_6;
+        commonShocks[i] = getBoxMullerNormal(i * 3 + 100000);
       }
 
-      // 환율 시계열 생성 (Float64Array)
       const fxPrices = new Float64Array(N);
       let currentFx = 1150;
       for (let i = 0; i < N; i++) {
         if (fxMode === 'fixed') {
           fxPrices[i] = 1350;
         } else {
-          const u1 = fastRandom(i * 2 + 500000);
-          const u2 = fastRandom(i * 2 + 500001);
-          const z = (u1 + u2 - 1.0) * SQRT_6;
-          
-          // 이토 보정항 적용
+          const z = getBoxMullerNormal(i * 2 + 500000);
           const mu = 0.00005;
           const sigma = 0.004;
           const drift = mu - 0.5 * sigma * sigma;
@@ -251,10 +247,8 @@
         }
       }
 
-      // 종목별 가격 데이터맵
       const priceMap = {};
 
-      // Direct 종목 처리
       selectedTickers.forEach((ticker, tIdx) => {
         const config = TICKER_CONFIG[ticker];
         if (config.type === 'direct') {
@@ -274,14 +268,9 @@
             if (year === 2022) mu = -0.0012;
             if (year >= 2023) mu += 0.0003;
 
-            const u1 = fastRandom(i * 1000 + tIdx * 17 + 700000);
-            const u2 = fastRandom(i * 1000 + tIdx * 17 + 700001);
-            const zInd = (u1 + u2 - 1.0) * SQRT_6;
-
-            // 공통 충격과 개별 충격 결합
+            const zInd = getBoxMullerNormal(i * 1000 + tIdx * 17 + 700000);
             const zCombined = 0.7071 * commonShocks[i] + 0.7071 * zInd;
 
-            // 이토 보정항 적용 (Drift Correction)
             const drift = mu - 0.5 * currentSigma * currentSigma;
             price *= Math.exp(drift + currentSigma * zCombined);
             prices[i] = price;
@@ -290,7 +279,6 @@
         }
       });
 
-      // Synth (레버리지) 종목 처리
       selectedTickers.forEach(ticker => {
         const config = TICKER_CONFIG[ticker];
         if (config.type === 'synth') {
@@ -338,7 +326,7 @@
           <input type="checkbox" value="${ticker}" ${isChecked ? 'checked' : ''} onchange="toggleTickerSelection('${ticker}')" class="accent-emerald-500">
           <div class="truncate">
             <span class="font-bold text-slate-200 block">${ticker}</span>
-            <span class="text-[10px] text-slate-500 truncate block">${item.name}</span>
+            <span class="text-[10px] text-slate-500 truncate block">${item.name} (배당 ${(item.divYield*100).toFixed(1)}%)</span>
           </div>
         `;
         grid.appendChild(label);
@@ -400,9 +388,8 @@
 
       const statusEl = document.getElementById('apiStatus');
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 animate-pulse";
-      statusEl.innerText = "연산 수행 중...";
+      statusEl.innerText = "DRIP & 절세 연산 수행 중...";
 
-      // 비동기 루프 차단을 방지하기 위한 UI 프레임 분리
       await new Promise(resolve => setTimeout(resolve, 10));
 
       const startYear = parseInt(document.getElementById('startYear').value);
@@ -411,7 +398,6 @@
       const fxMode = document.getElementById('fxMode').value;
       const taxEnabled = document.getElementById('taxMode').value === 'enabled';
 
-      // 레버리지 의존성 정렬 (Direct 종목 우선 시뮬레이션)
       const requiredTickers = new Set(selectedTickers);
       selectedTickers.forEach(t => {
         if (TICKER_CONFIG[t].type === 'synth') {
@@ -420,17 +406,18 @@
       });
       const sortedTickers = Array.from(requiredTickers);
 
-      // 1. 달력 생성
       const calendar = generateTradingCalendar(startYear, endYear);
       const N = calendar.count;
 
-      // 2. 엔진 데이터 생성
       const { fxPrices, priceMap } = generateOptimizedEngineData(calendar, sortedTickers, fxMode);
 
-      // 3. DCA 백테스트 계산
       const results = {};
+      const totalYears = Math.max(1, endYear - startYear + 1);
+      // 연간 250만원 절세 매도 누적 한도 (N년 × 250만원)
+      const taxFreeAllowance = 2500000 * totalYears;
 
       selectedTickers.forEach(ticker => {
+        const config = TICKER_CONFIG[ticker];
         const prices = priceMap[ticker];
         let shares = 0;
         let investedKrw = 0;
@@ -446,9 +433,19 @@
             const fxFriction = fxRate * 1.001;
             const buyPrice = prices[i] * 1.0005;
 
+            // 1. 매월 DCA 정기 적립
             const investedUsd = monthlyKrw / fxFriction;
             shares += investedUsd / buyPrice;
             investedKrw += monthlyKrw;
+
+            // 2. DRIP (배당 재투자: 15.4% 배당소득세 차감 후 자동 매수)
+            if (shares > 0 && config.divYield > 0) {
+              const monthlyDivYield = config.divYield / 12;
+              const grossDivUsd = shares * prices[i] * monthlyDivYield;
+              const netDivUsd = grossDivUsd * (1 - 0.154); // 15.4% 미국 배당세 차감
+              const dripShares = netDivUsd / buyPrice;
+              shares += dripShares;
+            }
           }
 
           const currentValKrw = shares * prices[i] * fxPrices[i];
@@ -462,12 +459,15 @@
 
         const grossVal = portfolioValues[N - 1];
         const totalProfit = grossVal - investedKrw;
-        const tax = (taxEnabled && totalProfit > 2500000) ? (totalProfit - 2500000) * 0.22 : 0;
+        
+        // 매년 250만원 절세 공제를 반영한 과세대상 수익 산출
+        const taxableProfit = Math.max(0, totalProfit - taxFreeAllowance);
+        const tax = (taxEnabled && taxableProfit > 0) ? taxableProfit * 0.22 : 0;
         const netVal = grossVal - tax;
         const netReturn = ((netVal - investedKrw) / investedKrw) * 100;
 
         results[ticker] = {
-          name: TICKER_CONFIG[ticker].name,
+          name: config.name,
           investedKrw,
           grossVal,
           netVal,
@@ -481,7 +481,7 @@
 
       renderDashboard(results, calendar);
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
-      statusEl.innerText = "연산 완료 (Optimized Engine Synced)";
+      statusEl.innerText = "연산 완료 (DRIP & Tax-Harvest Synced)";
     }
 
     function renderDashboard(results, calendar) {
@@ -505,7 +505,7 @@
         card.innerHTML = `
           <span class="text-xs text-slate-400 font-bold block truncate">${res.name}</span>
           <div class="text-lg sm:text-xl font-bold mt-1 truncate" style="color: ${COLOR_PALETTE[idx % COLOR_PALETTE.length]}">
-            ${(Math.round(res.netVal / 10000)).toLocaleString()}만 원 (${res.netReturn.toFixed(1)}%)
+            ${(Math.round(res.netVal / 10000)).toLocaleString()}만 원 (${res.netReturn >= 0 ? '+' : ''}${res.netReturn.toFixed(1)}%)
           </div>
         `;
         cardsContainer.appendChild(card);
@@ -521,7 +521,7 @@
           <td class="px-4 py-3">${Math.round(res.investedKrw).toLocaleString()}원</td>
           <td class="px-4 py-3 text-slate-400">${Math.round(res.grossVal).toLocaleString()}원</td>
           <td class="px-4 py-3 font-bold text-emerald-400">${Math.round(res.netVal).toLocaleString()}원</td>
-          <td class="px-4 py-3 ${res.netReturn >= 0 ? 'text-rose-400' : 'text-blue-400'} font-bold">${res.netReturn.toFixed(1)}%</td>
+          <td class="px-4 py-3 ${res.netReturn >= 0 ? 'text-rose-400' : 'text-blue-400'} font-bold">${res.netReturn >= 0 ? '+' : ''}${res.netReturn.toFixed(1)}%</td>
           <td class="px-4 py-3 text-slate-400">${res.mdd.toFixed(1)}%</td>
         `;
         tbody.appendChild(tr);
@@ -533,7 +533,6 @@
       const labels = calendar.dates;
       const refInvested = results[firstTicker].investedSeries;
 
-      // 차트 데이터 다운샘플링 (성능 최적화: 최대 300개 포인트)
       const step = Math.max(1, Math.floor(labels.length / 300));
       const sampledLabels = [];
       const sampledInvested = [];
@@ -572,7 +571,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          animation: false, // 고속 다운샘플링 수용
+          animation: false,
           interaction: { mode: 'index', intersect: false },
           scales: {
             x: { grid: { color: '#1e293b' }, ticks: { color: '#64748b', maxTicksLimit: 12 } },
