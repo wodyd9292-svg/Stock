@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.0 (Academic Pure Quant)</title>
+  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.1 (IRR Engine Integrated)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -12,8 +12,8 @@
   <div class="max-w-7xl mx-auto space-y-5">
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.0</h1>
-        <p class="text-slate-400 text-xs mt-1">Single-Factor GBM Process · Dynamic Volatility Drag · Discrete Step-up Tax Engine</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.1</h1>
+        <p class="text-slate-400 text-xs mt-1">Single-Factor GBM Process · Newton-Raphson MWRR/IRR Engine · Step-up Tax Protocol</p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
         Engine Standby
@@ -101,7 +101,7 @@
 
     <!-- 성과 정량 데이터 테이블 -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
-      <table class="w-full text-xs text-left text-slate-300 min-w-[750px]">
+      <table class="w-full text-xs text-left text-slate-300 min-w-[850px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
           <tr>
             <th class="px-4 py-3">Ticker</th>
@@ -109,31 +109,19 @@
             <th class="px-4 py-3">세전 평가금</th>
             <th class="px-4 py-3 text-amber-400">누적 추정 세금</th>
             <th class="px-4 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
-            <th class="px-4 py-3" id="thFinalReturn">수익률 (CAGR/TWR)</th>
+            <th class="px-4 py-3">누적 수익률</th>
+            <th class="px-4 py-3 text-cyan-400" id="thAnnualReturn">연 내부수익률 (MWRR/IRR)</th>
             <th class="px-4 py-3">최대 낙폭 (MDD)</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
-          <tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">백테스트 연산을 실행하십시오.</td></tr>
+          <tr><td colspan="8" class="px-4 py-6 text-center text-slate-500">백테스트 연산을 실행하십시오.</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
   <script>
-    /**
-     * @typedef {Object} TickerMetadata
-     * @property {'direct'|'synth'} type
-     * @property {number} [baseMu]
-     * @property {number} [sigma]
-     * @property {number} [marketCorr] - Market Correlation factor (rho)
-     * @property {string} [base]
-     * @property {number} [leverage]
-     * @property {number} [fee]
-     * @property {number} divYield
-     * @property {string} name
-     */
-
     const TICKER_UNIVERSE = {
       'QQQ':  { type: 'direct', baseMu: 0.00065, sigma: 0.012, marketCorr: 0.95, divYield: 0.006, name: 'Invesco QQQ (나스닥100)' },
       'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, divYield: 0.001, name: 'ProShares QLD (나스닥 2배)' },
@@ -167,11 +155,8 @@
       'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0095, divYield: 0.000, name: 'ProShares Short QQQ (-3x)' }
     };
 
-    /**
-     * 32비트 Mulberry32 난수 생성기 및 Gaussian Box-Muller 변환 모듈
-     */
     class PseudoRandomEngine {
-      constructor(seed = 1337) {
+      constructor(seed = 424242) {
         this.state = seed >>> 0;
       }
       next() {
@@ -223,6 +208,49 @@
       }
     }
 
+    /**
+     * 뉴턴-랩슨법 기반 수치해석적 월별/연별 내부수익률(IRR/MWRR) 산출 수치 엔진
+     */
+    class NewtonRaphsonIRRSolver {
+      static computeAnnualIRR(monthlyCashFlows, finalPortfolioVal) {
+        const m = monthlyCashFlows.length;
+        if (m === 0 || finalPortfolioVal <= 0) return 0.0;
+
+        let rm = 0.008; // 초깃값 (월 0.8% 추정)
+        const maxIterations = 60;
+        const tolerance = 1e-7;
+
+        for (let iter = 0; iter < maxIterations; iter++) {
+          let f = -finalPortfolioVal;
+          let df = 0.0;
+
+          for (let k = 0; k < m; k++) {
+            const exp = m - k;
+            const C_k = monthlyCashFlows[k];
+            const base = 1.0 + rm;
+            
+            if (base <= 0) { rm = 0.0001; break; }
+
+            const term = C_k * Math.pow(base, exp);
+            f += term;
+            df += exp * C_k * Math.pow(base, exp - 1);
+          }
+
+          if (Math.abs(df) < 1e-12) break;
+
+          const diff = f / df;
+          rm -= diff;
+
+          if (Math.abs(diff) < tolerance) break;
+        }
+
+        if (isNaN(rm) || rm <= -1.0) return -100.0;
+
+        const annualizedIRR = (Math.pow(1.0 + rm, 12) - 1.0) * 100.0;
+        return annualizedIRR;
+      }
+    }
+
     class QuantStochasticEngine {
       static getHistoricalSOFR(year) {
         if (year >= 2022 && year <= 2024) return 0.048;
@@ -235,11 +263,9 @@
         const N = calendar.count;
         const prng = new PseudoRandomEngine(424242);
         
-        // 시장 공통 요인 (Market Shock Factor)
         const marketShocks = new Float64Array(N);
         for (let i = 0; i < N; i++) marketShocks[i] = prng.getGaussian();
 
-        // FX 확률 과정 생성
         const fxPrices = new Float64Array(N);
         let currentFx = 1150.0;
         for (let i = 0; i < N; i++) {
@@ -255,7 +281,6 @@
 
         const priceMap = {};
 
-        // 1단계: Direct Asset 시뮬레이션 (Single-Factor Model 적용)
         tickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
           if (config.type === 'direct') {
@@ -285,7 +310,6 @@
           }
         });
 
-        // 2단계: Leveraged Synthetic Asset 시뮬레이션
         tickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
           if (config.type === 'synth') {
@@ -319,7 +343,7 @@
         const N = calendar.count;
         const { fxPrices, priceMap } = engineData;
         const results = {};
-        const FRICTION_RATE = 0.0005; // 0.05% 수수료 및 슬리피지
+        const FRICTION_RATE = 0.0005;
         const TAX_EXEMPTION_LIMIT = 2500000.0;
 
         tickers.forEach(ticker => {
@@ -332,6 +356,7 @@
           let maxDrawdown = 0.0;
           let totalTaxPaid = 0.0;
 
+          const monthlyCashFlows = [];
           const portfolioValues = new Float64Array(N);
           const investedSeries = new Float64Array(N);
 
@@ -345,12 +370,12 @@
               shares += investedUsd / buyPrice;
               investedKrw += monthlyKrw;
               costBasisKrw += monthlyKrw;
+              monthlyCashFlows.push(monthlyKrw);
 
-              // 배당금 재투자 (DRIP) 연산
               if (shares > 0 && config.divYield > 0) {
                 const monthlyDivYield = config.divYield / 12;
                 const grossDivUsd = shares * prices[i] * monthlyDivYield;
-                const netDivUsd = grossDivUsd * (1 - 0.154); // 미국 배당소득세율 15.4%
+                const netDivUsd = grossDivUsd * (1 - 0.154);
                 shares += netDivUsd / buyPrice;
                 costBasisKrw += netDivUsd * fxRate;
               }
@@ -358,7 +383,6 @@
 
             let currentValKrw = shares * prices[i] * fxPrices[i];
 
-            // 연말 이산 과세 및 Step-up Basis 적용
             if (taxEnabled && calendar.isYearEnd[i]) {
               const unrealizedGain = currentValKrw - costBasisKrw;
               if (unrealizedGain > 0) {
@@ -366,7 +390,7 @@
                 const frictionCost = harvestedGain * FRICTION_RATE;
                 
                 costBasisKrw += harvestedGain;
-                currentValKrw -= frictionCost; // 리밸런싱 마찰비용 차감
+                currentValKrw -= frictionCost;
               }
             }
 
@@ -385,7 +409,10 @@
           totalTaxPaid += finalTax;
 
           const finalVal = grossVal - finalTax;
-          const finalReturn = ((finalVal - investedKrw) / investedKrw) * 100;
+          const cumulativeReturn = ((finalVal - investedKrw) / investedKrw) * 100.0;
+
+          // 수치해석 뉴턴-랩슨 IRR 엔진 실행
+          const annualizedIRR = NewtonRaphsonIRRSolver.computeAnnualIRR(monthlyCashFlows, finalVal);
 
           results[ticker] = {
             name: config.name,
@@ -393,8 +420,9 @@
             grossVal,
             taxAmount: totalTaxPaid,
             finalVal,
-            finalReturn,
-            mdd: maxDrawdown * 100,
+            cumulativeReturn,
+            annualizedIRR,
+            mdd: maxDrawdown * 100.0,
             portfolioValues,
             investedSeries
           };
@@ -491,14 +519,14 @@
       static async runBacktest() {
         if (this.selectedTickers.length === 0) {
           document.getElementById('summaryCards').innerHTML = '';
-          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-rose-400">분석 대상 자산을 지정하십시오.</td></tr>`;
+          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-rose-400">분석 대상 자산을 지정하십시오.</td></tr>`;
           if (this.chartInstance) this.chartInstance.destroy();
           return;
         }
 
         const statusEl = document.getElementById('engineStatus');
         statusEl.className = "text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 animate-pulse";
-        statusEl.innerText = "수치 시뮬레이션 연산 중...";
+        statusEl.innerText = "뉴턴-랩슨 연쇄 수치해석 연산 중...";
 
         await new Promise(r => setTimeout(r, 10));
 
@@ -508,7 +536,6 @@
         const fxMode = document.getElementById('fxMode').value;
         const taxEnabled = document.getElementById('taxMode').value === 'enabled';
 
-        // 의존성 포함 자산 유니버스 추출
         const requiredSet = new Set(this.selectedTickers);
         this.selectedTickers.forEach(t => {
           if (TICKER_UNIVERSE[t].type === 'synth') requiredSet.add(TICKER_UNIVERSE[t].base);
@@ -522,12 +549,12 @@
         this.renderDashboard(results, calendar, taxEnabled);
 
         statusEl.className = "text-xs px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
-        statusEl.innerText = "연산 완료 (Single-Factor GBM 적용)";
+        statusEl.innerText = "IRR 연산 완료 (Newton-Raphson Solver)";
       }
 
       static renderDashboard(results, calendar, taxEnabled) {
         document.getElementById('thFinalVal').innerText = taxEnabled ? '세후 실질 평가금' : '세전 최종 평가금';
-        document.getElementById('thFinalReturn').innerText = taxEnabled ? '세후 수익률' : '세전 수익률';
+        document.getElementById('thAnnualReturn').innerText = taxEnabled ? '세후 연 내부수익률 (IRR)' : '세전 연 내부수익률 (IRR)';
 
         const cardsContainer = document.getElementById('summaryCards');
         cardsContainer.innerHTML = '';
@@ -548,15 +575,17 @@
           const card = document.createElement('div');
           card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
           card.innerHTML = `
-            <span class="text-xs text-slate-400 font-bold block truncate">${res.name} (${taxEnabled ? '세후' : '세전'})</span>
-            <div class="text-lg sm:text-xl font-bold mt-1 truncate" style="color: ${palette[idx % palette.length]}">
-              ${(Math.round(res.finalVal / 10000)).toLocaleString()}만 원 (${res.finalReturn >= 0 ? '+' : ''}${res.finalReturn.toFixed(1)}%)
+            <span class="text-xs text-slate-400 font-bold block truncate">${res.name}</span>
+            <div class="text-sm font-bold mt-1 truncate" style="color: ${palette[idx % palette.length]}">
+              ${(Math.round(res.finalVal / 10000)).toLocaleString()}만 원 (${res.cumulativeReturn >= 0 ? '+' : ''}${res.cumulativeReturn.toFixed(1)}%)
+            </div>
+            <div class="text-xs font-semibold text-cyan-400 mt-0.5">
+              연 IRR: ${res.annualizedIRR >= 0 ? '+' : ''}${res.annualizedIRR.toFixed(2)}%/yr
             </div>
           `;
           cardsContainer.appendChild(card);
         });
 
-        // 테이블 렌더링
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
         for (const [ticker, res] of Object.entries(results)) {
@@ -570,13 +599,13 @@
             <td class="px-4 py-3 text-slate-400">${Math.round(res.grossVal).toLocaleString()}원</td>
             <td class="px-4 py-3 text-amber-400 font-semibold">${taxText}</td>
             <td class="px-4 py-3 font-bold text-emerald-400">${Math.round(res.finalVal).toLocaleString()}원</td>
-            <td class="px-4 py-3 ${res.finalReturn >= 0 ? 'text-rose-400' : 'text-blue-400'} font-bold">${res.finalReturn >= 0 ? '+' : ''}${res.finalReturn.toFixed(1)}%</td>
+            <td class="px-4 py-3 ${res.cumulativeReturn >= 0 ? 'text-rose-400' : 'text-blue-400'} font-bold">${res.cumulativeReturn >= 0 ? '+' : ''}${res.cumulativeReturn.toFixed(1)}%</td>
+            <td class="px-4 py-3 ${res.annualizedIRR >= 0 ? 'text-cyan-400' : 'text-blue-400'} font-bold">${res.annualizedIRR >= 0 ? '+' : ''}${res.annualizedIRR.toFixed(2)}%</td>
             <td class="px-4 py-3 text-slate-400">${res.mdd.toFixed(1)}%</td>
           `;
           tbody.appendChild(tr);
         }
 
-        // 차트 렌더링 (Downsampling 시각화)
         const ctx = document.getElementById('quantChart').getContext('2d');
         if (this.chartInstance) this.chartInstance.destroy();
 
@@ -605,7 +634,7 @@
             sampledData.push(res.portfolioValues[i] / 10000);
           }
           datasets.push({
-            label: ticker,
+            label: `${ticker} (IRR: ${res.annualizedIRR.toFixed(1)}%)`,
             data: sampledData,
             borderColor: palette[idx % palette.length],
             borderWidth: 1.8,
