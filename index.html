@@ -38,7 +38,7 @@
       <div>
         <label class="block text-xs font-semibold text-slate-400 mb-1">환율 적용</label>
         <select id="fxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
-          <option value="historical">일별 역사적 환율 (API)</option>
+          <option value="historical">일별 역사적 환율 (시뮬레이션)</option>
           <option value="fixed">고정 환율 (1,350원)</option>
         </select>
       </div>
@@ -126,40 +126,39 @@
   <script>
     let chartInstance = null;
 
-    // 30개 전체 ETF 데이터베이스 (SPMO 포함)
     const TICKER_CONFIG = {
-      'QQQ':  { type: 'direct', name: 'Invesco QQQ (나스닥100)' },
+      'QQQ':  { type: 'direct', baseMu: 0.00065, sigma: 0.012, name: 'Invesco QQQ (나스닥100)' },
       'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, name: 'ProShares QLD (나스닥 2배)' },
       'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0098, name: 'ProShares TQQQ (나스닥 3배)' },
-      'SPMO': { type: 'direct', name: 'Invesco S&P 500 Momentum ETF' },
-      'SMH':  { type: 'direct', name: 'VanEck Semiconductor ETF' },
+      'SPMO': { type: 'direct', baseMu: 0.00062, sigma: 0.011, name: 'Invesco S&P 500 Momentum ETF' },
+      'SMH':  { type: 'direct', baseMu: 0.00085, sigma: 0.018, name: 'VanEck Semiconductor ETF' },
       'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0094, name: 'Direxion Semi 3x Bull' },
       
-      'SPY':  { type: 'direct', name: 'SPDR S&P 500 ETF Trust' },
-      'VOO':  { type: 'direct', name: 'Vanguard S&P 500 ETF' },
+      'SPY':  { type: 'direct', baseMu: 0.00048, sigma: 0.010, name: 'SPDR S&P 500 ETF Trust' },
+      'VOO':  { type: 'direct', baseMu: 0.00048, sigma: 0.010, name: 'Vanguard S&P 500 ETF' },
       'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0089, name: 'ProShares Ultra S&P500 2x' },
       'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0091, name: 'ProShares UltraPro S&P500 3x' },
-      'SCHD': { type: 'direct', name: 'Schwab US Dividend Equity' },
-      'IWM':  { type: 'direct', name: 'iShares Russell 2000 ETF' },
+      'SCHD': { type: 'direct', baseMu: 0.00042, sigma: 0.009, name: 'Schwab US Dividend Equity' },
+      'IWM':  { type: 'direct', baseMu: 0.00035, sigma: 0.013, name: 'iShares Russell 2000 ETF' },
       'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0108, name: 'Direxion Small Cap 3x Bull' },
-      'DIA':  { type: 'direct', name: 'SPDR Dow Jones Industrial Average' },
+      'DIA':  { type: 'direct', baseMu: 0.00040, sigma: 0.009, name: 'SPDR Dow Jones Industrial Average' },
       
-      'XLK':  { type: 'direct', name: 'Technology Select Sector SPDR' },
-      'XLF':  { type: 'direct', name: 'Financial Select Sector SPDR' },
-      'XLE':  { type: 'direct', name: 'Energy Select Sector SPDR' },
-      'XBI':  { type: 'direct', name: 'SPDR S&P Biotech ETF' },
+      'XLK':  { type: 'direct', baseMu: 0.00070, sigma: 0.013, name: 'Technology Select Sector SPDR' },
+      'XLF':  { type: 'direct', baseMu: 0.00042, sigma: 0.012, name: 'Financial Select Sector SPDR' },
+      'XLE':  { type: 'direct', baseMu: 0.00030, sigma: 0.018, name: 'Energy Select Sector SPDR' },
+      'XBI':  { type: 'direct', baseMu: 0.00038, sigma: 0.017, name: 'SPDR S&P Biotech ETF' },
       'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0101, name: 'Direxion Biotech 3x Bull' },
-      'ARKK': { type: 'direct', name: 'ARK Innovation ETF' },
-      'SCHG': { type: 'direct', name: 'Schwab U.S. Large-Cap Growth' },
-      'JEPI': { type: 'direct', name: 'JPMorgan Equity Premium Income' },
+      'ARKK': { type: 'direct', baseMu: 0.00035, sigma: 0.024, name: 'ARK Innovation ETF' },
+      'SCHG': { type: 'direct', baseMu: 0.00062, sigma: 0.012, name: 'Schwab U.S. Large-Cap Growth' },
+      'JEPI': { type: 'direct', baseMu: 0.00032, sigma: 0.007, name: 'JPMorgan Equity Premium Income' },
       
-      'TLT':  { type: 'direct', name: 'iShares 20+ Year Treasury Bond' },
+      'TLT':  { type: 'direct', baseMu: -0.0001, sigma: 0.009, name: 'iShares 20+ Year Treasury Bond' },
       'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0102, name: 'Direxion 20+ Yr Bull 3x' },
-      'GLD':  { type: 'direct', name: 'SPDR Gold Shares' },
-      'XLP':  { type: 'direct', name: 'Consumer Staples Select SPDR' },
-      'XLU':  { type: 'direct', name: 'Utilities Select Sector SPDR' },
-      'IEMG': { type: 'direct', name: 'iShares Core MSCI Emerging' },
-      'VUG':  { type: 'direct', name: 'Vanguard Growth ETF' },
+      'GLD':  { type: 'direct', baseMu: 0.00030, sigma: 0.008, name: 'SPDR Gold Shares' },
+      'XLP':  { type: 'direct', baseMu: 0.00032, sigma: 0.007, name: 'Consumer Staples Select SPDR' },
+      'XLU':  { type: 'direct', baseMu: 0.00030, sigma: 0.009, name: 'Utilities Select Sector SPDR' },
+      'IEMG': { type: 'direct', baseMu: 0.00020, sigma: 0.012, name: 'iShares Core MSCI Emerging' },
+      'VUG':  { type: 'direct', baseMu: 0.00060, sigma: 0.012, name: 'Vanguard Growth ETF' },
       'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0095, name: 'ProShares Short QQQ (-3x)' }
     };
 
@@ -178,55 +177,55 @@
       return 0.005;
     }
 
-    async function fetchDailyHistory(symbol, startYear, endYear) {
-      const startDate = `${startYear}-01-01`;
-      const endDate = `${endYear}-12-31`;
-      const url = `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=20y`);
-
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('API Sync Failed');
-        const json = await response.json();
-        const result = json.chart.result[0];
-        const timestamps = result.timestamp;
-        const quote = result.indicators.quote[0].close;
-        const adjclose = result.indicators.adjclose ? result.indicators.adjclose[0].adjclose : quote;
-
-        const series = [];
-        for (let i = 0; i < timestamps.length; i++) {
-          const d = new Date(timestamps[i] * 1000).toISOString().split('T')[0];
-          if (d >= startDate && d <= endDate && adjclose[i] !== null) {
-            series.push({ date: d, price: quote[i], adjClose: adjclose[i] });
-          }
-        }
-        return series;
-      } catch (e) {
-        return generateSyntheticDailyData(symbol, startYear, endYear);
+    // 의사 난수 생성기 (Seeded Pseudo-Random) - 모든 종목 동기화용
+    function getDeterministicRandom(dateStr, key = "MARKET") {
+      let hash = 0;
+      const str = dateStr + key;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
       }
+      const x = Math.sin(hash) * 10000;
+      return x - Math.floor(x);
     }
 
-    function generateSyntheticDailyData(symbol, startYear, endYear) {
+    async function fetchDailyHistory(symbol, startYear, endYear) {
+      return generateSynchronizedDailyData(symbol, startYear, endYear);
+    }
+
+    function generateSynchronizedDailyData(symbol, startYear, endYear) {
       const series = [];
-      let currentPrice = symbol.includes('QQQ') ? 100 : symbol.includes('SPMO') ? 35 : 50;
+      const isFx = symbol === 'USDKRW=X';
+      let currentPrice = isFx ? 1150 : (symbol.includes('QQQ') ? 100 : symbol.includes('SPMO') ? 35 : 50);
       let adjPrice = currentPrice;
+      
       const start = new Date(`${startYear}-01-01`);
       const end = new Date(`${endYear}-12-31`);
+      const config = TICKER_CONFIG[symbol] || { baseMu: 0.00045, sigma: 0.012 };
 
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         if (d.getDay() === 0 || d.getDay() === 6) continue;
         const dateStr = d.toISOString().split('T')[0];
         const year = d.getFullYear();
 
-        let mu = 0.00048;
-        let sigma = 0.011;
-        if (year === 2008 || year === 2022) mu = -0.0011;
-        if (year === 2020) sigma = 0.025;
+        let mu = isFx ? 0.00005 : config.baseMu;
+        let sigma = isFx ? 0.004 : config.sigma;
 
-        const shock = (Math.random() + Math.random() + Math.random() - 1.5) * 2;
-        const dailyReturn = mu + sigma * shock;
+        if (!isFx) {
+          if (year === 2018) mu -= 0.0003;
+          if (year === 2020) { sigma *= 2.2; mu = 0.0008; } // 2020 변동성 및 급반등
+          if (year === 2022) mu = -0.0012; // 2022 하락장
+          if (year >= 2023) mu += 0.0003;  // 2023~2026 강세장
+        }
 
-        currentPrice *= (1 + dailyReturn);
-        adjPrice *= (1 + dailyReturn + 0.00004);
+        // 시장 공통 충격(r1)과 개별 종목 충격(r2) 결합
+        const r1 = getDeterministicRandom(dateStr, "COMMON_MARKET");
+        const r2 = getDeterministicRandom(dateStr, symbol);
+        const z = ((r1 + r2) - 1.0) * 1.732; // Standardized Normal Approx
+
+        const dailyReturn = mu + sigma * z;
+        currentPrice *= Math.exp(dailyReturn);
+        adjPrice = currentPrice;
 
         series.push({ date: dateStr, price: currentPrice, adjClose: adjPrice });
       }
@@ -316,7 +315,7 @@
 
       const statusEl = document.getElementById('apiStatus');
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 animate-pulse";
-      statusEl.innerText = "일별 시계열 동기화 중...";
+      statusEl.innerText = "일별 시계열 동기화 연산 중...";
 
       const startYear = parseInt(document.getElementById('startYear').value);
       const endYear = parseInt(document.getElementById('endYear').value);
@@ -336,7 +335,7 @@
         }
       }
 
-      // 레버리지/인버스 일별 합성 연산 Engine
+      // 레버리지 정밀 합성 엔진 (파산 방지 및 서킷 브레이커 적용)
       for (const ticker of selectedTickers) {
         const item = TICKER_CONFIG[ticker];
         if (item.type === 'synth') {
@@ -356,9 +355,11 @@
             const sofr = getHistoricalSOFR(baseSeries[i].date);
             const dailyFee = (((Math.abs(item.leverage) - 1) * sofr) + item.fee) / 252;
             
-            const leveragedReturn = baseReturn * item.leverage - dailyFee;
-            currentPrice = Math.max(0.00001, currentPrice * (1 + leveragedReturn));
+            // 안전 레버리지 수익률 계산 (서킷브레이커: 일별 최대 하락 한도 -95% 제한)
+            let leveragedReturn = baseReturn * item.leverage - dailyFee;
+            if (leveragedReturn < -0.95) leveragedReturn = -0.95;
 
+            currentPrice = Math.max(0.01, currentPrice * (1 + leveragedReturn));
             synthSeries.push({ date: baseSeries[i].date, price: currentPrice, adjClose: currentPrice });
           }
           dataMap[ticker] = synthSeries;
@@ -395,7 +396,7 @@
           const currentValKrw = shares * point.adjClose * currentFx;
 
           if (currentValKrw > peakVal) peakVal = currentValKrw;
-          const drawdown = (currentValKrw - peakVal) / peakVal;
+          const drawdown = peakVal > 0 ? (currentValKrw - peakVal) / peakVal : 0;
           if (drawdown < maxDrawdown) maxDrawdown = drawdown;
 
           timeline.push({
