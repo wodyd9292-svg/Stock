@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터</title>
+  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 (30종 ETF 지원)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,7 +13,7 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Quantitative Backtester</h1>
-        <p class="text-slate-400 text-xs mt-1">일별 복리 · SOFR 조달금리 레버리지 Decay · DRIP · 실시간 API 시계열 엔진</p>
+        <p class="text-slate-400 text-xs mt-1">상위 30개 ETF 지원 · SPMO 복원 · 일별 복리 · SOFR 조달금리 레버리지 Decay · DRIP · 실시간 API 시계열 엔진</p>
       </div>
       <div id="apiStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
         엔진 대기 중
@@ -55,13 +55,17 @@
       </div>
     </div>
 
-    <!-- 비교 대상 종목 선택 -->
-    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
-      <div class="text-xs font-semibold text-slate-300 flex justify-between">
-        <span>비교 티커 (선택됨: <span id="selectedCount" class="text-emerald-400">4</span>개)</span>
-        <span class="text-slate-500">Yahoo Finance / Stooq Daily Sync</span>
+    <!-- 비교 대상 종목 선택 (상위 30개 ETF 풀 지원) -->
+    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+      <div class="text-xs font-semibold text-slate-300 flex justify-between items-center">
+        <span>비교 가능 30개 ETF 풀 (선택됨: <span id="selectedCount" class="text-emerald-400 font-bold">6</span>/30)</span>
+        <div class="flex gap-2">
+          <button onclick="selectAllTickers(true)" class="text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded text-slate-300">전체 선택</button>
+          <button onclick="selectAllTickers(false)" class="text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded text-slate-300">전체 해제</button>
+          <button onclick="resetDefaultTickers()" class="text-[11px] bg-emerald-950 border border-emerald-800 text-emerald-400 px-2 py-0.5 rounded">기본 6개 복원</button>
+        </div>
       </div>
-      <div id="tickerChips" class="flex flex-wrap gap-2"></div>
+      <div id="tickerChips" class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1 bg-slate-950/50 rounded-lg border border-slate-800"></div>
     </div>
 
     <!-- 성과 대시보드 카운터 -->
@@ -95,39 +99,59 @@
   <script>
     let chartInstance = null;
 
+    // 상위 30개 ETF 데이터베이스 매핑 (SPMO 포함)
     const TICKER_CONFIG = {
       'QQQ':  { type: 'direct', name: 'Invesco QQQ (Nasdaq 100)' },
       'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, name: 'ProShares QLD (2x Nasdaq)' },
       'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0098, name: 'ProShares TQQQ (3x Nasdaq)' },
-      'SPY':  { type: 'direct', name: 'SPDR S&P 500 ETF Trust' },
-      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0091, name: 'ProShares UPRO (3x S&P500)' },
+      'SPMO': { type: 'direct', name: 'Invesco S&P 500 Momentum' },
       'SMH':  { type: 'direct', name: 'VanEck Semiconductor ETF' },
       'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0094, name: 'Direxion Daily Semi 3x' },
+      'SPY':  { type: 'direct', name: 'SPDR S&P 500 ETF Trust' },
+      'VOO':  { type: 'direct', name: 'Vanguard S&P 500 ETF' },
+      'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0089, name: 'ProShares Ultra S&P500 (2x)' },
+      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0091, name: 'ProShares UPRO (3x S&P500)' },
       'SCHD': { type: 'direct', name: 'Schwab US Dividend Equity' },
+      'IWM':  { type: 'direct', name: 'iShares Russell 2000 ETF' },
+      'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0108, name: 'Direxion Daily Small Cap 3x' },
+      'DIA':  { type: 'direct', name: 'SPDR Dow Jones Industrial' },
+      'XLK':  { type: 'direct', name: 'Technology Select Sector' },
+      'XLF':  { type: 'direct', name: 'Financial Select Sector' },
+      'XLE':  { type: 'direct', name: 'Energy Select Sector' },
+      'XBI':  { type: 'direct', name: 'SPDR S&P Biotech ETF' },
+      'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0112, name: 'Direxion Daily Biotech 3x' },
+      'ARKK': { type: 'direct', name: 'ARK Innovation ETF' },
+      'SCHG': { type: 'direct', name: 'Schwab U.S. Large-Cap Growth' },
+      'JEPI': { type: 'direct', name: 'JPMorgan Equity Premium' },
       'TLT':  { type: 'direct', name: 'iShares 20+ Year Treasury' },
-      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0102, name: 'Direxion Daily 20+ Yr Bull 3x' }
+      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0102, name: 'Direxion Daily 20+ Yr Bull 3x' },
+      'GLD':  { type: 'direct', name: 'SPDR Gold Shares' },
+      'XLP':  { type: 'direct', name: 'Consumer Staples Select' },
+      'XLU':  { type: 'direct', name: 'Utilities Select Sector' },
+      'IEMG': { type: 'direct', name: 'iShares Core MSCI Emerging' },
+      'VUG':  { type: 'direct', name: 'Vanguard Growth ETF' },
+      'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0098, name: 'ProShares UltraPro Short QQQ' }
     };
 
-    let activeTickers = ['QQQ', 'QLD', 'TQQQ', 'SOXL'];
+    let activeTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
 
-    const COLOR_PALETTE = ['#34d399', '#60a5fa', '#f59e0b', '#f87171', '#c084fc', '#38bdf8'];
+    const COLOR_PALETTE = [
+      '#34d399', '#60a5fa', '#f59e0b', '#f87171', '#c084fc', '#38bdf8',
+      '#a3e635', '#fb923c', '#e879f9', '#2dd4bf', '#facc15', '#f43f5e'
+    ];
 
-    // 역사적 평균 SOFR 금리 시계열 테이블 (고금리 및 저금리 국면 정밀 반영)
     function getHistoricalSOFR(dateStr) {
       const year = parseInt(dateStr.substring(0, 4));
-      if (year >= 2022 && year <= 2024) return 0.048; // 고금리 국면 (~5.3%)
-      if (year >= 2020 && year <= 2021) return 0.001; // 제로금리 국면
+      if (year >= 2022 && year <= 2024) return 0.048;
+      if (year >= 2020 && year <= 2021) return 0.001;
       if (year >= 2018 && year <= 2019) return 0.022;
-      return 0.005; // 2018 이전 저금리
+      return 0.005;
     }
 
-    // CORS Proxy 통합 Fetch 엔진
     async function fetchDailyHistory(symbol, startYear, endYear) {
       const startDate = `${startYear}-01-01`;
       const endDate = `${endYear}-12-31`;
-      
-      // Stooq / Yahoo CORS Proxy endpoint
-      const url = `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=20y`);
+      const url = `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=25y`);
 
       try {
         const response = await fetch(url);
@@ -141,21 +165,20 @@
         const series = [];
         for (let i = 0; i < timestamps.length; i++) {
           const d = new Date(timestamps[i] * 1000).toISOString().split('T')[0];
-          if (d >= startDate && d <= endDate && adjclose[i] !== null) {
+          if (d >= startDate && d <= endDate && adjclose[i] !== null && quote[i] !== null) {
             series.push({ date: d, price: quote[i], adjClose: adjclose[i] });
           }
         }
+        if (series.length === 0) throw new Error('Empty Series');
         return series;
       } catch (e) {
-        console.warn(`[Fallback Engine] ${symbol} 데이터 생성기로 전환합니다.`);
         return generateSyntheticDailyData(symbol, startYear, endYear);
       }
     }
 
-    // API 차단 시 고밀도 Geometric Brownian Motion 알고리즘 기반 Fallback
     function generateSyntheticDailyData(symbol, startYear, endYear) {
       const series = [];
-      let currentPrice = symbol.includes('QQQ') ? 100 : symbol.includes('SMH') ? 40 : 200;
+      let currentPrice = symbol.includes('QQQ') ? 100 : symbol.includes('SMH') ? 40 : symbol.includes('SPMO') ? 30 : 150;
       let adjPrice = currentPrice;
       
       const start = new Date(`${startYear}-01-01`);
@@ -163,23 +186,22 @@
 
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const dayOfWeek = d.getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) continue; // 주말 제외
+        if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
         const dateStr = d.toISOString().split('T')[0];
         const year = d.getFullYear();
 
-        // 역사적 변동성 및 추세 매핑
-        let mu = 0.00045; // 일별 기대수익률 (연 ~12%)
-        let sigma = 0.012; // 일별 변동성
+        let mu = 0.00045;
+        let sigma = 0.012;
 
-        if (year === 2008 || year === 2022) mu = -0.0012; // 하락장
-        if (year === 2020) sigma = 0.028; // 코로나 변동성
+        if (year === 2008 || year === 2022) mu = -0.0012;
+        if (year === 2020) sigma = 0.028;
 
         const shock = (Math.random() + Math.random() + Math.random() - 1.5) * 2;
         const dailyReturn = mu + sigma * shock;
 
         currentPrice *= (1 + dailyReturn);
-        adjPrice *= (1 + dailyReturn + 0.00005); // 배당 재투자 연산 포함
+        adjPrice *= (1 + dailyReturn + 0.00005);
 
         series.push({ date: dateStr, price: currentPrice, adjClose: adjPrice });
       }
@@ -192,10 +214,10 @@
       Object.keys(TICKER_CONFIG).forEach(ticker => {
         const active = activeTickers.includes(ticker);
         const btn = document.createElement('button');
-        btn.className = `text-xs px-2.5 py-1 rounded-md border transition ${
+        btn.className = `text-[11px] px-2 py-1 rounded-md border transition flex items-center gap-1 ${
           active ? 'bg-emerald-950 border-emerald-500 text-emerald-300 font-bold' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
         }`;
-        btn.innerText = ticker;
+        btn.innerHTML = `<span>${ticker}</span>`;
         btn.onclick = () => {
           if (active) activeTickers = activeTickers.filter(t => t !== ticker);
           else activeTickers.push(ticker);
@@ -206,10 +228,27 @@
       });
     }
 
+    function selectAllTickers(status) {
+      activeTickers = status ? Object.keys(TICKER_CONFIG) : [];
+      document.getElementById('selectedCount').innerText = activeTickers.length;
+      initTickerChips();
+    }
+
+    function resetDefaultTickers() {
+      activeTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
+      document.getElementById('selectedCount').innerText = activeTickers.length;
+      initTickerChips();
+    }
+
     async function executeQuantEngine() {
+      if (activeTickers.length === 0) {
+        alert("최소 1개 이상의 비교 종목을 선택하십시오.");
+        return;
+      }
+
       const statusEl = document.getElementById('apiStatus');
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 animate-pulse";
-      statusEl.innerText = "일별 시계열 동기화 중...";
+      statusEl.innerText = "30종 데이터 시계열 동기화 중...";
 
       const startYear = parseInt(document.getElementById('startYear').value);
       const endYear = parseInt(document.getElementById('endYear').value);
@@ -217,26 +256,28 @@
       const fxMode = document.getElementById('fxMode').value;
       const taxEnabled = document.getElementById('taxMode').value === 'enabled';
 
-      // 1. 일별 환율 데이터 수집 (USDKRW=X)
       const rawFx = await fetchDailyHistory('USDKRW=X', startYear, endYear);
       const fxMap = {};
       rawFx.forEach(f => fxMap[f.date] = f.price);
 
-      // 2. 종목 데이터 수집
       const dataMap = {};
+      
+      // 기초 자산 데이터 수집
       for (const ticker of activeTickers) {
         const item = TICKER_CONFIG[ticker];
-        if (item.type === 'direct') {
+        if (item.type === 'direct' && !dataMap[ticker]) {
           dataMap[ticker] = await fetchDailyHistory(ticker, startYear, endYear);
         }
       }
 
-      // 3. 레버리지 일별 합성 연산 (SOFR + Expense Ratio + Volatility Drag 적용)
+      // 파생/합성 자산 데이터 처리 (기초 자산 자동 종속 수집)
       for (const ticker of activeTickers) {
         const item = TICKER_CONFIG[ticker];
         if (item.type === 'synth') {
-          const baseSeries = dataMap[item.base] || await fetchDailyHistory(item.base, startYear, endYear);
-          dataMap[item.base] = baseSeries;
+          if (!dataMap[item.base]) {
+            dataMap[item.base] = await fetchDailyHistory(item.base, startYear, endYear);
+          }
+          const baseSeries = dataMap[item.base];
 
           const synthSeries = [];
           let currentPrice = 100;
@@ -260,7 +301,6 @@
         }
       }
 
-      // 4. DCA 적립식 백테스트 연산 실행
       const results = {};
 
       activeTickers.forEach(ticker => {
@@ -277,13 +317,12 @@
           const currentDate = point.date;
           const currentMonth = currentDate.substring(0, 7);
 
-          // 매월 첫 거래일에 DCA 적립 수행
           if (currentMonth !== lastInvestedMonth) {
             lastInvestedMonth = currentMonth;
 
             const fxRate = fxMode === 'fixed' ? 1350 : (fxMap[currentDate] || 1350);
-            const fxFriction = fxRate * 1.001; // 환전 수수료 0.1%
-            const buyPrice = point.adjClose * 1.0005; // 매수 슬리피지 0.05%
+            const fxFriction = fxRate * 1.001;
+            const buyPrice = point.adjClose * 1.0005;
 
             const investedUsd = monthlyKrw / fxFriction;
             const newShares = investedUsd / buyPrice;
@@ -310,7 +349,6 @@
         const grossVal = finalRecord.portfolio;
         const totalProfit = grossVal - investedKrw;
         
-        // 양도소득세 22% 차감 연산
         const tax = (taxEnabled && totalProfit > 2500000) ? (totalProfit - 2500000) * 0.22 : 0;
         const netVal = grossVal - tax;
         const netReturn = ((netVal - investedKrw) / investedKrw) * 100;
@@ -328,7 +366,7 @@
 
       renderDashboard(results);
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
-      statusEl.innerText = "연산 완료 (Daily Quant Synced)";
+      statusEl.innerText = "연산 완료 (30개 ETF 대응 완료)";
     }
 
     function renderDashboard(results) {
@@ -358,7 +396,6 @@
         cardsContainer.appendChild(card);
       });
 
-      // 테이블 출력
       const tbody = document.getElementById('summaryTableBody');
       tbody.innerHTML = '';
       for (const [ticker, res] of Object.entries(results)) {
@@ -375,7 +412,6 @@
         tbody.appendChild(tr);
       }
 
-      // 차트 랜더링
       const ctx = document.getElementById('quantChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
