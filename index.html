@@ -10,10 +10,11 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono">
 
   <div class="max-w-7xl mx-auto space-y-5">
+    <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Quantitative Backtester</h1>
-        <p class="text-slate-400 text-xs mt-1">상위 30개 ETF 지원 · SPMO 복원 · 일별 복리 · SOFR 조달금리 레버리지 Decay · DRIP · 실시간 API 시계열 엔진</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Backtester (30 ETFs Engine)</h1>
+        <p class="text-slate-400 text-xs mt-1">일별 복리 · SOFR 조달금리 반영 레버리지 Decay · DRIP · 30종 ETF 동기화</p>
       </div>
       <div id="apiStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
         엔진 대기 중
@@ -49,23 +50,49 @@
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1 flex items-end">
-        <button onclick="executeQuantEngine()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-3 rounded text-xs transition">
+        <button onclick="executeQuantEngine()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
           시뮬레이션 실행
         </button>
       </div>
     </div>
 
-    <!-- 비교 대상 종목 선택 (상위 30개 ETF 풀 지원) -->
+    <!-- 종목 관리 섹션 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-      <div class="text-xs font-semibold text-slate-300 flex justify-between items-center">
-        <span>비교 가능 30개 ETF 풀 (선택됨: <span id="selectedCount" class="text-emerald-400 font-bold">6</span>/30)</span>
-        <div class="flex gap-2">
-          <button onclick="selectAllTickers(true)" class="text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded text-slate-300">전체 선택</button>
-          <button onclick="selectAllTickers(false)" class="text-[11px] bg-slate-800 hover:bg-slate-700 px-2 py-0.5 rounded text-slate-300">전체 해제</button>
-          <button onclick="resetDefaultTickers()" class="text-[11px] bg-emerald-950 border border-emerald-800 text-emerald-400 px-2 py-0.5 rounded">기본 6개 복원</button>
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-semibold text-slate-300">
+          비교 대상 종목 (선택됨: <span id="selectedCount" class="text-emerald-400 font-bold">6</span>/30)
+        </span>
+        <button onclick="toggleAssetModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+          ⚙️ 종목 추가 / 삭제 (30개 전체)
+        </button>
+      </div>
+      <div id="activeChips" class="flex flex-wrap gap-1.5"></div>
+    </div>
+
+    <!-- 종목 선택 모달 -->
+    <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
+          <h3 class="font-bold text-sm text-emerald-400">30개 ETF 종목 선택 (SPMO 포함)</h3>
+          <button onclick="toggleAssetModal()" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
+        </div>
+        
+        <div class="p-4 overflow-y-auto space-y-4 text-xs">
+          <div class="flex gap-2">
+            <button onclick="selectAllAssets(true)" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 border border-slate-700">전체 선택</button>
+            <button onclick="selectAllAssets(false)" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 border border-slate-700">전체 해제</button>
+            <button onclick="resetDefaultAssets()" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs px-2.5 py-1 rounded">기본 6개 복원</button>
+          </div>
+
+          <div id="modalCheckboxGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
+        </div>
+
+        <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-end">
+          <button onclick="toggleAssetModal(); executeQuantEngine();" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs py-2 px-5 rounded-lg transition">
+            선택 완료 및 백테스트 실행
+          </button>
         </div>
       </div>
-      <div id="tickerChips" class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto p-1 bg-slate-950/50 rounded-lg border border-slate-800"></div>
     </div>
 
     <!-- 성과 대시보드 카운터 -->
@@ -90,7 +117,7 @@
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
-          <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">엔진을 실행하십시오.</td></tr>
+          <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">시뮬레이션을 실행하십시오.</td></tr>
         </tbody>
       </table>
     </div>
@@ -99,45 +126,48 @@
   <script>
     let chartInstance = null;
 
-    // 상위 30개 ETF 데이터베이스 매핑 (SPMO 포함)
+    // 30개 전체 ETF 데이터베이스 (SPMO 포함)
     const TICKER_CONFIG = {
-      'QQQ':  { type: 'direct', name: 'Invesco QQQ (Nasdaq 100)' },
-      'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, name: 'ProShares QLD (2x Nasdaq)' },
-      'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0098, name: 'ProShares TQQQ (3x Nasdaq)' },
-      'SPMO': { type: 'direct', name: 'Invesco S&P 500 Momentum' },
+      'QQQ':  { type: 'direct', name: 'Invesco QQQ (나스닥100)' },
+      'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, name: 'ProShares QLD (나스닥 2배)' },
+      'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0098, name: 'ProShares TQQQ (나스닥 3배)' },
+      'SPMO': { type: 'direct', name: 'Invesco S&P 500 Momentum ETF' },
       'SMH':  { type: 'direct', name: 'VanEck Semiconductor ETF' },
-      'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0094, name: 'Direxion Daily Semi 3x' },
+      'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0094, name: 'Direxion Semi 3x Bull' },
+      
       'SPY':  { type: 'direct', name: 'SPDR S&P 500 ETF Trust' },
       'VOO':  { type: 'direct', name: 'Vanguard S&P 500 ETF' },
-      'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0089, name: 'ProShares Ultra S&P500 (2x)' },
-      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0091, name: 'ProShares UPRO (3x S&P500)' },
+      'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0089, name: 'ProShares Ultra S&P500 2x' },
+      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0091, name: 'ProShares UltraPro S&P500 3x' },
       'SCHD': { type: 'direct', name: 'Schwab US Dividend Equity' },
       'IWM':  { type: 'direct', name: 'iShares Russell 2000 ETF' },
-      'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0108, name: 'Direxion Daily Small Cap 3x' },
-      'DIA':  { type: 'direct', name: 'SPDR Dow Jones Industrial' },
-      'XLK':  { type: 'direct', name: 'Technology Select Sector' },
-      'XLF':  { type: 'direct', name: 'Financial Select Sector' },
-      'XLE':  { type: 'direct', name: 'Energy Select Sector' },
+      'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0108, name: 'Direxion Small Cap 3x Bull' },
+      'DIA':  { type: 'direct', name: 'SPDR Dow Jones Industrial Average' },
+      
+      'XLK':  { type: 'direct', name: 'Technology Select Sector SPDR' },
+      'XLF':  { type: 'direct', name: 'Financial Select Sector SPDR' },
+      'XLE':  { type: 'direct', name: 'Energy Select Sector SPDR' },
       'XBI':  { type: 'direct', name: 'SPDR S&P Biotech ETF' },
-      'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0112, name: 'Direxion Daily Biotech 3x' },
+      'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0101, name: 'Direxion Biotech 3x Bull' },
       'ARKK': { type: 'direct', name: 'ARK Innovation ETF' },
       'SCHG': { type: 'direct', name: 'Schwab U.S. Large-Cap Growth' },
-      'JEPI': { type: 'direct', name: 'JPMorgan Equity Premium' },
-      'TLT':  { type: 'direct', name: 'iShares 20+ Year Treasury' },
-      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0102, name: 'Direxion Daily 20+ Yr Bull 3x' },
+      'JEPI': { type: 'direct', name: 'JPMorgan Equity Premium Income' },
+      
+      'TLT':  { type: 'direct', name: 'iShares 20+ Year Treasury Bond' },
+      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0102, name: 'Direxion 20+ Yr Bull 3x' },
       'GLD':  { type: 'direct', name: 'SPDR Gold Shares' },
-      'XLP':  { type: 'direct', name: 'Consumer Staples Select' },
-      'XLU':  { type: 'direct', name: 'Utilities Select Sector' },
+      'XLP':  { type: 'direct', name: 'Consumer Staples Select SPDR' },
+      'XLU':  { type: 'direct', name: 'Utilities Select Sector SPDR' },
       'IEMG': { type: 'direct', name: 'iShares Core MSCI Emerging' },
       'VUG':  { type: 'direct', name: 'Vanguard Growth ETF' },
-      'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0098, name: 'ProShares UltraPro Short QQQ' }
+      'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0095, name: 'ProShares Short QQQ (-3x)' }
     };
 
-    let activeTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
+    let selectedTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
 
     const COLOR_PALETTE = [
-      '#34d399', '#60a5fa', '#f59e0b', '#f87171', '#c084fc', '#38bdf8',
-      '#a3e635', '#fb923c', '#e879f9', '#2dd4bf', '#facc15', '#f43f5e'
+      '#34d399', '#60a5fa', '#f59e0b', '#f87171', '#c084fc', '#fb923c',
+      '#38bdf8', '#a3e635', '#f43f5e', '#818cf8', '#e879f9', '#2dd4bf'
     ];
 
     function getHistoricalSOFR(dateStr) {
@@ -151,7 +181,7 @@
     async function fetchDailyHistory(symbol, startYear, endYear) {
       const startDate = `${startYear}-01-01`;
       const endDate = `${endYear}-12-31`;
-      const url = `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=25y`);
+      const url = `https://api.allorigins.win/raw?url=` + encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=20y`);
 
       try {
         const response = await fetch(url);
@@ -165,11 +195,10 @@
         const series = [];
         for (let i = 0; i < timestamps.length; i++) {
           const d = new Date(timestamps[i] * 1000).toISOString().split('T')[0];
-          if (d >= startDate && d <= endDate && adjclose[i] !== null && quote[i] !== null) {
+          if (d >= startDate && d <= endDate && adjclose[i] !== null) {
             series.push({ date: d, price: quote[i], adjClose: adjclose[i] });
           }
         }
-        if (series.length === 0) throw new Error('Empty Series');
         return series;
       } catch (e) {
         return generateSyntheticDailyData(symbol, startYear, endYear);
@@ -178,77 +207,116 @@
 
     function generateSyntheticDailyData(symbol, startYear, endYear) {
       const series = [];
-      let currentPrice = symbol.includes('QQQ') ? 100 : symbol.includes('SMH') ? 40 : symbol.includes('SPMO') ? 30 : 150;
+      let currentPrice = symbol.includes('QQQ') ? 100 : symbol.includes('SPMO') ? 35 : 50;
       let adjPrice = currentPrice;
-      
       const start = new Date(`${startYear}-01-01`);
       const end = new Date(`${endYear}-12-31`);
 
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const dayOfWeek = d.getDay();
-        if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-
+        if (d.getDay() === 0 || d.getDay() === 6) continue;
         const dateStr = d.toISOString().split('T')[0];
         const year = d.getFullYear();
 
-        let mu = 0.00045;
-        let sigma = 0.012;
-
-        if (year === 2008 || year === 2022) mu = -0.0012;
-        if (year === 2020) sigma = 0.028;
+        let mu = 0.00048;
+        let sigma = 0.011;
+        if (year === 2008 || year === 2022) mu = -0.0011;
+        if (year === 2020) sigma = 0.025;
 
         const shock = (Math.random() + Math.random() + Math.random() - 1.5) * 2;
         const dailyReturn = mu + sigma * shock;
 
         currentPrice *= (1 + dailyReturn);
-        adjPrice *= (1 + dailyReturn + 0.00005);
+        adjPrice *= (1 + dailyReturn + 0.00004);
 
         series.push({ date: dateStr, price: currentPrice, adjClose: adjPrice });
       }
       return series;
     }
 
-    function initTickerChips() {
-      const container = document.getElementById('tickerChips');
-      container.innerHTML = '';
-      Object.keys(TICKER_CONFIG).forEach(ticker => {
-        const active = activeTickers.includes(ticker);
-        const btn = document.createElement('button');
-        btn.className = `text-[11px] px-2 py-1 rounded-md border transition flex items-center gap-1 ${
-          active ? 'bg-emerald-950 border-emerald-500 text-emerald-300 font-bold' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
+    function toggleAssetModal() {
+      const modal = document.getElementById('assetModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        renderModalCheckboxes();
+      }
+    }
+
+    function renderModalCheckboxes() {
+      const grid = document.getElementById('modalCheckboxGrid');
+      grid.innerHTML = '';
+      for (const [ticker, item] of Object.entries(TICKER_CONFIG)) {
+        const isChecked = selectedTickers.includes(ticker);
+        const label = document.createElement('label');
+        label.className = `flex items-center gap-2 p-2 rounded border cursor-pointer transition ${
+          isChecked ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
         }`;
-        btn.innerHTML = `<span>${ticker}</span>`;
-        btn.onclick = () => {
-          if (active) activeTickers = activeTickers.filter(t => t !== ticker);
-          else activeTickers.push(ticker);
-          document.getElementById('selectedCount').innerText = activeTickers.length;
-          initTickerChips();
-        };
-        container.appendChild(btn);
+        label.innerHTML = `
+          <input type="checkbox" value="${ticker}" ${isChecked ? 'checked' : ''} onchange="toggleTickerSelection('${ticker}')" class="accent-emerald-500">
+          <div class="truncate">
+            <span class="font-bold text-slate-200 block">${ticker}</span>
+            <span class="text-[10px] text-slate-500 truncate block">${item.name}</span>
+          </div>
+        `;
+        grid.appendChild(label);
+      }
+    }
+
+    function toggleTickerSelection(ticker) {
+      if (selectedTickers.includes(ticker)) {
+        selectedTickers = selectedTickers.filter(t => t !== ticker);
+      } else {
+        selectedTickers.push(ticker);
+      }
+      updateActiveChips();
+      renderModalCheckboxes();
+    }
+
+    function selectAllAssets(status) {
+      selectedTickers = status ? Object.keys(TICKER_CONFIG) : [];
+      updateActiveChips();
+      renderModalCheckboxes();
+    }
+
+    function resetDefaultAssets() {
+      selectedTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
+      updateActiveChips();
+      renderModalCheckboxes();
+    }
+
+    function updateActiveChips() {
+      const container = document.getElementById('activeChips');
+      document.getElementById('selectedCount').innerText = selectedTickers.length;
+      container.innerHTML = '';
+
+      if (selectedTickers.length === 0) {
+        container.innerHTML = `<span class="text-xs text-rose-400 font-semibold">선택된 종목이 없습니다.</span>`;
+        return;
+      }
+
+      selectedTickers.forEach(ticker => {
+        const chip = document.createElement('div');
+        chip.className = 'inline-flex items-center gap-1 bg-emerald-950/80 border border-emerald-600/50 text-emerald-300 text-xs px-2 py-0.5 rounded';
+        chip.innerHTML = `
+          <span class="font-bold">${ticker}</span>
+          <button onclick="toggleTickerSelection('${ticker}'); executeQuantEngine();" class="hover:text-rose-400 ml-1">&times;</button>
+        `;
+        container.appendChild(chip);
       });
     }
 
-    function selectAllTickers(status) {
-      activeTickers = status ? Object.keys(TICKER_CONFIG) : [];
-      document.getElementById('selectedCount').innerText = activeTickers.length;
-      initTickerChips();
-    }
-
-    function resetDefaultTickers() {
-      activeTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
-      document.getElementById('selectedCount').innerText = activeTickers.length;
-      initTickerChips();
-    }
-
     async function executeQuantEngine() {
-      if (activeTickers.length === 0) {
-        alert("최소 1개 이상의 비교 종목을 선택하십시오.");
+      updateActiveChips();
+
+      if (selectedTickers.length === 0) {
+        document.getElementById('summaryCards').innerHTML = '';
+        document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-rose-400">비교할 종목을 선택하십시오.</td></tr>`;
+        if (chartInstance) chartInstance.destroy();
         return;
       }
 
       const statusEl = document.getElementById('apiStatus');
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 animate-pulse";
-      statusEl.innerText = "30종 데이터 시계열 동기화 중...";
+      statusEl.innerText = "일별 시계열 동기화 중...";
 
       const startYear = parseInt(document.getElementById('startYear').value);
       const endYear = parseInt(document.getElementById('endYear').value);
@@ -261,23 +329,19 @@
       rawFx.forEach(f => fxMap[f.date] = f.price);
 
       const dataMap = {};
-      
-      // 기초 자산 데이터 수집
-      for (const ticker of activeTickers) {
+      for (const ticker of selectedTickers) {
         const item = TICKER_CONFIG[ticker];
-        if (item.type === 'direct' && !dataMap[ticker]) {
+        if (item.type === 'direct') {
           dataMap[ticker] = await fetchDailyHistory(ticker, startYear, endYear);
         }
       }
 
-      // 파생/합성 자산 데이터 처리 (기초 자산 자동 종속 수집)
-      for (const ticker of activeTickers) {
+      // 레버리지/인버스 일별 합성 연산 Engine
+      for (const ticker of selectedTickers) {
         const item = TICKER_CONFIG[ticker];
         if (item.type === 'synth') {
-          if (!dataMap[item.base]) {
-            dataMap[item.base] = await fetchDailyHistory(item.base, startYear, endYear);
-          }
-          const baseSeries = dataMap[item.base];
+          const baseSeries = dataMap[item.base] || await fetchDailyHistory(item.base, startYear, endYear);
+          dataMap[item.base] = baseSeries;
 
           const synthSeries = [];
           let currentPrice = 100;
@@ -303,14 +367,13 @@
 
       const results = {};
 
-      activeTickers.forEach(ticker => {
+      selectedTickers.forEach(ticker => {
         const series = dataMap[ticker];
         let shares = 0;
         let investedKrw = 0;
         const timeline = [];
         let peakVal = 0;
         let maxDrawdown = 0;
-
         let lastInvestedMonth = "";
 
         series.forEach(point => {
@@ -319,15 +382,12 @@
 
           if (currentMonth !== lastInvestedMonth) {
             lastInvestedMonth = currentMonth;
-
             const fxRate = fxMode === 'fixed' ? 1350 : (fxMap[currentDate] || 1350);
             const fxFriction = fxRate * 1.001;
             const buyPrice = point.adjClose * 1.0005;
 
             const investedUsd = monthlyKrw / fxFriction;
-            const newShares = investedUsd / buyPrice;
-
-            shares += newShares;
+            shares += investedUsd / buyPrice;
             investedKrw += monthlyKrw;
           }
 
@@ -348,7 +408,6 @@
         const finalRecord = timeline[timeline.length - 1];
         const grossVal = finalRecord.portfolio;
         const totalProfit = grossVal - investedKrw;
-        
         const tax = (taxEnabled && totalProfit > 2500000) ? (totalProfit - 2500000) * 0.22 : 0;
         const netVal = grossVal - tax;
         const netReturn = ((netVal - investedKrw) / investedKrw) * 100;
@@ -366,7 +425,7 @@
 
       renderDashboard(results);
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
-      statusEl.innerText = "연산 완료 (30개 ETF 대응 완료)";
+      statusEl.innerText = "연산 완료 (30 ETFs Quant Synced)";
     }
 
     function renderDashboard(results) {
@@ -460,7 +519,7 @@
     }
 
     window.onload = () => {
-      initTickerChips();
+      updateActiveChips();
       executeQuantEngine();
     };
   </script>
