@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 (동적 과세 표기 반영)</title>
+  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 (결함 수정 완전판)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,8 +13,8 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Backtester</h1>
-        <p class="text-slate-400 text-xs mt-1">Box-Muller 정규분포 · 연 250만 원 절세 공제 · 과세 모드 동기화 UI</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Backtester v2.0</h1>
+        <p class="text-slate-400 text-xs mt-1">32비트 Math.imul PRNG · 연도별 이산 절세 매도(Step-up Basis) · 포커스 보존 DOM UI</p>
       </div>
       <div id="apiStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
         엔진 대기 중
@@ -45,7 +45,7 @@
       <div>
         <label class="block text-xs font-semibold text-slate-400 mb-1">양도세 산출</label>
         <select id="taxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
-          <option value="enabled">세후 (연 250만 절세 매도 반영)</option>
+          <option value="enabled">세후 (연 250만 절세 매도 실감 반영)</option>
           <option value="disabled">세전 (Gross)</option>
         </select>
       </div>
@@ -170,12 +170,15 @@
       '#38bdf8', '#a3e635', '#f43f5e', '#818cf8', '#e879f9', '#2dd4bf'
     ];
 
+    // [수정 1] 32비트 Math.imul 비트연산 기반 PRNG (Mulberry32) 구현을 통한 정규성 보장
     function getBoxMullerNormal(seedIndex) {
-      let a = seedIndex * 1597334677 + 2860486313;
+      let state = Math.imul(seedIndex ^ 0x85EBCA6B, 1597334677) >>> 0;
       function next() {
-        a = (a ^ (a >>> 15)) * 0x85ebca6b;
-        a = (a ^ (a >>> 13)) * 0xc2b2ae35;
-        return ((a ^ (a >>> 16)) >>> 0) / 4294967296;
+        state = (state + 0x6D2B79F5) >>> 0;
+        let z = state;
+        z = Math.imul(z ^ (z >>> 15), z | 1);
+        z ^= z + Math.imul(z ^ (z >>> 7), z | 61);
+        return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
       }
       let u1 = next();
       let u2 = next();
@@ -195,6 +198,7 @@
       const years = [];
       const months = [];
       const isNewMonth = [];
+      const isYearEnd = [];
       let lastMonth = "";
 
       const start = new Date(`${startYear}-01-01`);
@@ -220,7 +224,12 @@
         }
       }
 
-      return { dates, years, months, isNewMonth, count: dates.length };
+      for (let i = 0; i < dates.length; i++) {
+        const isLastDayOfYear = (i === dates.length - 1) || (years[i] !== years[i + 1]);
+        isYearEnd.push(isLastDayOfYear);
+      }
+
+      return { dates, years, months, isNewMonth, isYearEnd, count: dates.length };
     }
 
     function generateOptimizedEngineData(calendar, selectedTickers, fxMode) {
@@ -294,7 +303,10 @@
             let leveragedReturn = baseReturn * config.leverage - dailyFee;
             if (leveragedReturn < -0.95) leveragedReturn = -0.95;
 
-            currentPrice = Math.max(0.01, currentPrice * (1 + leveragedReturn));
+            // [수정 4] 0.01 하한 클램핑 왜곡 제거: 주식 병합(Reverse Split) 연속 연속성 유지
+            currentPrice = currentPrice * (1 + leveragedReturn);
+            if (currentPrice < 1e-12) currentPrice = 1e-12; // 수치 하한 보정만 유지
+
             prices[i] = currentPrice;
           }
           priceMap[ticker] = prices;
@@ -318,11 +330,12 @@
       for (const [ticker, item] of Object.entries(TICKER_CONFIG)) {
         const isChecked = selectedTickers.includes(ticker);
         const label = document.createElement('label');
+        label.id = `label-chk-${ticker}`;
         label.className = `flex items-center gap-2 p-2 rounded border cursor-pointer transition ${
           isChecked ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
         }`;
         label.innerHTML = `
-          <input type="checkbox" value="${ticker}" ${isChecked ? 'checked' : ''} onchange="toggleTickerSelection('${ticker}')" class="accent-emerald-500">
+          <input type="checkbox" id="chk-${ticker}" value="${ticker}" ${isChecked ? 'checked' : ''} onchange="toggleTickerSelection('${ticker}')" class="accent-emerald-500">
           <div class="truncate">
             <span class="font-bold text-slate-200 block">${ticker}</span>
             <span class="text-[10px] text-slate-500 truncate block">${item.name}</span>
@@ -332,14 +345,21 @@
       }
     }
 
+    // [수정 3] DOM 파괴 없는 개별 체크박스 상태 갱신 (포커스 유지 및 이벤트 유실 방지)
     function toggleTickerSelection(ticker) {
-      if (selectedTickers.includes(ticker)) {
-        selectedTickers = selectedTickers.filter(t => t !== ticker);
-      } else {
-        selectedTickers.push(ticker);
+      const chk = document.getElementById(`chk-${ticker}`);
+      const label = document.getElementById(`label-chk-${ticker}`);
+
+      if (chk) {
+        if (chk.checked) {
+          if (!selectedTickers.includes(ticker)) selectedTickers.push(ticker);
+          if (label) label.className = 'flex items-center gap-2 p-2 rounded border cursor-pointer transition bg-emerald-950/60 border-emerald-500/80 text-emerald-300';
+        } else {
+          selectedTickers = selectedTickers.filter(t => t !== ticker);
+          if (label) label.className = 'flex items-center gap-2 p-2 rounded border cursor-pointer transition bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700';
+        }
       }
       updateActiveChips();
-      renderModalCheckboxes();
     }
 
     function selectAllAssets(status) {
@@ -387,7 +407,7 @@
 
       const statusEl = document.getElementById('apiStatus');
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 animate-pulse";
-      statusEl.innerText = "과세 엔진 및 동적 표기 연산 중...";
+      statusEl.innerText = "연도별 이산 과세 및 퀀트 엔진 연산 중...";
 
       await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -411,14 +431,13 @@
       const { fxPrices, priceMap } = generateOptimizedEngineData(calendar, sortedTickers, fxMode);
 
       const results = {};
-      const totalYears = Math.max(1, endYear - startYear + 1);
-      const taxFreeAllowance = 2500000 * totalYears;
 
       selectedTickers.forEach(ticker => {
         const config = TICKER_CONFIG[ticker];
         const prices = priceMap[ticker];
         let shares = 0;
         let investedKrw = 0;
+        let costBasisKrw = 0; // [수정 2] 취득 원가(Cost Basis) 관리
         let peakVal = 0;
         let maxDrawdown = 0;
 
@@ -434,6 +453,7 @@
             const investedUsd = monthlyKrw / fxFriction;
             shares += investedUsd / buyPrice;
             investedKrw += monthlyKrw;
+            costBasisKrw += monthlyKrw;
 
             if (shares > 0 && config.divYield > 0) {
               const monthlyDivYield = config.divYield / 12;
@@ -441,6 +461,7 @@
               const netDivUsd = grossDivUsd * (1 - 0.154);
               const dripShares = netDivUsd / buyPrice;
               shares += dripShares;
+              costBasisKrw += netDivUsd * fxPrices[i];
             }
           }
 
@@ -448,19 +469,27 @@
           portfolioValues[i] = currentValKrw;
           investedSeries[i] = investedKrw;
 
+          // [수정 2] 연도별 말일 절세 매도(Tax Harvesting: Step-up in Cost Basis) 실감 연산
+          if (taxEnabled && calendar.isYearEnd[i]) {
+            const unrealizedGain = currentValKrw - costBasisKrw;
+            if (unrealizedGain > 0) {
+              const harvestedGain = Math.min(unrealizedGain, 2500000);
+              costBasisKrw += harvestedGain; // 매년 250만 원 한도 익절 후 재매수 -> 취득원가 상향
+            }
+          }
+
           if (currentValKrw > peakVal) peakVal = currentValKrw;
           const drawdown = peakVal > 0 ? (currentValKrw - peakVal) / peakVal : 0;
           if (drawdown < maxDrawdown) maxDrawdown = drawdown;
         }
 
         const grossVal = portfolioValues[N - 1];
-        const totalProfit = grossVal - investedKrw;
         
-        // 양도소득세 정밀 산출
-        const taxableProfit = Math.max(0, totalProfit - taxFreeAllowance);
+        // [수정 2] 최종 잔여 평가이익에 대해서만 과세 적용
+        const finalUnrealizedGain = Math.max(0, grossVal - costBasisKrw);
+        const taxableProfit = Math.max(0, finalUnrealizedGain - 2500000); // 최종연도 기본공제
         const taxAmount = (taxEnabled && taxableProfit > 0) ? taxableProfit * 0.22 : 0;
         
-        // 과세 선택 모드에 따른 최종 명목 평가금 및 수익률 할당
         const finalVal = grossVal - taxAmount;
         const finalReturn = ((finalVal - investedKrw) / investedKrw) * 100;
 
@@ -480,15 +509,13 @@
 
       renderDashboard(results, calendar, taxEnabled);
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
-      statusEl.innerText = "연산 완료 (Dynamic UI Synced)";
+      statusEl.innerText = "연산 완료 (알고리즘 수정 반영)";
     }
 
     function renderDashboard(results, calendar, taxEnabled) {
-      // 1. 헤더 라벨 동적 동기화
       document.getElementById('thFinalVal').innerText = taxEnabled ? '세후 실질 평가금' : '세전 최종 평가금';
       document.getElementById('thFinalReturn').innerText = taxEnabled ? '세후 수익률' : '세전 수익률';
 
-      // 2. 상단 카운터 카드 동적 생성
       const cardsContainer = document.getElementById('summaryCards');
       cardsContainer.innerHTML = '';
 
@@ -515,17 +542,22 @@
         cardsContainer.appendChild(card);
       });
 
-      // 3. 성과 상세 테이블 데이터 바인딩
       const tbody = document.getElementById('summaryTableBody');
       tbody.innerHTML = '';
       for (const [ticker, res] of Object.entries(results)) {
         const tr = document.createElement('tr');
         tr.className = 'hover:bg-slate-800/40 border-b border-slate-800/60';
+        
+        // [수정 5] UI 과세 옵션 미반영 시 시맨틱 표기 엄격성 준수
+        const taxCellText = !taxEnabled 
+          ? '<span class="text-slate-500">미반영 (세전)</span>' 
+          : (res.taxAmount > 0 ? Math.round(res.taxAmount).toLocaleString() + '원' : '0원 (비과세)');
+
         tr.innerHTML = `
           <td class="px-4 py-3 font-bold text-slate-200">${ticker} <span class="text-[10px] text-slate-500 font-normal">(${res.name})</span></td>
           <td class="px-4 py-3">${Math.round(res.investedKrw).toLocaleString()}원</td>
           <td class="px-4 py-3 text-slate-400">${Math.round(res.grossVal).toLocaleString()}원</td>
-          <td class="px-4 py-3 text-amber-400 font-semibold">${res.taxAmount > 0 ? Math.round(res.taxAmount).toLocaleString() + '원' : '0원 (비과세)'}</td>
+          <td class="px-4 py-3 text-amber-400 font-semibold">${taxCellText}</td>
           <td class="px-4 py-3 font-bold text-emerald-400">${Math.round(res.finalVal).toLocaleString()}원</td>
           <td class="px-4 py-3 ${res.finalReturn >= 0 ? 'text-rose-400' : 'text-blue-400'} font-bold">${res.finalReturn >= 0 ? '+' : ''}${res.finalReturn.toFixed(1)}%</td>
           <td class="px-4 py-3 text-slate-400">${res.mdd.toFixed(1)}%</td>
@@ -533,7 +565,6 @@
         tbody.appendChild(tr);
       }
 
-      // 4. 차트 업데이트
       const ctx = document.getElementById('quantChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
