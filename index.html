@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.3 (IRR Engine Integrated)</title>
+  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.4 (Vol-Drag Fixed)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,8 +13,8 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.3</h1>
-        <p class="text-slate-400 text-xs mt-1">Single-Factor GBM Process · Newton-Raphson MWRR/IRR Engine · Step-up Tax Protocol</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.4</h1>
+        <p class="text-slate-400 text-xs mt-1">Realistic Volatility-Drag Engine · Newton-Raphson MWRR/IRR · Step-up Tax Protocol</p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
         Engine Standby
@@ -125,37 +125,38 @@
   <script>
     'use strict';
 
+    // 자산 유니버스: 현실적인 일간 변동성(sigma) 및 운용 마찰비용(fee) 재정의
     const TICKER_UNIVERSE = {
-      'QQQ':  { type: 'direct', baseMu: 0.00065, sigma: 0.012, marketCorr: 0.95, divYield: 0.006, name: 'Invesco QQQ (나스닥100)' },
-      'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, divYield: 0.001, name: 'ProShares QLD (나스닥 2배)' },
-      'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0098, divYield: 0.001, name: 'ProShares TQQQ (나스닥 3배)' },
-      'SPMO': { type: 'direct', baseMu: 0.00062, sigma: 0.011, marketCorr: 0.90, divYield: 0.008, name: 'Invesco S&P 500 Momentum ETF' },
-      'SMH':  { type: 'direct', baseMu: 0.00085, sigma: 0.018, marketCorr: 0.88, divYield: 0.005, name: 'VanEck Semiconductor ETF' },
-      'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0094, divYield: 0.001, name: 'Direxion Semi 3x Bull' },
-      'SPY':  { type: 'direct', baseMu: 0.00048, sigma: 0.010, marketCorr: 1.00, divYield: 0.013, name: 'SPDR S&P 500 ETF Trust' },
-      'VOO':  { type: 'direct', baseMu: 0.00048, sigma: 0.010, marketCorr: 1.00, divYield: 0.013, name: 'Vanguard S&P 500 ETF' },
-      'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0089, divYield: 0.002, name: 'ProShares Ultra S&P500 2x' },
-      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0091, divYield: 0.002, name: 'ProShares UltraPro S&P500 3x' },
-      'SCHD': { type: 'direct', baseMu: 0.00042, sigma: 0.009, marketCorr: 0.75, divYield: 0.035, name: 'Schwab US Dividend Equity' },
-      'IWM':  { type: 'direct', baseMu: 0.00035, sigma: 0.013, marketCorr: 0.82, divYield: 0.012, name: 'iShares Russell 2000 ETF' },
-      'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0108, divYield: 0.001, name: 'Direxion Small Cap 3x Bull' },
-      'DIA':  { type: 'direct', baseMu: 0.00040, sigma: 0.009, marketCorr: 0.85, divYield: 0.018, name: 'SPDR Dow Jones Industrial' },
-      'XLK':  { type: 'direct', baseMu: 0.00070, sigma: 0.013, marketCorr: 0.92, divYield: 0.007, name: 'Technology Select Sector SPDR' },
-      'XLF':  { type: 'direct', baseMu: 0.00042, sigma: 0.012, marketCorr: 0.78, divYield: 0.014, name: 'Financial Select Sector SPDR' },
-      'XLE':  { type: 'direct', baseMu: 0.00030, sigma: 0.018, marketCorr: 0.45, divYield: 0.032, name: 'Energy Select Sector SPDR' },
-      'XBI':  { type: 'direct', baseMu: 0.00038, sigma: 0.017, marketCorr: 0.60, divYield: 0.004, name: 'SPDR S&P Biotech ETF' },
-      'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0101, divYield: 0.001, name: 'Direxion Biotech 3x Bull' },
-      'ARKK': { type: 'direct', baseMu: 0.00035, sigma: 0.024, marketCorr: 0.65, divYield: 0.000, name: 'ARK Innovation ETF' },
-      'SCHG': { type: 'direct', baseMu: 0.00062, sigma: 0.012, marketCorr: 0.94, divYield: 0.005, name: 'Schwab U.S. Large-Cap Growth' },
-      'JEPI': { type: 'direct', baseMu: 0.00032, sigma: 0.007, marketCorr: 0.70, divYield: 0.075, name: 'JPMorgan Equity Premium Income' },
+      'QQQ':  { type: 'direct', baseMu: 0.00055, sigma: 0.014, marketCorr: 0.95, divYield: 0.006, name: 'Invesco QQQ (나스닥100)' },
+      'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0110, divYield: 0.001, name: 'ProShares QLD (나스닥 2배)' },
+      'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0135, divYield: 0.001, name: 'ProShares TQQQ (나스닥 3배)' },
+      'SPMO': { type: 'direct', baseMu: 0.00050, sigma: 0.011, marketCorr: 0.90, divYield: 0.008, name: 'Invesco S&P 500 Momentum ETF' },
+      'SMH':  { type: 'direct', baseMu: 0.00055, sigma: 0.025, marketCorr: 0.88, divYield: 0.005, name: 'VanEck Semiconductor ETF' },
+      'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0150, divYield: 0.001, name: 'Direxion Semi 3x Bull' },
+      'SPY':  { type: 'direct', baseMu: 0.00045, sigma: 0.010, marketCorr: 1.00, divYield: 0.013, name: 'SPDR S&P 500 ETF Trust' },
+      'VOO':  { type: 'direct', baseMu: 0.00045, sigma: 0.010, marketCorr: 1.00, divYield: 0.013, name: 'Vanguard S&P 500 ETF' },
+      'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0095, divYield: 0.002, name: 'ProShares Ultra S&P500 2x' },
+      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0125, divYield: 0.002, name: 'ProShares UltraPro S&P500 3x' },
+      'SCHD': { type: 'direct', baseMu: 0.00038, sigma: 0.009, marketCorr: 0.75, divYield: 0.035, name: 'Schwab US Dividend Equity' },
+      'IWM':  { type: 'direct', baseMu: 0.00030, sigma: 0.016, marketCorr: 0.82, divYield: 0.012, name: 'iShares Russell 2000 ETF' },
+      'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0145, divYield: 0.001, name: 'Direxion Small Cap 3x Bull' },
+      'DIA':  { type: 'direct', baseMu: 0.00038, sigma: 0.009, marketCorr: 0.85, divYield: 0.018, name: 'SPDR Dow Jones Industrial' },
+      'XLK':  { type: 'direct', baseMu: 0.00060, sigma: 0.014, marketCorr: 0.92, divYield: 0.007, name: 'Technology Select Sector SPDR' },
+      'XLF':  { type: 'direct', baseMu: 0.00038, sigma: 0.013, marketCorr: 0.78, divYield: 0.014, name: 'Financial Select Sector SPDR' },
+      'XLE':  { type: 'direct', baseMu: 0.00025, sigma: 0.020, marketCorr: 0.45, divYield: 0.032, name: 'Energy Select Sector SPDR' },
+      'XBI':  { type: 'direct', baseMu: 0.00030, sigma: 0.022, marketCorr: 0.60, divYield: 0.004, name: 'SPDR S&P Biotech ETF' },
+      'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0160, divYield: 0.001, name: 'Direxion Biotech 3x Bull' },
+      'ARKK': { type: 'direct', baseMu: 0.00025, sigma: 0.026, marketCorr: 0.65, divYield: 0.000, name: 'ARK Innovation ETF' },
+      'SCHG': { type: 'direct', baseMu: 0.00055, sigma: 0.013, marketCorr: 0.94, divYield: 0.005, name: 'Schwab U.S. Large-Cap Growth' },
+      'JEPI': { type: 'direct', baseMu: 0.00030, sigma: 0.007, marketCorr: 0.70, divYield: 0.075, name: 'JPMorgan Equity Premium Income' },
       'TLT':  { type: 'direct', baseMu: -0.0001, sigma: 0.009, marketCorr: -0.30, divYield: 0.035, name: 'iShares 20+ Year Treasury Bond' },
-      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0102, divYield: 0.002, name: 'Direxion 20+ Yr Bull 3x' },
-      'GLD':  { type: 'direct', baseMu: 0.00030, sigma: 0.008, marketCorr: 0.05, divYield: 0.000, name: 'SPDR Gold Shares' },
-      'XLP':  { type: 'direct', baseMu: 0.00032, sigma: 0.007, marketCorr: 0.55, divYield: 0.026, name: 'Consumer Staples Select SPDR' },
-      'XLU':  { type: 'direct', baseMu: 0.00030, sigma: 0.009, marketCorr: 0.40, divYield: 0.031, name: 'Utilities Select Sector SPDR' },
-      'IEMG': { type: 'direct', baseMu: 0.00020, sigma: 0.012, marketCorr: 0.65, divYield: 0.028, name: 'iShares Core MSCI Emerging' },
-      'VUG':  { type: 'direct', baseMu: 0.00060, sigma: 0.012, marketCorr: 0.95, divYield: 0.005, name: 'Vanguard Growth ETF' },
-      'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0095, divYield: 0.000, name: 'ProShares Short QQQ (-3x)' }
+      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0130, divYield: 0.002, name: 'Direxion 20+ Yr Bull 3x' },
+      'GLD':  { type: 'direct', baseMu: 0.00025, sigma: 0.008, marketCorr: 0.05, divYield: 0.000, name: 'SPDR Gold Shares' },
+      'XLP':  { type: 'direct', baseMu: 0.00030, sigma: 0.007, marketCorr: 0.55, divYield: 0.026, name: 'Consumer Staples Select SPDR' },
+      'XLU':  { type: 'direct', baseMu: 0.00028, sigma: 0.009, marketCorr: 0.40, divYield: 0.031, name: 'Utilities Select Sector SPDR' },
+      'IEMG': { type: 'direct', baseMu: 0.00018, sigma: 0.014, marketCorr: 0.65, divYield: 0.028, name: 'iShares Core MSCI Emerging' },
+      'VUG':  { type: 'direct', baseMu: 0.00052, sigma: 0.013, marketCorr: 0.95, divYield: 0.005, name: 'Vanguard Growth ETF' },
+      'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0135, divYield: 0.000, name: 'ProShares Short QQQ (-3x)' }
     };
 
     class PseudoRandomEngine {
@@ -182,7 +183,6 @@
         const dates = [], years = [], months = [], isNewMonth = [], isYearEnd = [];
         let lastMonth = "";
         
-        // 타임존 변환 오류 방지를 위해 로컬 자정 기준 Date 객체 생성
         const start = new Date(startYear, 0, 1);
         const end = new Date(endYear, 11, 31);
 
@@ -217,15 +217,12 @@
       }
     }
 
-    /**
-     * 뉴턴-랩슨법 기반 수치해석적 내부수익률(IRR/MWRR) 엔진
-     */
     class NewtonRaphsonIRRSolver {
       static computeAnnualIRR(monthlyCashFlows, finalPortfolioVal) {
         const m = monthlyCashFlows.length;
         if (m === 0 || finalPortfolioVal <= 0) return -100.0;
 
-        let rm = 0.008; // 초깃값 (월 0.8% 추정)
+        let rm = 0.008;
         const maxIterations = 80;
         const tolerance = 1e-7;
 
@@ -272,7 +269,6 @@
         const N = calendar.count;
         const prng = new PseudoRandomEngine(424242);
         
-        // 정렬된 알파벳 순서대로 시뮬레이션을 실행하여 결과의 결정을 보장함
         const sortedTickers = [...tickers].sort();
 
         const marketShocks = new Float64Array(N);
@@ -293,7 +289,7 @@
 
         const priceMap = {};
 
-        // 1단계: 직접 자산 시뮬레이션
+        // 1단계: 기초 자산 확률과정 시뮬레이션
         sortedTickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
           if (config && config.type === 'direct') {
@@ -307,10 +303,20 @@
               let mu = config.baseMu;
               let sigma = config.sigma;
 
-              if (year === 2018) mu -= 0.0003;
-              if (year === 2020) { sigma *= 2.1; mu = 0.0008; }
-              if (year === 2022) mu = -0.0012;
-              if (year >= 2023) mu += 0.0003;
+              // 국면별(Regime) 변동성 및 추세 정밀 반영
+              if (year === 2018) { 
+                mu -= 0.0008; 
+                sigma *= 1.5; // 미중 무역분쟁 및 반도체 다운사이클 Vol 스파이크
+              } else if (year === 2020) { 
+                mu = 0.0004; 
+                sigma *= 2.2; // 코로나 폭락장
+              } else if (year === 2022) { 
+                mu = -0.0015; 
+                sigma *= 2.0; // 스태그플레이션 폭락장 (SOXL -90% 궤멸의 원인)
+              } else if (year >= 2023) { 
+                mu += 0.0002; 
+                sigma *= 1.15; // AI 붐 고변동성 유지
+              }
 
               const zIndiv = prng.getGaussian();
               const zCombined = rho * marketShocks[i] + sqrtOneMinusRho2 * zIndiv;
@@ -323,7 +329,7 @@
           }
         });
 
-        // 2단계: 파생/합성 자산 시뮬레이션
+        // 2단계: 파생/합성 레버리지 자산 시뮬레이션
         sortedTickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
           if (config && config.type === 'synth') {
@@ -337,6 +343,8 @@
             for (let i = 1; i < N; i++) {
               const baseReturn = (basePrices[i] - basePrices[i - 1]) / basePrices[i - 1];
               const sofr = this.getHistoricalSOFR(calendar.years[i]);
+              
+              // 차입 비용 + 운용 마찰 및 추적오차(Tracking Error) 적용
               const dailyDrag = (((Math.abs(config.leverage) - 1) * sofr) + config.fee) / 252;
 
               let leveragedReturn = baseReturn * config.leverage - dailyDrag;
@@ -359,8 +367,8 @@
         const N = calendar.count;
         const { fxPrices, priceMap } = engineData;
         const results = {};
-        const FRICTION_RATE = 0.0005; // 수수료/환전 마찰 비율 (0.05%)
-        const TAX_EXEMPTION_LIMIT = 2500000.0; // 연간 비과세 공제한도 (250만원)
+        const FRICTION_RATE = 0.0005;
+        const TAX_EXEMPTION_LIMIT = 2500000.0;
 
         tickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
@@ -401,25 +409,22 @@
 
             let currentValKrw = shares * prices[i] * fxPrices[i];
 
-            // 연말 절세 매도(Tax Harvesting) 정밀 정산 로직
+            // 연말 절세 매도(Tax Harvesting) 정밀 정산
             if (taxEnabled && calendar.isYearEnd[i]) {
               const unrealizedGain = currentValKrw - costBasisKrw;
               if (unrealizedGain > 0 && currentValKrw > 0) {
                 const harvestedGain = Math.min(unrealizedGain, TAX_EXEMPTION_LIMIT);
                 
-                // 250만원 수익 실현에 필요한 실제 매도 거래대금 역산
                 const profitRatio = unrealizedGain / currentValKrw;
                 const requiredTradeVolume = harvestedGain / profitRatio;
                 const frictionCost = requiredTradeVolume * FRICTION_RATE;
                 
-                // 마찰비용 발생에 따른 실질 주식 수 차감
                 const currentUnitPriceKrw = prices[i] * fxPrices[i];
                 if (currentUnitPriceKrw > 0) {
                   const sharesDeducted = frictionCost / currentUnitPriceKrw;
                   shares = Math.max(0, shares - sharesDeducted);
                 }
 
-                // 취득 단가 증액 (Step-up Cost Basis)
                 costBasisKrw += harvestedGain;
                 currentValKrw = shares * prices[i] * fxPrices[i];
               }
@@ -442,7 +447,6 @@
           const finalVal = grossVal - finalTax;
           const cumulativeReturn = investedKrw > 0 ? ((finalVal - investedKrw) / investedKrw) * 100.0 : 0;
 
-          // 수치해석 뉴턴-랩슨 IRR 연산
           const annualizedIRR = NewtonRaphsonIRRSolver.computeAnnualIRR(monthlyCashFlows, finalVal);
 
           results[ticker] = {
@@ -604,7 +608,6 @@
         const firstTicker = Object.keys(results)[0];
         if (!firstTicker) return;
 
-        // 원금 카드
         const invCard = document.createElement('div');
         invCard.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
         invCard.innerHTML = `
@@ -615,7 +618,6 @@
         `;
         cardsContainer.appendChild(invCard);
 
-        // 상위 최대 3개 요약 카드
         Object.entries(results).slice(0, 3).forEach(([ticker, res], idx) => {
           const card = document.createElement('div');
           card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
@@ -631,7 +633,6 @@
           cardsContainer.appendChild(card);
         });
 
-        // 결과 테이블 바인딩
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
         for (const [ticker, res] of Object.entries(results)) {
@@ -652,7 +653,6 @@
           tbody.appendChild(tr);
         }
 
-        // Chart.js 시계열 차트 바인딩
         const ctx = document.getElementById('quantChart').getContext('2d');
         if (this.chartInstance) this.chartInstance.destroy();
 
@@ -678,7 +678,6 @@
         Object.entries(results).forEach(([ticker, res], idx) => {
           const sampledData = [];
           for (let i = 0; i < labels.length; i += step) {
-            // Log scale 축 오류 방지를 위해 최소값 0.1 Clamping
             const valInTenThousand = res.portfolioValues[i] / 10000;
             sampledData.push(Math.max(0.1, valInTenThousand));
           }
