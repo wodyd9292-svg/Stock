@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 (DRIP & 절세 반영)</title>
+  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 (동적 과세 표기 반영)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,8 +13,8 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Backtester (DRIP & Tax-Harvesting Engine)</h1>
-        <p class="text-slate-400 text-xs mt-1">Box-Muller 정규분포 · 연 250만 원 절세 공제 · 15.4% 배당소득세 차감 후 DRIP 재투자</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 Precision DCA Backtester</h1>
+        <p class="text-slate-400 text-xs mt-1">Box-Muller 정규분포 · 연 250만 원 절세 공제 · 과세 모드 동기화 UI</p>
       </div>
       <div id="apiStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
         엔진 대기 중
@@ -73,7 +73,7 @@
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-          <h3 class="font-bold text-sm text-emerald-400">30개 ETF 종목 선택 (DRIP 지원)</h3>
+          <h3 class="font-bold text-sm text-emerald-400">30개 ETF 종목 선택</h3>
           <button onclick="toggleAssetModal()" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
         </div>
         
@@ -105,19 +105,20 @@
 
     <!-- 성과 상세 데이터 테이블 -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
-      <table class="w-full text-xs text-left text-slate-300 min-w-[650px]">
+      <table class="w-full text-xs text-left text-slate-300 min-w-[700px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
-          <tr>
+          <tr id="tableHeaderRow">
             <th class="px-4 py-3">종목 (Ticker)</th>
             <th class="px-4 py-3">총 원금 (KRW)</th>
             <th class="px-4 py-3">세전 평가금</th>
-            <th class="px-4 py-3">세후 실질 평가금</th>
-            <th class="px-4 py-3">세후 수익률</th>
+            <th class="px-4 py-3 text-amber-400">산출 양도세</th>
+            <th class="px-4 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
+            <th class="px-4 py-3" id="thFinalReturn">최종 수익률</th>
             <th class="px-4 py-3">최대 낙폭 (MDD)</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
-          <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">시뮬레이션을 실행하십시오.</td></tr>
+          <tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">시뮬레이션을 실행하십시오.</td></tr>
         </tbody>
       </table>
     </div>
@@ -126,7 +127,6 @@
   <script>
     let chartInstance = null;
 
-    // ETF별 연간 배당수익률(divYield) 반영
     const TICKER_CONFIG = {
       'QQQ':  { type: 'direct', baseMu: 0.00065, sigma: 0.012, divYield: 0.006, name: 'Invesco QQQ (나스닥100)' },
       'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0095, divYield: 0.001, name: 'ProShares QLD (나스닥 2배)' },
@@ -170,7 +170,6 @@
       '#38bdf8', '#a3e635', '#f43f5e', '#818cf8', '#e879f9', '#2dd4bf'
     ];
 
-    // 무편향 Box-Muller 변환 기반 정규분포 PRNG
     function getBoxMullerNormal(seedIndex) {
       let a = seedIndex * 1597334677 + 2860486313;
       function next() {
@@ -326,7 +325,7 @@
           <input type="checkbox" value="${ticker}" ${isChecked ? 'checked' : ''} onchange="toggleTickerSelection('${ticker}')" class="accent-emerald-500">
           <div class="truncate">
             <span class="font-bold text-slate-200 block">${ticker}</span>
-            <span class="text-[10px] text-slate-500 truncate block">${item.name} (배당 ${(item.divYield*100).toFixed(1)}%)</span>
+            <span class="text-[10px] text-slate-500 truncate block">${item.name}</span>
           </div>
         `;
         grid.appendChild(label);
@@ -381,14 +380,14 @@
 
       if (selectedTickers.length === 0) {
         document.getElementById('summaryCards').innerHTML = '';
-        document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-rose-400">비교할 종목을 선택하십시오.</td></tr>`;
+        document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-rose-400">비교할 종목을 선택하십시오.</td></tr>`;
         if (chartInstance) chartInstance.destroy();
         return;
       }
 
       const statusEl = document.getElementById('apiStatus');
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 animate-pulse";
-      statusEl.innerText = "DRIP & 절세 연산 수행 중...";
+      statusEl.innerText = "과세 엔진 및 동적 표기 연산 중...";
 
       await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -413,7 +412,6 @@
 
       const results = {};
       const totalYears = Math.max(1, endYear - startYear + 1);
-      // 연간 250만원 절세 매도 누적 한도 (N년 × 250만원)
       const taxFreeAllowance = 2500000 * totalYears;
 
       selectedTickers.forEach(ticker => {
@@ -433,16 +431,14 @@
             const fxFriction = fxRate * 1.001;
             const buyPrice = prices[i] * 1.0005;
 
-            // 1. 매월 DCA 정기 적립
             const investedUsd = monthlyKrw / fxFriction;
             shares += investedUsd / buyPrice;
             investedKrw += monthlyKrw;
 
-            // 2. DRIP (배당 재투자: 15.4% 배당소득세 차감 후 자동 매수)
             if (shares > 0 && config.divYield > 0) {
               const monthlyDivYield = config.divYield / 12;
               const grossDivUsd = shares * prices[i] * monthlyDivYield;
-              const netDivUsd = grossDivUsd * (1 - 0.154); // 15.4% 미국 배당세 차감
+              const netDivUsd = grossDivUsd * (1 - 0.154);
               const dripShares = netDivUsd / buyPrice;
               shares += dripShares;
             }
@@ -460,18 +456,21 @@
         const grossVal = portfolioValues[N - 1];
         const totalProfit = grossVal - investedKrw;
         
-        // 매년 250만원 절세 공제를 반영한 과세대상 수익 산출
+        // 양도소득세 정밀 산출
         const taxableProfit = Math.max(0, totalProfit - taxFreeAllowance);
-        const tax = (taxEnabled && taxableProfit > 0) ? taxableProfit * 0.22 : 0;
-        const netVal = grossVal - tax;
-        const netReturn = ((netVal - investedKrw) / investedKrw) * 100;
+        const taxAmount = (taxEnabled && taxableProfit > 0) ? taxableProfit * 0.22 : 0;
+        
+        // 과세 선택 모드에 따른 최종 명목 평가금 및 수익률 할당
+        const finalVal = grossVal - taxAmount;
+        const finalReturn = ((finalVal - investedKrw) / investedKrw) * 100;
 
         results[ticker] = {
           name: config.name,
           investedKrw,
           grossVal,
-          netVal,
-          netReturn,
+          taxAmount,
+          finalVal,
+          finalReturn,
           mdd: maxDrawdown * 100,
           portfolioValues,
           investedSeries,
@@ -479,12 +478,17 @@
         };
       });
 
-      renderDashboard(results, calendar);
+      renderDashboard(results, calendar, taxEnabled);
       statusEl.className = "text-xs px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
-      statusEl.innerText = "연산 완료 (DRIP & Tax-Harvest Synced)";
+      statusEl.innerText = "연산 완료 (Dynamic UI Synced)";
     }
 
-    function renderDashboard(results, calendar) {
+    function renderDashboard(results, calendar, taxEnabled) {
+      // 1. 헤더 라벨 동적 동기화
+      document.getElementById('thFinalVal').innerText = taxEnabled ? '세후 실질 평가금' : '세전 최종 평가금';
+      document.getElementById('thFinalReturn').innerText = taxEnabled ? '세후 수익률' : '세전 수익률';
+
+      // 2. 상단 카운터 카드 동적 생성
       const cardsContainer = document.getElementById('summaryCards');
       cardsContainer.innerHTML = '';
 
@@ -503,14 +507,15 @@
         const card = document.createElement('div');
         card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
         card.innerHTML = `
-          <span class="text-xs text-slate-400 font-bold block truncate">${res.name}</span>
+          <span class="text-xs text-slate-400 font-bold block truncate">${res.name} (${taxEnabled ? '세후' : '세전'})</span>
           <div class="text-lg sm:text-xl font-bold mt-1 truncate" style="color: ${COLOR_PALETTE[idx % COLOR_PALETTE.length]}">
-            ${(Math.round(res.netVal / 10000)).toLocaleString()}만 원 (${res.netReturn >= 0 ? '+' : ''}${res.netReturn.toFixed(1)}%)
+            ${(Math.round(res.finalVal / 10000)).toLocaleString()}만 원 (${res.finalReturn >= 0 ? '+' : ''}${res.finalReturn.toFixed(1)}%)
           </div>
         `;
         cardsContainer.appendChild(card);
       });
 
+      // 3. 성과 상세 테이블 데이터 바인딩
       const tbody = document.getElementById('summaryTableBody');
       tbody.innerHTML = '';
       for (const [ticker, res] of Object.entries(results)) {
@@ -520,13 +525,15 @@
           <td class="px-4 py-3 font-bold text-slate-200">${ticker} <span class="text-[10px] text-slate-500 font-normal">(${res.name})</span></td>
           <td class="px-4 py-3">${Math.round(res.investedKrw).toLocaleString()}원</td>
           <td class="px-4 py-3 text-slate-400">${Math.round(res.grossVal).toLocaleString()}원</td>
-          <td class="px-4 py-3 font-bold text-emerald-400">${Math.round(res.netVal).toLocaleString()}원</td>
-          <td class="px-4 py-3 ${res.netReturn >= 0 ? 'text-rose-400' : 'text-blue-400'} font-bold">${res.netReturn >= 0 ? '+' : ''}${res.netReturn.toFixed(1)}%</td>
+          <td class="px-4 py-3 text-amber-400 font-semibold">${res.taxAmount > 0 ? Math.round(res.taxAmount).toLocaleString() + '원' : '0원 (비과세)'}</td>
+          <td class="px-4 py-3 font-bold text-emerald-400">${Math.round(res.finalVal).toLocaleString()}원</td>
+          <td class="px-4 py-3 ${res.finalReturn >= 0 ? 'text-rose-400' : 'text-blue-400'} font-bold">${res.finalReturn >= 0 ? '+' : ''}${res.finalReturn.toFixed(1)}%</td>
           <td class="px-4 py-3 text-slate-400">${res.mdd.toFixed(1)}%</td>
         `;
         tbody.appendChild(tr);
       }
 
+      // 4. 차트 업데이트
       const ctx = document.getElementById('quantChart').getContext('2d');
       if (chartInstance) chartInstance.destroy();
 
