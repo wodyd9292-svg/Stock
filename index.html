@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.2 (IRR Engine Integrated)</title>
+  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.3 (IRR Engine Integrated)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,7 +13,7 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.2</h1>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.3</h1>
         <p class="text-slate-400 text-xs mt-1">Single-Factor GBM Process · Newton-Raphson MWRR/IRR Engine · Step-up Tax Protocol</p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
@@ -181,17 +181,23 @@
       static generate(startYear, endYear) {
         const dates = [], years = [], months = [], isNewMonth = [], isYearEnd = [];
         let lastMonth = "";
-        const start = new Date(`${startYear}-01-01`);
-        const end = new Date(`${endYear}-12-31`);
+        
+        // 타임존 변환 오류 방지를 위해 로컬 자정 기준 Date 객체 생성
+        const start = new Date(startYear, 0, 1);
+        const end = new Date(endYear, 11, 31);
 
         for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
           const day = d.getDay();
           if (day === 0 || day === 6) continue;
-          const dateStr = d.toISOString().split('T')[0];
-          const monthStr = dateStr.substring(0, 7);
+          
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          const dayNum = String(d.getDate()).padStart(2, '0');
+          const dateStr = `${y}-${m}-${dayNum}`;
+          const monthStr = `${y}-${m}`;
           
           dates.push(dateStr);
-          years.push(d.getFullYear());
+          years.push(y);
           months.push(monthStr);
 
           if (monthStr !== lastMonth) {
@@ -212,7 +218,7 @@
     }
 
     /**
-     * 뉴턴-랩슨법 기반 수치해석적 내부수익률(IRR/MWRR) 엔진 (안정성 보완 버전)
+     * 뉴턴-랩슨법 기반 수치해석적 내부수익률(IRR/MWRR) 엔진
      */
     class NewtonRaphsonIRRSolver {
       static computeAnnualIRR(monthlyCashFlows, finalPortfolioVal) {
@@ -230,7 +236,6 @@
           for (let k = 0; k < m; k++) {
             const exp = m - k;
             const C_k = monthlyCashFlows[k];
-            // base가 0 이하로 내려가는 수치적 이상 현상 방지
             const base = Math.max(1e-5, 1.0 + rm);
 
             const term = C_k * Math.pow(base, exp);
@@ -243,7 +248,6 @@
           const diff = f / df;
           rm -= diff;
 
-          // 할인율 수렴 경계 한계 Clamping
           if (rm <= -0.99) rm = -0.99;
 
           if (Math.abs(diff) < tolerance) break;
@@ -268,6 +272,9 @@
         const N = calendar.count;
         const prng = new PseudoRandomEngine(424242);
         
+        // 정렬된 알파벳 순서대로 시뮬레이션을 실행하여 결과의 결정을 보장함
+        const sortedTickers = [...tickers].sort();
+
         const marketShocks = new Float64Array(N);
         for (let i = 0; i < N; i++) marketShocks[i] = prng.getGaussian();
 
@@ -287,7 +294,7 @@
         const priceMap = {};
 
         // 1단계: 직접 자산 시뮬레이션
-        tickers.forEach(ticker => {
+        sortedTickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
           if (config && config.type === 'direct') {
             const prices = new Float64Array(N);
@@ -317,7 +324,7 @@
         });
 
         // 2단계: 파생/합성 자산 시뮬레이션
-        tickers.forEach(ticker => {
+        sortedTickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
           if (config && config.type === 'synth') {
             const basePrices = priceMap[config.base];
@@ -352,8 +359,8 @@
         const N = calendar.count;
         const { fxPrices, priceMap } = engineData;
         const results = {};
-        const FRICTION_RATE = 0.0005;
-        const TAX_EXEMPTION_LIMIT = 2500000.0;
+        const FRICTION_RATE = 0.0005; // 수수료/환전 마찰 비율 (0.05%)
+        const TAX_EXEMPTION_LIMIT = 2500000.0; // 연간 비과세 공제한도 (250만원)
 
         tickers.forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
@@ -394,15 +401,27 @@
 
             let currentValKrw = shares * prices[i] * fxPrices[i];
 
-            // 연말 절세 매도(Tax Harvesting) 반영
+            // 연말 절세 매도(Tax Harvesting) 정밀 정산 로직
             if (taxEnabled && calendar.isYearEnd[i]) {
               const unrealizedGain = currentValKrw - costBasisKrw;
-              if (unrealizedGain > 0) {
+              if (unrealizedGain > 0 && currentValKrw > 0) {
                 const harvestedGain = Math.min(unrealizedGain, TAX_EXEMPTION_LIMIT);
-                const frictionCost = harvestedGain * FRICTION_RATE;
                 
+                // 250만원 수익 실현에 필요한 실제 매도 거래대금 역산
+                const profitRatio = unrealizedGain / currentValKrw;
+                const requiredTradeVolume = harvestedGain / profitRatio;
+                const frictionCost = requiredTradeVolume * FRICTION_RATE;
+                
+                // 마찰비용 발생에 따른 실질 주식 수 차감
+                const currentUnitPriceKrw = prices[i] * fxPrices[i];
+                if (currentUnitPriceKrw > 0) {
+                  const sharesDeducted = frictionCost / currentUnitPriceKrw;
+                  shares = Math.max(0, shares - sharesDeducted);
+                }
+
+                // 취득 단가 증액 (Step-up Cost Basis)
                 costBasisKrw += harvestedGain;
-                currentValKrw -= frictionCost;
+                currentValKrw = shares * prices[i] * fxPrices[i];
               }
             }
 
@@ -659,7 +678,7 @@
         Object.entries(results).forEach(([ticker, res], idx) => {
           const sampledData = [];
           for (let i = 0; i < labels.length; i += step) {
-            // Log scale 축에서 0 이하 값 발생 시 차트 오류 방지를 위해 최소값 0.1 클램핑
+            // Log scale 축 오류 방지를 위해 최소값 0.1 Clamping
             const valInTenThousand = res.portfolioValues[i] / 10000;
             sampledData.push(Math.max(0.1, valInTenThousand));
           }
