@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>정밀 퀀트 DCA 백테스트 시뮬레이터 v3.5 (Engine Refined)</title>
+  <title>실전 퀀트 DCA 히스토리컬 백테스터 v4.0 (Real Data Engine)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,11 +13,12 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🔬 High-Precision Quant DCA Backtester v3.5</h1>
-        <p class="text-slate-400 text-xs mt-1">Realistic Volatility-Drag Engine · Newton-Raphson MWRR/IRR · Step-up Tax Protocol</p>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">📊 Real Historical Quant DCA Backtester v4.0</h1>
+        <p class="text-slate-400 text-xs mt-1">Real Yahoo Finance OHLCV · Actual USD/KRW Rates · Real Ex-Div Events · True Sell & Re-buy Tax Engine</p>
       </div>
-      <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700">
-        Engine Standby
+      <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
+        <span id="statusDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+        <span id="statusText">Engine Standby</span>
       </div>
     </header>
 
@@ -25,7 +26,7 @@
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900 p-4 rounded-xl border border-slate-800">
       <div>
         <label for="startYear" class="block text-xs font-semibold text-slate-400 mb-1">시작 연도</label>
-        <input type="number" id="startYear" value="2015" min="2000" max="2025" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
+        <input type="number" id="startYear" value="2015" min="2000" max="2026" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
       </div>
       <div>
         <label for="endYear" class="block text-xs font-semibold text-slate-400 mb-1">종료 연도</label>
@@ -36,23 +37,34 @@
         <input type="number" id="monthlyKrw" value="500000" step="50000" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
       </div>
       <div>
-        <label for="fxMode" class="block text-xs font-semibold text-slate-400 mb-1">환율 모델</label>
+        <label for="fxMode" class="block text-xs font-semibold text-slate-400 mb-1">환율 데이터</label>
         <select id="fxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
-          <option value="historical">동적 과도 확률 환율 (GBM Process)</option>
+          <option value="real">실제 일별 USD/KRW (KRW=X)</option>
           <option value="fixed">고정 환율 (1,350 KRW/USD)</option>
         </select>
       </div>
       <div>
         <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">과세 엔진</label>
         <select id="taxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
-          <option value="enabled">세후 (연 250만 절세 매도 및 마찰비용 반영)</option>
+          <option value="enabled">세후 (연 250만 절세 매도 루틴 실행)</option>
           <option value="disabled">세전 (Gross Aggregate)</option>
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1 flex items-end">
         <button onclick="UIController.runBacktest()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
-          백테스트 연산 실행
+          백테스트 데이터 수신 및 실행
         </button>
+      </div>
+    </div>
+
+    <!-- 진행바 모듈 -->
+    <div id="progressContainer" class="hidden bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1.5">
+      <div class="flex justify-between text-xs text-slate-400">
+        <span id="progressLabel">Yahoo Finance 데이터 수신 중...</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+        <div id="progressBar" class="bg-emerald-500 h-2 transition-all duration-200" style="width: 0%"></div>
       </div>
     </div>
 
@@ -60,7 +72,7 @@
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <span class="text-xs font-semibold text-slate-300">
-          분석 대상 자산 (선택: <span id="selectedCount" class="text-emerald-400 font-bold">0</span>/30)
+          분석 대상 자산 (선택: <span id="selectedCount" class="text-emerald-400 font-bold">0</span>/20)
         </span>
         <button onclick="UIController.toggleModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
           ⚙️ 자산 유니버스 구성
@@ -73,7 +85,7 @@
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-          <h3 class="font-bold text-sm text-emerald-400">30개 자산 유니버스 설정</h3>
+          <h3 class="font-bold text-sm text-emerald-400">실제 상장 ETF 유니버스</h3>
           <button onclick="UIController.toggleModal()" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
         </div>
         <div class="p-4 overflow-y-auto space-y-4 text-xs">
@@ -125,98 +137,78 @@
   <script>
     'use strict';
 
-    // 자산 유니버스: divFreq 옵션 추가 (monthly: 월배당, 기본값: 분기배당)
+    // 실제 상장 미국 주요 ETF 데이터베이스
     const TICKER_UNIVERSE = {
-      'QQQ':  { type: 'direct', baseMu: 0.00055, sigma: 0.014, marketCorr: 0.95, divYield: 0.006, name: 'Invesco QQQ (나스닥100)' },
-      'QLD':  { type: 'synth', base: 'QQQ', leverage: 2, fee: 0.0110, divYield: 0.001, name: 'ProShares QLD (나스닥 2배)' },
-      'TQQQ': { type: 'synth', base: 'QQQ', leverage: 3, fee: 0.0135, divYield: 0.001, name: 'ProShares TQQQ (나스닥 3배)' },
-      'SPMO': { type: 'direct', baseMu: 0.00050, sigma: 0.011, marketCorr: 0.90, divYield: 0.008, name: 'Invesco S&P 500 Momentum ETF' },
-      'SMH':  { type: 'direct', baseMu: 0.00055, sigma: 0.025, marketCorr: 0.88, divYield: 0.005, name: 'VanEck Semiconductor ETF' },
-      'SOXL': { type: 'synth', base: 'SMH', leverage: 3, fee: 0.0150, divYield: 0.001, name: 'Direxion Semi 3x Bull' },
-      'SPY':  { type: 'direct', baseMu: 0.00045, sigma: 0.010, marketCorr: 1.00, divYield: 0.013, name: 'SPDR S&P 500 ETF Trust' },
-      'VOO':  { type: 'direct', baseMu: 0.00045, sigma: 0.010, marketCorr: 1.00, divYield: 0.013, name: 'Vanguard S&P 500 ETF' },
-      'SSO':  { type: 'synth', base: 'SPY', leverage: 2, fee: 0.0095, divYield: 0.002, name: 'ProShares Ultra S&P500 2x' },
-      'UPRO': { type: 'synth', base: 'SPY', leverage: 3, fee: 0.0125, divYield: 0.002, name: 'ProShares UltraPro S&P500 3x' },
-      'SCHD': { type: 'direct', baseMu: 0.00038, sigma: 0.009, marketCorr: 0.75, divYield: 0.035, name: 'Schwab US Dividend Equity' },
-      'IWM':  { type: 'direct', baseMu: 0.00030, sigma: 0.016, marketCorr: 0.82, divYield: 0.012, name: 'iShares Russell 2000 ETF' },
-      'TNA':  { type: 'synth', base: 'IWM', leverage: 3, fee: 0.0145, divYield: 0.001, name: 'Direxion Small Cap 3x Bull' },
-      'DIA':  { type: 'direct', baseMu: 0.00038, sigma: 0.009, marketCorr: 0.85, divYield: 0.018, name: 'SPDR Dow Jones Industrial' },
-      'XLK':  { type: 'direct', baseMu: 0.00060, sigma: 0.014, marketCorr: 0.92, divYield: 0.007, name: 'Technology Select Sector SPDR' },
-      'XLF':  { type: 'direct', baseMu: 0.00038, sigma: 0.013, marketCorr: 0.78, divYield: 0.014, name: 'Financial Select Sector SPDR' },
-      'XLE':  { type: 'direct', baseMu: 0.00025, sigma: 0.020, marketCorr: 0.45, divYield: 0.032, name: 'Energy Select Sector SPDR' },
-      'XBI':  { type: 'direct', baseMu: 0.00030, sigma: 0.022, marketCorr: 0.60, divYield: 0.004, name: 'SPDR S&P Biotech ETF' },
-      'LABU': { type: 'synth', base: 'XBI', leverage: 3, fee: 0.0160, divYield: 0.001, name: 'Direxion Biotech 3x Bull' },
-      'ARKK': { type: 'direct', baseMu: 0.00025, sigma: 0.026, marketCorr: 0.65, divYield: 0.000, name: 'ARK Innovation ETF' },
-      'SCHG': { type: 'direct', baseMu: 0.00055, sigma: 0.013, marketCorr: 0.94, divYield: 0.005, name: 'Schwab U.S. Large-Cap Growth' },
-      'JEPI': { type: 'direct', baseMu: 0.00030, sigma: 0.007, marketCorr: 0.70, divYield: 0.075, divFreq: 'monthly', name: 'JPMorgan Equity Premium Income' },
-      'TLT':  { type: 'direct', baseMu: -0.0001, sigma: 0.009, marketCorr: -0.30, divYield: 0.035, divFreq: 'monthly', name: 'iShares 20+ Year Treasury Bond' },
-      'TMF':  { type: 'synth', base: 'TLT', leverage: 3, fee: 0.0130, divYield: 0.002, name: 'Direxion 20+ Yr Bull 3x' },
-      'GLD':  { type: 'direct', baseMu: 0.00025, sigma: 0.008, marketCorr: 0.05, divYield: 0.000, name: 'SPDR Gold Shares' },
-      'XLP':  { type: 'direct', baseMu: 0.00030, sigma: 0.007, marketCorr: 0.55, divYield: 0.026, name: 'Consumer Staples Select SPDR' },
-      'XLU':  { type: 'direct', baseMu: 0.00028, sigma: 0.009, marketCorr: 0.40, divYield: 0.031, name: 'Utilities Select Sector SPDR' },
-      'IEMG': { type: 'direct', baseMu: 0.00018, sigma: 0.014, marketCorr: 0.65, divYield: 0.028, name: 'iShares Core MSCI Emerging' },
-      'VUG':  { type: 'direct', baseMu: 0.00052, sigma: 0.013, marketCorr: 0.95, divYield: 0.005, name: 'Vanguard Growth ETF' },
-      'SQQQ': { type: 'synth', base: 'QQQ', leverage: -3, fee: 0.0135, divYield: 0.000, name: 'ProShares Short QQQ (-3x)' }
+      'QQQ':  { name: 'Invesco QQQ Trust (나스닥 100 1x)' },
+      'QLD':  { name: 'ProShares Ultra QQQ (나스닥 100 2x)' },
+      'TQQQ': { name: 'ProShares UltraPro QQQ (나스닥 100 3x)' },
+      'SPY':  { name: 'SPDR S&P 500 ETF Trust (S&P 500 1x)' },
+      'SSO':  { name: 'ProShares Ultra S&P500 (S&P 500 2x)' },
+      'UPRO': { name: 'ProShares UltraPro S&P500 (S&P 500 3x)' },
+      'SMH':  { name: 'VanEck Semiconductor ETF (반도체 1x)' },
+      'SOXL': { name: 'Direxion Daily Semiconductor Bull 3X' },
+      'SCHD': { name: 'Schwab U.S. Dividend Equity ETF' },
+      'SPMO': { name: 'Invesco S&P 500 Momentum ETF' },
+      'JEPI': { name: 'JPMorgan Equity Premium Income ETF' },
+      'TLT':  { name: 'iShares 20+ Year Treasury Bond ETF' },
+      'TMF':  { name: 'Direxion Daily 20+ Year Treasury Bull 3X' },
+      'GLD':  { name: 'SPDR Gold Shares' },
+      'ARKK': { name: 'ARK Innovation ETF' },
+      'IWM':  { name: 'iShares Russell 2000 ETF' },
+      'XLK':  { name: 'Technology Select Sector SPDR Fund' },
+      'XLE':  { name: 'Energy Select Sector SPDR Fund' },
+      'XBI':  { name: 'SPDR S&P Biotech ETF' },
+      'SQQQ': { name: 'ProShares Short QQQ (-3x Bear)' }
     };
 
-    class PseudoRandomEngine {
-      constructor(seed = 424242) {
-        this.state = seed >>> 0;
-      }
-      next() {
-        this.state = (this.state + 0x6D2B79F5) >>> 0;
-        let z = this.state;
-        z = Math.imul(z ^ (z >>> 15), z | 1);
-        z ^= z + Math.imul(z ^ (z >>> 7), z | 61);
-        return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
-      }
-      getGaussian() {
-        let u1 = this.next();
-        let u2 = this.next();
-        while (u1 === 0) u1 = this.next();
-        return Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
-      }
-    }
-
-    class MarketCalendarBuilder {
-      static generate(startYear, endYear) {
-        const dates = [], years = [], months = [], isNewMonth = [], isYearEnd = [];
-        let lastMonth = "";
+    // Yahoo Finance 실시간 역사적 데이터 Fetcher (CORS Proxy 활용)
+    class YahooFinanceFetcher {
+      static async fetchChartData(ticker, startYear, endYear) {
+        const startSec = Math.floor(new Date(`${startYear}-01-01T00:00:00Z`).getTime() / 1000);
+        const endSec = Math.floor(new Date(`${endYear}-12-31T23:59:59Z`).getTime() / 1000);
         
-        const start = new Date(startYear, 0, 1);
-        const end = new Date(endYear, 11, 31);
+        const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${startSec}&period2=${endSec}&interval=1d&events=div`;
+        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
 
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-          const day = d.getDay();
-          if (day === 0 || day === 6) continue;
+        try {
+          const res = await fetch(proxyUrl);
+          if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+          const json = await res.json();
           
-          const y = d.getFullYear();
-          const m = String(d.getMonth() + 1).padStart(2, '0');
-          const dayNum = String(d.getDate()).padStart(2, '0');
-          const dateStr = `${y}-${m}-${dayNum}`;
-          const monthStr = `${y}-${m}`;
-          
-          dates.push(dateStr);
-          years.push(y);
-          months.push(monthStr);
+          const result = json.chart?.result?.[0];
+          if (!result) throw new Error('Data empty');
 
-          if (monthStr !== lastMonth) {
-            isNewMonth.push(true);
-            lastMonth = monthStr;
-          } else {
-            isNewMonth.push(false);
-          }
+          const timestamps = result.timestamps || result.timestamp || [];
+          const closes = result.indicators?.quote?.[0]?.close || [];
+          const eventsDiv = result.events?.dividends || {};
+
+          const priceMap = {}; // 'YYYY-MM-DD' -> price
+          const divMap = {};   // 'YYYY-MM-DD' -> divAmountPerShare
+
+          timestamps.forEach((ts, idx) => {
+            const price = closes[idx];
+            if (price !== null && price !== undefined && !isNaN(price)) {
+              const dateStr = new Date(ts * 1000).toISOString().split('T')[0];
+              priceMap[dateStr] = price;
+            }
+          });
+
+          Object.values(eventsDiv).forEach(div => {
+            if (div.amount && div.date) {
+              const dateStr = new Date(div.date * 1000).toISOString().split('T')[0];
+              divMap[dateStr] = div.amount;
+            }
+          });
+
+          return { priceMap, divMap };
+        } catch (err) {
+          console.warn(`[YahooFetcher] ${ticker} fetch failed:`, err);
+          return null;
         }
-
-        for (let i = 0; i < dates.length; i++) {
-          const isLast = (i === dates.length - 1) || (years[i] !== years[i + 1]);
-          isYearEnd.push(isLast);
-        }
-
-        return { dates, years, months, isNewMonth, isYearEnd, count: dates.length };
       }
     }
 
+    // Newton-Raphson MWRR/IRR 수치해석 Solver
     class NewtonRaphsonIRRSolver {
       static computeAnnualIRR(monthlyCashFlows, finalPortfolioVal) {
         const m = monthlyCashFlows.length;
@@ -246,148 +238,102 @@
           rm -= diff;
 
           if (rm <= -0.99) rm = -0.99;
-
           if (Math.abs(diff) < tolerance) break;
         }
 
         if (isNaN(rm) || !isFinite(rm)) return -100.0;
-
-        const annualizedIRR = (Math.pow(1.0 + rm, 12) - 1.0) * 100.0;
-        return annualizedIRR;
+        return (Math.pow(1.0 + rm, 12) - 1.0) * 100.0;
       }
     }
 
-    class QuantStochasticEngine {
-      // [수정 2번] 2025~2026년 SOFR 금리 반영 (4.2%)
-      static getHistoricalSOFR(year) {
-        if (year >= 2025) return 0.042;
-        if (year >= 2022 && year <= 2024) return 0.048;
-        if (year >= 2020 && year <= 2021) return 0.001;
-        if (year >= 2018 && year <= 2019) return 0.022;
-        return 0.005;
-      }
+    // 데이터 정렬 및 거래일 달력 통합기
+    class HistoricalMarketCalendar {
+      static build(rawDatasets, fxData, startYear, endYear) {
+        const allDatesSet = new Set();
+        Object.values(rawDatasets).forEach(ds => {
+          if (ds?.priceMap) Object.keys(ds.priceMap).forEach(d => allDatesSet.add(d));
+        });
 
-      // [수정 1번] 종목 고유 시드 생성을 위한 해시 함수
-      static getTickerSeed(ticker, baseSeed = 424242) {
-        let hash = 0;
-        for (let i = 0; i < ticker.length; i++) {
-          hash = (hash << 5) - hash + ticker.charCodeAt(i);
+        const sortedDates = Array.from(allDatesSet).sort();
+        const filteredDates = sortedDates.filter(d => {
+          const y = parseInt(d.split('-')[0], 10);
+          return y >= startYear && y <= endYear;
+        });
+
+        const dates = [], years = [], months = [], isNewMonth = [], isYearEnd = [];
+        let lastMonth = "";
+
+        filteredDates.forEach((dateStr, idx) => {
+          const parts = dateStr.split('-');
+          const y = parseInt(parts[0], 10);
+          const mStr = `${parts[0]}-${parts[1]}`;
+
+          dates.push(dateStr);
+          years.push(y);
+          months.push(mStr);
+
+          if (mStr !== lastMonth) {
+            isNewMonth.push(true);
+            lastMonth = mStr;
+          } else {
+            isNewMonth.push(false);
+          }
+        });
+
+        for (let i = 0; i < dates.length; i++) {
+          const isLast = (i === dates.length - 1) || (years[i] !== years[i + 1]);
+          isYearEnd.push(isLast);
         }
-        return (baseSeed ^ Math.abs(hash)) >>> 0;
+
+        return { dates, years, months, isNewMonth, isYearEnd, count: dates.length };
       }
+    }
 
-      static simulate(calendar, tickers, fxMode) {
+    // 실제 히스토리컬 백테스트 실행 엔진
+    class HistoricalBacktestEngine {
+      static run(calendar, tickers, rawDatasets, fxData, monthlyKrw, fxMode, taxEnabled) {
         const N = calendar.count;
-        const sortedTickers = [...tickers].sort();
+        const results = {};
+        const FRICTION_RATE = 0.0005; // 0.05% 수수료 및 슬리피지
+        const TAX_EXEMPTION_LIMIT = 2500000.0; // 연간 양도소득세 기본공제 250만원
 
-        // FX 전용 독립 PRNG 인스턴스
-        const fxPrng = new PseudoRandomEngine(424242);
+        // 일별 FX 가격 배열 동기화
         const fxPrices = new Float64Array(N);
-        let currentFx = 1150.0;
+        let lastKnownFx = 1300.0;
         for (let i = 0; i < N; i++) {
+          const d = calendar.dates[i];
           if (fxMode === 'fixed') {
             fxPrices[i] = 1350.0;
           } else {
-            const zFx = fxPrng.getGaussian();
-            const drift = 0.00003 - 0.5 * (0.0035 ** 2);
-            currentFx *= Math.exp(drift + 0.0035 * zFx);
-            fxPrices[i] = currentFx;
+            if (fxData?.priceMap?.[d]) {
+              lastKnownFx = fxData.priceMap[d];
+            }
+            fxPrices[i] = lastKnownFx;
           }
         }
 
-        // 시장 공통 충격(Market Shock) 전용 독립 PRNG 인스턴스
-        const marketPrng = new PseudoRandomEngine(888888);
-        const marketShocks = new Float64Array(N);
-        for (let i = 0; i < N; i++) marketShocks[i] = marketPrng.getGaussian();
-
-        const priceMap = {};
-
-        // [수정 1번] 1단계: 기초 자산 시뮬레이션 (종목별 독립 Seed 사용으로 난수 간섭 제거)
-        sortedTickers.forEach(ticker => {
-          const config = TICKER_UNIVERSE[ticker];
-          if (config && config.type === 'direct') {
-            const prng = new PseudoRandomEngine(this.getTickerSeed(ticker));
-            const prices = new Float64Array(N);
-            let price = ticker.includes('QQQ') ? 100 : ticker.includes('SPMO') ? 35 : 50;
-            const rho = config.marketCorr || 0.8;
-            const sqrtOneMinusRho2 = Math.sqrt(1 - rho * rho);
-
-            for (let i = 0; i < N; i++) {
-              const year = calendar.years[i];
-              let mu = config.baseMu;
-              let sigma = config.sigma;
-
-              // 국면별(Regime) 변동성 및 추세 반영
-              if (year === 2018) { 
-                mu -= 0.0008; 
-                sigma *= 1.5; 
-              } else if (year === 2020) { 
-                mu = 0.0004; 
-                sigma *= 2.2; 
-              } else if (year === 2022) { 
-                mu = -0.0015; 
-                sigma *= 2.0; 
-              } else if (year >= 2023) { 
-                mu += 0.0002; 
-                sigma *= 1.15; 
-              }
-
-              const zIndiv = prng.getGaussian();
-              const zCombined = rho * marketShocks[i] + sqrtOneMinusRho2 * zIndiv;
-              const drift = mu - 0.5 * sigma * sigma;
-
-              price *= Math.exp(drift + sigma * zCombined);
-              prices[i] = price;
-            }
-            priceMap[ticker] = prices;
-          }
-        });
-
-        // 2단계: 파생/합성 레버리지 자산 시뮬레이션
-        sortedTickers.forEach(ticker => {
-          const config = TICKER_UNIVERSE[ticker];
-          if (config && config.type === 'synth') {
-            const basePrices = priceMap[config.base];
-            if (!basePrices) return;
-
-            const prices = new Float64Array(N);
-            let currentPrice = 100.0;
-            prices[0] = currentPrice;
-
-            for (let i = 1; i < N; i++) {
-              const baseReturn = (basePrices[i] - basePrices[i - 1]) / basePrices[i - 1];
-              const sofr = this.getHistoricalSOFR(calendar.years[i]);
-              
-              // 차입 비용 + 운용 마찰 및 추적오차(Tracking Error) 적용
-              const dailyDrag = (((Math.abs(config.leverage) - 1) * sofr) + config.fee) / 252;
-
-              let leveragedReturn = baseReturn * config.leverage - dailyDrag;
-              if (leveragedReturn < -0.98) leveragedReturn = -0.98;
-
-              currentPrice *= (1 + leveragedReturn);
-              if (currentPrice < 1e-9) currentPrice = 1e-9;
-              prices[i] = currentPrice;
-            }
-            priceMap[ticker] = prices;
-          }
-        });
-
-        return { fxPrices, priceMap };
-      }
-    }
-
-    class BacktestExecutionEngine {
-      static run(calendar, tickers, engineData, monthlyKrw, taxEnabled) {
-        const N = calendar.count;
-        const { fxPrices, priceMap } = engineData;
-        const results = {};
-        const FRICTION_RATE = 0.0005;
-        const TAX_EXEMPTION_LIMIT = 2500000.0;
-
         tickers.forEach(ticker => {
-          const config = TICKER_UNIVERSE[ticker];
-          const prices = priceMap[ticker];
-          if (!prices) return;
+          const dataset = rawDatasets[ticker];
+          if (!dataset || !dataset.priceMap) return;
+
+          // 일별 주가 보정(Forward fill)
+          const prices = new Float64Array(N);
+          let lastPrice = 0.0;
+          for (let i = 0; i < N; i++) {
+            const d = calendar.dates[i];
+            if (dataset.priceMap[d]) {
+              lastPrice = dataset.priceMap[d];
+            }
+            prices[i] = lastPrice;
+          }
+
+          if (prices[0] <= 0) {
+            // 상장 전 구간 처리: 최초 유효 가격 탐색
+            const firstValidPrice = prices.find(p => p > 0) || 100.0;
+            for (let i = 0; i < N; i++) {
+              if (prices[i] <= 0) prices[i] = firstValidPrice;
+            }
+          }
 
           let shares = 0.0;
           let investedKrw = 0.0;
@@ -401,28 +347,29 @@
           const investedSeries = new Float64Array(N);
 
           for (let i = 0; i < N; i++) {
+            const currentDateStr = calendar.dates[i];
+            const currentFx = fxPrices[i];
+            const currentPriceUsd = prices[i];
+
+            // 1. 실제 Ex-Dividend 배당금 정산 및 재투자
+            if (shares > 0 && dataset.divMap && dataset.divMap[currentDateStr]) {
+              const divPerShare = dataset.divMap[currentDateStr];
+              const grossDivUsd = shares * divPerShare;
+              const netDivUsd = grossDivUsd * (1 - 0.154); // 배당소득세 15.4% 원천징수
+              
+              const buyFx = currentFx * (1 + FRICTION_RATE);
+              const buyPrice = currentPriceUsd * (1 + FRICTION_RATE);
+              
+              const newSharesFromDiv = netDivUsd / buyPrice;
+              shares += newSharesFromDiv;
+              costBasisKrw += netDivUsd * currentFx; // 배당 재투자로 취득원가 증가
+            }
+
+            // 2. 매월 초 정기 DCA 적립 매수
             if (calendar.isNewMonth[i]) {
-              const fxRate = fxPrices[i];
-              const buyFx = fxRate * (1 + FRICTION_RATE);
-              const buyPrice = prices[i] * (1 + FRICTION_RATE);
+              const buyFx = currentFx * (1 + FRICTION_RATE);
+              const buyPrice = currentPriceUsd * (1 + FRICTION_RATE);
 
-              // [수정 3번] 기존 보유 주식 대상 분기/월별 배당금 정산 및 재투자
-              if (shares > 0 && config.divYield > 0) {
-                const monthNum = parseInt(calendar.months[i].split('-')[1], 10);
-                const isMonthlyPayer = config.divFreq === 'monthly';
-                const isQuarterlyMonth = [3, 6, 9, 12].includes(monthNum);
-
-                // 월배당 종목이거나 분기배당 해당 월(3,6,9,12월)인 경우에만 집행
-                if (isMonthlyPayer || isQuarterlyMonth) {
-                  const divRate = isMonthlyPayer ? (config.divYield / 12) : (config.divYield / 4);
-                  const grossDivUsd = shares * prices[i] * divRate;
-                  const netDivUsd = grossDivUsd * (1 - 0.154); // 배당소득세 15.4% 원천징수
-                  shares += netDivUsd / buyPrice; // 배당금 재투자 매수
-                  costBasisKrw += netDivUsd * fxRate;
-                }
-              }
-
-              // 신규 월 적립금 납입 및 주식 매수
               const investedUsd = monthlyKrw / buyFx;
               shares += investedUsd / buyPrice;
               investedKrw += monthlyKrw;
@@ -430,26 +377,40 @@
               monthlyCashFlows.push(monthlyKrw);
             }
 
-            let currentValKrw = shares * prices[i] * fxPrices[i];
+            let currentValKrw = shares * currentPriceUsd * currentFx;
 
-            // 연말 절세 매도(Tax Harvesting) 정밀 정산
+            // 3. 연말 절세 매도 정밀 매매 루틴 (Actual Sell & Re-buy Execution)
             if (taxEnabled && calendar.isYearEnd[i]) {
               const unrealizedGain = currentValKrw - costBasisKrw;
               if (unrealizedGain > 0 && currentValKrw > 0) {
-                const harvestedGain = Math.min(unrealizedGain, TAX_EXEMPTION_LIMIT);
-                
+                const targetHarvestedGain = Math.min(unrealizedGain, TAX_EXEMPTION_LIMIT);
                 const profitRatio = unrealizedGain / currentValKrw;
-                const requiredTradeVolume = harvestedGain / profitRatio;
-                const frictionCost = requiredTradeVolume * FRICTION_RATE;
-                
-                const currentUnitPriceKrw = prices[i] * fxPrices[i];
-                if (currentUnitPriceKrw > 0) {
-                  const sharesDeducted = frictionCost / currentUnitPriceKrw;
-                  shares = Math.max(0, shares - sharesDeducted);
-                }
+                const requiredSellVolumeKrw = targetHarvestedGain / profitRatio;
 
-                costBasisKrw += harvestedGain;
-                currentValKrw = shares * prices[i] * fxPrices[i];
+                // 매도 집행 (수수료 및 슬리피지 차감)
+                const sellPriceUsd = currentPriceUsd * (1 - FRICTION_RATE);
+                const sellFx = currentFx * (1 - FRICTION_RATE);
+                const sharesSold = (requiredSellVolumeKrw / sellFx) / sellPriceUsd;
+
+                if (sharesSold > 0 && sharesSold <= shares) {
+                  const avgCostBasisPerShare = costBasisKrw / shares;
+                  const soldCostBasis = sharesSold * avgCostBasisPerShare;
+
+                  // 주식 수 및 취득원가 차감
+                  shares -= sharesSold;
+                  costBasisKrw -= soldCostBasis;
+
+                  // 즉시 재매수 집행 (수수료 및 슬리피지 차감)
+                  const buyPriceUsd = currentPriceUsd * (1 + FRICTION_RATE);
+                  const buyFx = currentFx * (1 + FRICTION_RATE);
+                  const reinvestKrw = sharesSold * sellPriceUsd * sellFx;
+                  const sharesRebought = (reinvestKrw / buyFx) / buyPriceUsd;
+
+                  shares += sharesRebought;
+                  costBasisKrw += (sharesRebought * buyPriceUsd * buyFx); // 증액된 취득 단가 반영
+
+                  currentValKrw = shares * currentPriceUsd * currentFx;
+                }
               }
             }
 
@@ -469,11 +430,10 @@
 
           const finalVal = grossVal - finalTax;
           const cumulativeReturn = investedKrw > 0 ? ((finalVal - investedKrw) / investedKrw) * 100.0 : 0;
-
           const annualizedIRR = NewtonRaphsonIRRSolver.computeAnnualIRR(monthlyCashFlows, finalVal);
 
           results[ticker] = {
-            name: config.name,
+            name: TICKER_UNIVERSE[ticker]?.name || ticker,
             investedKrw,
             grossVal,
             taxAmount: totalTaxPaid,
@@ -582,6 +542,38 @@
         container.appendChild(fragment);
       }
 
+      static setProgress(percent, label) {
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressLabel = document.getElementById('progressLabel');
+
+        if (percent < 100) {
+          progressContainer.classList.remove('hidden');
+          progressBar.style.width = `${percent}%`;
+          progressPercent.innerText = `${Math.round(percent)}%`;
+          if (label) progressLabel.innerText = label;
+        } else {
+          progressBar.style.width = `100%`;
+          progressPercent.innerText = `100%`;
+          setTimeout(() => progressContainer.classList.add('hidden'), 500);
+        }
+      }
+
+      static setEngineStatus(state, text) {
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        statusText.innerText = text;
+
+        if (state === 'loading') {
+          statusDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
+        } else if (state === 'success') {
+          statusDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+        } else {
+          statusDot.className = "w-2 h-2 rounded-full bg-rose-500";
+        }
+      }
+
       static async runBacktest() {
         if (this.selectedTickers.length === 0) {
           document.getElementById('summaryCards').innerHTML = '';
@@ -590,34 +582,53 @@
           return;
         }
 
-        const statusEl = document.getElementById('engineStatus');
-        statusEl.className = "text-xs px-2.5 py-1 rounded bg-amber-950 text-amber-400 border border-amber-800 animate-pulse";
-        statusEl.innerText = "뉴턴-랩슨 연쇄 수치해석 연산 중...";
-
-        await new Promise(r => setTimeout(r, 10));
-
         const startYear = parseInt(document.getElementById('startYear').value, 10);
         const endYear = parseInt(document.getElementById('endYear').value, 10);
         const monthlyKrw = parseFloat(document.getElementById('monthlyKrw').value);
         const fxMode = document.getElementById('fxMode').value;
         const taxEnabled = document.getElementById('taxMode').value === 'enabled';
 
-        const requiredSet = new Set(this.selectedTickers);
-        this.selectedTickers.forEach(t => {
-          if (TICKER_UNIVERSE[t] && TICKER_UNIVERSE[t].type === 'synth') {
-            requiredSet.add(TICKER_UNIVERSE[t].base);
-          }
-        });
-        const fullTickers = Array.from(requiredSet);
+        this.setEngineStatus('loading', 'Yahoo Finance 수신 중...');
+        this.setProgress(5, '시작 중...');
 
-        const calendar = MarketCalendarBuilder.generate(startYear, endYear);
-        const engineData = QuantStochasticEngine.simulate(calendar, fullTickers, fxMode);
-        const results = BacktestExecutionEngine.run(calendar, this.selectedTickers, engineData, monthlyKrw, taxEnabled);
+        const rawDatasets = {};
+        let fxData = null;
+
+        const totalTasks = this.selectedTickers.length + (fxMode === 'real' ? 1 : 0);
+        let completedTasks = 0;
+
+        // 1. 환율 데이터 수신
+        if (fxMode === 'real') {
+          this.setProgress(10, 'USD/KRW 환율 수신 중...');
+          fxData = await YahooFinanceFetcher.fetchChartData('KRW=X', startYear, endYear);
+          completedTasks++;
+          this.setProgress((completedTasks / totalTasks) * 80, '환율 완료');
+        }
+
+        // 2. 각 ETF 티커 비동기 병렬 수신
+        for (const ticker of this.selectedTickers) {
+          this.setProgress((completedTasks / totalTasks) * 80, `${ticker} 데이터 수신 중...`);
+          const data = await YahooFinanceFetcher.fetchChartData(ticker, startYear, endYear);
+          if (data) rawDatasets[ticker] = data;
+          completedTasks++;
+        }
+
+        this.setProgress(90, '백테스트 수치해석 집행 중...');
+
+        const calendar = HistoricalMarketCalendar.build(rawDatasets, fxData, startYear, endYear);
+        
+        if (calendar.count === 0) {
+          this.setEngineStatus('error', '데이터 수신 실패');
+          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="8" class="px-4 py-6 text-center text-rose-400">선택한 기간의 과거 데이터를 불러올 수 없습니다. 네트워크 연결 상태 또는 CORS 서버를 확인하십시오.</td></tr>`;
+          this.setProgress(100, '오류 발생');
+          return;
+        }
+
+        const results = HistoricalBacktestEngine.run(calendar, this.selectedTickers, rawDatasets, fxData, monthlyKrw, fxMode, taxEnabled);
 
         this.renderDashboard(results, calendar, taxEnabled);
-
-        statusEl.className = "text-xs px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
-        statusEl.innerText = "IRR 연산 완료 (Newton-Raphson Solver)";
+        this.setProgress(100, '연산 완료');
+        this.setEngineStatus('success', 'Real Backtest 완료');
       }
 
       static renderDashboard(results, calendar, taxEnabled) {
