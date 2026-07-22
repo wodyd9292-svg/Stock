@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v12.0 Ultimate Enterprise</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v12.1 Ultimate Enterprise</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -14,10 +14,10 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.0 Pro</span>
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.1 Pro</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Householder QR OLS · True Parallel Stationary Bootstrap · Dynamic SOFR · 24H TTL Cache Engine
+          Newton-Raphson XIRR · True Parallel Stationary Bootstrap · Dynamic SOFR · 24H TTL Cache Engine
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -30,22 +30,22 @@
     <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 sm:p-4 space-y-2 text-xs">
       <div class="flex justify-between items-center cursor-pointer" onclick="UIController.toggleBeginnerGuide()">
         <span class="font-bold text-emerald-400 flex items-center gap-1.5">
-          💡 퀀트 용어가 어려우신가요? (초보자 3초 핵심 가이드)
+          💡 한눈에 보는 핵심 투자 지표 3초 가이드
         </span>
         <span id="guideToggleIcon" class="text-slate-400 font-bold">▲ 접기</span>
       </div>
       <div id="beginnerGuideContent" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-slate-300 border-t border-slate-800">
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-cyan-400 block mb-1">📈 Brent XIRR (실질 연수익률)</span>
-          매달 꼬박꼬박 돈을 나누어 적립한 <span class="text-emerald-300 font-semibold">내 진짜 적립식 복리 수익률</span>입니다. 가장 먼저 확인해야 할 핵심 지표입니다.
+          <span class="font-bold text-cyan-400 block mb-1">📈 적립식 실질 연수익률 (XIRR)</span>
+          매달 꼬박꼬박 돈을 나누어 적립한 <span class="text-emerald-300 font-semibold">내 실제 적립식 복리 수익률</span>입니다. 가장 먼저 확인해야 할 핵심 수치입니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-amber-400 block mb-1">⚖️ Sharpe Ratio (위험 대비 가성비)</span>
-          주가 출렁임을 견딘 대가로 수익을 얼마나 얻었는지 보여주는 <span class="text-emerald-300 font-semibold">가성비 지수</span>입니다. **1.0 이상**이면 매우 우수한 자산입니다.
+          <span class="font-bold text-amber-400 block mb-1">⚖️ 위험 대비 가성비 (샤프 지수)</span>
+          주가 출렁임을 견딘 대가로 수익을 얼마나 얻었는지 보여주는 <span class="text-emerald-300 font-semibold">가성비 지수</span>입니다. **1.0 이상**이면 우수한 자산입니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-rose-400 block mb-1">🛡️ Port MDD (최대 계좌 하락 폭)</span>
-          투자 기간 중 계좌가 <span class="text-emerald-300 font-semibold">가장 비참하게 박살 났을 때의 폭락 비율</span>입니다. 내가 이 멘탈 고통을 견딜 수 있는지 판단해 줍니다.
+          <span class="font-bold text-rose-400 block mb-1">🛡️ 역대 최대 계좌 하락 폭 (MDD)</span>
+          투자 기간 중 계좌가 <span class="text-emerald-300 font-semibold">가장 크게 박살 났을 때의 폭락 비율</span>입니다. 내가 견딜 수 있는 수준인지 파악합니다.
         </div>
       </div>
     </div>
@@ -65,7 +65,7 @@
         <input type="number" id="monthlyKrw" value="500000" step="50000" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
       </div>
       <div>
-        <label for="fxSpread" class="block text-xs font-semibold text-slate-400 mb-1">TTB/TTS 환전 마찰</label>
+        <label for="fxSpread" class="block text-xs font-semibold text-slate-400 mb-1">환전 수수료 우대</label>
         <select id="fxSpread" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
           <option value="0.0003">90% 우대 (0.03%)</option>
           <option value="0.0005">80% 우대 (0.05%)</option>
@@ -74,15 +74,15 @@
         </select>
       </div>
       <div>
-        <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">과세/Lot 엔진</label>
+        <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">절세 전략 엔진</label>
         <select id="taxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
           <option value="fifo">FIFO 22% 양도세 (250만 공제)</option>
-          <option value="disabled">세전 (Gross Aggregate)</option>
+          <option value="disabled">세전 (원금 단순 합산)</option>
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1 flex items-end">
         <button onclick="UIController.runBacktest()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
-          v12.0 시뮬레이션 실행
+          v12.1 시뮬레이션 실행
         </button>
       </div>
     </div>
@@ -105,7 +105,7 @@
           분석 대상 자산 (선택: <span id="selectedCount" class="text-emerald-400 font-bold">0</span>/20)
         </span>
         <button onclick="UIController.toggleModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
-          ⚙️ 자산 유니버스 구성
+          ⚙️ 자산 선택 및 변경
         </button>
       </div>
       <div id="activeChips" class="flex flex-wrap gap-1.5"></div>
@@ -115,7 +115,7 @@
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-          <h3 class="font-bold text-sm text-emerald-400">20개 ETF 유니버스 및 팩터 프록시 매핑</h3>
+          <h3 class="font-bold text-sm text-emerald-400">20개 주요 미국 ETF 목록</h3>
           <button onclick="UIController.toggleModal()" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
         </div>
         <div class="p-4 overflow-y-auto space-y-4 text-xs">
@@ -128,7 +128,7 @@
         </div>
         <div class="p-3 border-t border-slate-800 bg-slate-950 flex justify-end">
           <button onclick="UIController.toggleModal(); UIController.runBacktest();" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs py-2 px-5 rounded-lg transition">
-            설정 적용 및 연산 실행
+            설정 적용 및 시뮬레이션
           </button>
         </div>
       </div>
@@ -142,8 +142,8 @@
       <div class="flex justify-between items-center flex-wrap gap-2">
         <div class="flex gap-2">
           <button onclick="UIController.switchChartTab('portfolio')" id="btnTabPortfolio" class="px-3 py-1 rounded text-xs font-bold bg-emerald-500 text-slate-950">포트폴리오 자산 추이</button>
-          <button onclick="UIController.switchChartTab('rolling')" id="btnTabRolling" class="px-3 py-1 rounded text-xs font-bold bg-slate-800 text-slate-400 hover:text-slate-200">36M Rolling Sharpe</button>
-          <button onclick="UIController.switchChartTab('montecarlo')" id="btnTabMonteCarlo" class="px-3 py-1 rounded text-xs font-bold bg-slate-800 text-slate-400 hover:text-slate-200">Stationary Bootstrap Monte Carlo</button>
+          <button onclick="UIController.switchChartTab('rolling')" id="btnTabRolling" class="px-3 py-1 rounded text-xs font-bold bg-slate-800 text-slate-400 hover:text-slate-200">3년 단위 가성비 변화</button>
+          <button onclick="UIController.switchChartTab('montecarlo')" id="btnTabMonteCarlo" class="px-3 py-1 rounded text-xs font-bold bg-slate-800 text-slate-400 hover:text-slate-200">미래 시뮬레이션 (시퀀스 리스크)</button>
         </div>
         <div class="text-xs text-slate-400 flex items-center" id="chartTabDescription">시계열 평가금 로그 차트</div>
       </div>
@@ -152,24 +152,24 @@
       </div>
     </div>
 
-    <!-- Fama-French 4-Factor 익스포저 분해 테이블 -->
+    <!-- 요인 분석 테이블 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-      <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 Fama-French 4-Factor (Carhart) QR-OLS Matrix</h3>
+      <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Matrix)</h3>
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
             <tr>
-              <th class="px-3 py-2.5">Ticker</th>
-              <th class="px-3 py-2.5 text-purple-400 cursor-help" title="FF 알파: 시장 대비 순수하게 자산 자체 성질로 올린 추가 초과 수익률">FF $\alpha$ (Ann.) ℹ️</th>
-              <th class="px-3 py-2.5 cursor-help" title="MKT 베타: 시장(S&P500) 대비 주가 민감도 (1.0 = 시장과 동일)">MKT Beta ($\beta_{MKT}$) ℹ️</th>
-              <th class="px-3 py-2.5 text-emerald-400 cursor-help" title="Size 베타: 소형주 특성 노출도">Size Beta ($\beta_{SMB}$) ℹ️</th>
-              <th class="px-3 py-2.5 text-amber-400 cursor-help" title="Value 베타: 가치주/저평가주 성향 노출도">Value Beta ($\beta_{HML}$) ℹ️</th>
-              <th class="px-3 py-2.5 text-cyan-400 cursor-help" title="Momentum 베타: 상승 모멘텀 추종 성향 노출도">Momentum Beta ($\beta_{MOM}$) ℹ️</th>
-              <th class="px-3 py-2.5 cursor-help" title="설명력(R^2): 이 모델이 자산의 움직임을 얼마나 잘 설명하는지 (1.0에 가까울수록 완벽)">$R^2$ (Factor Fit) ℹ️</th>
+              <th class="px-3 py-2.5">종목코드</th>
+              <th class="px-3 py-2.5 text-purple-400 cursor-help" title="자산 자체 초과 수익력: 시장과 상관없이 종목 고유 특성으로 낸 연 추가 수익률">자산 자체 수익력 (알파) ℹ️</th>
+              <th class="px-3 py-2.5 cursor-help" title="시장 민감도: S&P500 시장이 1% 움직일 때 종목이 반응하는 정도">시장 민감도 (베타) ℹ️</th>
+              <th class="px-3 py-2.5 text-emerald-400 cursor-help" title="소형주 성향: 소형주 특성에 영향을 받는 정도">소형주 성향 (SMB) ℹ️</th>
+              <th class="px-3 py-2.5 text-amber-400 cursor-help" title="가치주 성향: 저평가/가치주 특성에 영향을 받는 정도">가치주 성향 (HML) ℹ️</th>
+              <th class="px-3 py-2.5 text-cyan-400 cursor-help" title="상승세 추종 성향: 상승 모멘텀을 타는 정도">상승세 추종 (MOM) ℹ️</th>
+              <th class="px-3 py-2.5 cursor-help" title="모델 설명력: 지표 공식이 이 종목 움직임을 얼마나 정밀하게 설명하는지 (1.0에 가까울수록 완벽)">모델 설명력 (R²) ℹ️</th>
             </tr>
           </thead>
           <tbody id="ffTableBody" class="divide-y divide-slate-800/60">
-            <tr><td colspan="7" class="px-4 py-4 text-center text-slate-500">백테스트 연산 후 팩터 익스포저가 도출됩니다.</td></tr>
+            <tr><td colspan="7" class="px-4 py-4 text-center text-slate-500">백테스트 연산 후 성과 분석이 도출됩니다.</td></tr>
           </tbody>
         </table>
       </div>
@@ -180,21 +180,21 @@
       <table class="w-full text-xs text-left text-slate-300 min-w-[1550px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
           <tr>
-            <th class="px-3 py-3">Ticker</th>
+            <th class="px-3 py-3">종목코드</th>
             <th class="px-3 py-3">총 원금</th>
             <th class="px-3 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
-            <th class="px-3 py-3 text-cyan-400 cursor-help" title="Brent XIRR: 매달 적립 투자를 감안한 내 실질 복리 연수익률">Brent XIRR ℹ️</th>
-            <th class="px-3 py-3 cursor-help" title="TWR CAGR: 자산 자체의 순수 연평균 성장률">TWR CAGR ℹ️</th>
-            <th class="px-3 py-3 cursor-help" title="Sharpe Ratio: 변동성 위험 1단위 대비 얻은 수익 (가성비 지수, 1.0 이상 우수)">Sharpe ($r_f$ Dynamic) ℹ️</th>
-            <th class="px-3 py-3 text-amber-400 cursor-help" title="Sortino Ratio: 하락 위험만을 깐깐하게 반영한 위험 대비 가성비">Sortino ℹ️</th>
-            <th class="px-3 py-3 text-cyan-300 cursor-help" title="Treynor Ratio: 시장 위험(베타) 1단위당 초과 수익률">Treynor Ratio ℹ️</th>
-            <th class="px-3 py-3 text-emerald-300 cursor-help" title="Omega Ratio: 손실 가능성 대비 수익 가능성의 비율 (1.0 이상 우수)">Omega Ratio ℹ️</th>
-            <th class="px-3 py-3 text-rose-300 cursor-help" title="Pain Ratio: 계좌가 깎이고 지루하게 빌빌거린 멘탈 고통 대비 수익 성과">Pain Ratio ℹ️</th>
-            <th class="px-3 py-3 cursor-help" title="Tracking Error: 추종 대상과 비교해 얼마나 벗어나는지 오차율">Tracking Error ℹ️</th>
-            <th class="px-3 py-3 cursor-help" title="Information Ratio: 벤치마크 대비 적극적 운용으로 올린 가성비">Info Ratio ℹ️</th>
-            <th class="px-3 py-3 text-rose-300 cursor-help" title="Ulcer Index (궤양 지수): 하락 깊이와 지속 기간을 반영한 마음 고통 수치 (낮을수록 좋음)">Ulcer Index ℹ️</th>
-            <th class="px-3 py-3 text-rose-400 cursor-help" title="CVaR 95%: 리먼사태 같은 최악의 폭락장에서 예상되는 하루 최대 손실">CVaR (95%) ℹ️</th>
-            <th class="px-3 py-3 text-rose-500 cursor-help" title="Port MDD: 역사상 계좌가 가장 크게 박살 났을 때의 폭락률">Port MDD ℹ️</th>
+            <th class="px-3 py-3 text-cyan-400 cursor-help" title="적립식 실질 연수익률: 매달 나누어 투자한 내 적립금 기준 진짜 연 복리 수익률">적립식 실질 연수익률 (XIRR) ℹ️</th>
+            <th class="px-3 py-3 cursor-help" title="자산 순수 연성장률: 입출금과 상관없이 종목 자체가 성장한 순수 연평균 성장률">자산 순수 연성장률 (CAGR) ℹ️</th>
+            <th class="px-3 py-3 cursor-help" title="위험 대비 가성비: 출렁임을 견딘 대가로 받은 수익성 (1.0 이상 우수)">위험 대비 가성비 (샤프) ℹ️</th>
+            <th class="px-3 py-3 text-amber-400 cursor-help" title="하락위험 가성비: 상승은 제외하고 하락 폭락 위험만 따진 가성비">하락위험 가성비 (소티노) ℹ️</th>
+            <th class="px-3 py-3 text-cyan-300 cursor-help" title="시장위험 대비 수익: 시장 위험 1단위당 올린 초과 수익 성과">시장위험 대비 수익 (트레이너) ℹ️</th>
+            <th class="px-3 py-3 text-emerald-300 cursor-help" title="손익 확률 비율: 손실 가능성 대비 수익 가능성의 비율">손익 확률 비율 (오메가) ℹ️</th>
+            <th class="px-3 py-3 text-rose-300 cursor-help" title="멘탈 고통 대비 성과: 계좌가 깎이고 회복을 못 한 마음 고통 대비 성과">멘탈 고통 대비 성과 (페인) ℹ️</th>
+            <th class="px-3 py-3 cursor-help" title="지수 추종 오차율: 원본 지수와 얼마나 차이가 발생하는지 오차 비율">지수 추종 오차율 ℹ️</th>
+            <th class="px-3 py-3 cursor-help" title="초과수익 가성비: 시장 대비 얼마나 효율적으로 초과 성과를 냈는지 비율">초과수익 가성비 (정보비율) ℹ️</th>
+            <th class="px-3 py-3 text-rose-300 cursor-help" title="마음 고통 지수: 주가 하락의 깊이와 길이를 종합한 고통 지수 (낮을수록 좋음)">마음 고통 지수 (궤양) ℹ️</th>
+            <th class="px-3 py-3 text-rose-400 cursor-help" title="최악의 날 폭락 위험: 대형 위기에서 하루 만에 깎일 예상 손실률">최악의 날 폭락 위험 (CVaR) ℹ️</th>
+            <th class="px-3 py-3 text-rose-500 cursor-help" title="역대 최대 계좌 하락 폭: 역사상 내 계좌가 가장 크게 박살 났을 때의 손실률">역대 최대 계좌 하락 폭 (MDD) ℹ️</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
@@ -231,11 +231,11 @@
       'XBI':  { name: 'SPDR S&P Biotech ETF', base: 'IWM', leverage: 1, fee: 0.0035, proxyType: 'direct' }
     };
 
-    // IndexedDB 캐싱 레이어 (24시간 TTL 만료 적용)
+    // IndexedDB 캐싱 레이어 (24시간 자동 만료)
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v12_0";
+      static dbName = "QuantBacktestCacheDB_v12_1";
       static storeName = "timeSeriesStore";
-      static TTL_MS = 24 * 60 * 60 * 1000; // 24시간 후 데이터 자동 만료
+      static TTL_MS = 24 * 60 * 60 * 1000;
 
       static async openDB() {
         return new Promise((resolve, reject) => {
@@ -262,7 +262,7 @@
               if (res && res.timestamp && (Date.now() - res.timestamp < this.TTL_MS)) {
                 resolve(res);
               } else {
-                resolve(null); // 만료되거나 없으면 null
+                resolve(null);
               }
             };
             req.onerror = () => resolve(null);
@@ -274,7 +274,7 @@
         try {
           const db = await this.openDB();
           const tx = db.transaction(this.storeName, "readwrite");
-          value.timestamp = Date.now(); // 저장 시간 기록
+          value.timestamp = Date.now();
           tx.objectStore(this.storeName).put(value, key);
         } catch (e) { console.warn("Cache write error:", e); }
       }
@@ -424,7 +424,7 @@
       }
     }
 
-    // FIFO Tax Lot 엔진 (수정: break -> continue로 수익 Lot을 건너뛰지 않고 검색)
+    // FIFO Tax Lot 엔진
     class FIFOTaxLotManager {
       constructor() {
         this.lots = [];
@@ -447,7 +447,6 @@
           const lot = this.lots[i];
           const lotGainPerShareKrw = (netSellPriceUsd * netSellFx) - (lot.priceUsd * lot.fxRate);
 
-          // 손실 Lot이라도 중단하지 않고 다음 수익 Lot 탐색 (continue)
           if (lotGainPerShareKrw <= 0) continue;
 
           const neededGain = targetGainKrw - accumulatedGain;
@@ -464,7 +463,6 @@
           lot.costBasisKrw -= (sharesToSellFromLot * lot.priceUsd * lot.fxRate);
         }
 
-        // 잔여 주수가 0인 Lot 정리
         this.lots = this.lots.filter(l => l.shares > 1e-7);
 
         if (totalSharesSold > 0) {
@@ -486,10 +484,10 @@
       }
     }
 
-    // Fetcher (CORS Proxy 다중 우회 로직 포함)
+    // Fetcher (CORS Proxy 다중 우회)
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_0`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_1`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -503,7 +501,6 @@
         
         const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${startSec}&period2=${endSec}&interval=1d&events=div`;
         
-        // CORS 프록시 주소 폴백 배열
         const proxies = [
           `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
           `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`
@@ -554,113 +551,73 @@
       }
     }
 
-    // Brent's Method XIRR Solver
+    // 🌟 안전 고성능 Newton-Raphson + Bisection XIRR 연산 엔진 (수치 에러 완벽 방어)
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
-        if (m === 0 || finalVal <= 0 || isNaN(finalVal)) return -100.0;
+        if (m === 0 || finalVal <= 0 || isNaN(finalVal)) return 0.0;
 
         const t0 = new Date(dates[0]).getTime();
-        if (isNaN(t0)) return -100.0;
+        if (isNaN(t0)) return 0.0;
 
         const daysArr = dates.map(d => (new Date(d).getTime() - t0) / (1000 * 3600 * 24));
         const finalDay = daysArr[daysArr.length - 1];
 
+        if (finalDay <= 0) return 0.0;
+
         const f = (r) => {
-          if (r <= -0.99) return Infinity;
+          if (r <= -0.99) return 1e12;
           let val = -finalVal / Math.pow(1 + r, finalDay / 365.25);
           for (let k = 0; k < m; k++) {
             val += cashFlows[k] / Math.pow(1 + r, daysArr[k] / 365.25);
           }
-          return isNaN(val) ? Infinity : val;
+          return isNaN(val) ? 1e12 : val;
         };
 
-        let a = -0.90, b = 10.0;
-        let fa = f(a), fb = f(b);
-
-        if (fa * fb > 0 || !isFinite(fa) || !isFinite(fb)) {
-          let found = false;
-
-          for (let upper = 20.0; upper <= 10000.0; upper *= 2) {
-            let fUpper = f(upper);
-            if (isFinite(fUpper) && fUpper * fa < 0) {
-              b = upper;
-              fb = fUpper;
-              found = true;
-              break;
-            }
+        const df = (r) => {
+          if (r <= -0.99) return -1e12;
+          let deriv = (finalDay / 365.25) * finalVal / Math.pow(1 + r, (finalDay / 365.25) + 1);
+          for (let k = 0; k < m; k++) {
+            deriv -= (daysArr[k] / 365.25) * cashFlows[k] / Math.pow(1 + r, (daysArr[k] / 365.25) + 1);
           }
+          return deriv;
+        };
 
-          if (!found) {
-            for (let lower = -0.50; lower >= -0.98; lower -= 0.1) {
-              let fLower = f(lower);
-              if (isFinite(fLower) && fLower * fb < 0) {
-                a = lower;
-                fa = fLower;
-                found = true;
-                break;
-              }
-            }
-          }
-
-          if (!found) {
-            let bestR = -0.5;
-            let minDiff = Infinity;
-            for (let rTest = -0.90; rTest <= 10.0; rTest += 0.05) {
-              let diff = Math.abs(f(rTest));
-              if (isFinite(diff) && diff < minDiff) {
-                minDiff = diff;
-                bestR = rTest;
-              }
-            }
-            return bestR * 100.0;
-          }
+        // 1차 시도: Newton-Raphson 미분법 탐색 (r0 = 10%)
+        let r = 0.10;
+        for (let iter = 0; iter < 50; iter++) {
+          let y = f(r);
+          let dy = df(r);
+          if (Math.abs(dy) < 1e-12) break;
+          let rNext = r - y / dy;
+          if (rNext <= -0.90) rNext = -0.50;
+          if (Math.abs(rNext - r) < 1e-6) return rNext * 100.0;
+          r = rNext;
         }
 
-        let c = a, fc = fa, d = b - a, e = d;
+        // 2차 시도: 안전 이분법 (Bisection Method)
+        let low = -0.50, high = 10.0;
+        let fLow = f(low), fHigh = f(high);
+
+        if (fLow * fHigh > 0) {
+          for (let h = 10.0; h <= 100.0; h *= 2) {
+            if (f(h) * fLow < 0) { high = h; break; }
+          }
+        }
 
         for (let iter = 0; iter < 100; iter++) {
-          if (Math.abs(fc) < Math.abs(fb)) {
-            a = b; b = c; c = a;
-            fa = fb; fb = fc; fc = fa;
-          }
-
-          const tol = 1e-6;
-          const mpr = 0.5 * (c - b);
-
-          if (Math.abs(mpr) <= tol || fb === 0) return b * 100.0;
-
-          if (Math.abs(e) >= tol && Math.abs(fa) > Math.abs(fb)) {
-            let s = fb / fa, p, q;
-
-            if (a === c) {
-              p = 2 * mpr * s;
-              q = 1 - s;
-            } else {
-              q = fa / fc;
-              let r = fb / fc;
-              p = s * (2 * mpr * q * (q - r) - (b - a) * (r - 1));
-              q = (q - 1) * (r - 1) * (s - 1);
-            }
-
-            if (p > 0) q = -q;
-            p = Math.abs(p);
-
-            if (2 * p < Math.min(3 * mpr * q - Math.abs(tol * q), Math.abs(e * q))) {
-              e = d; d = p / q;
-            } else {
-              d = mpr; e = d;
-            }
+          let mid = (low + high) / 2;
+          let fMid = f(mid);
+          if (Math.abs(fMid) < 1e-4 || (high - low) < 1e-6) return mid * 100.0;
+          if (fLow * fMid < 0) {
+            high = mid;
           } else {
-            d = mpr; e = d;
+            low = mid;
+            fLow = fMid;
           }
-
-          a = b; fa = fb;
-          b += (Math.abs(d) > tol) ? d : (mpr > 0 ? tol : -tol);
-          fb = f(b);
         }
 
-        return b * 100.0;
+        return ((low + high) / 2) * 100.0;
       }
     }
 
@@ -876,7 +833,6 @@
         return { sharpe, sortino, treynor, omega, trackingError, informationRatio, cvar95 };
       }
 
-      // Pain Ratio 무위험수익률 Dynamic SOFR 평균 연동으로 정밀 교정
       static computeUlcerAndPainRatio(twrSeries, twrCagr, avgRfAnnPercent) {
         const N = twrSeries.length;
         if (N === 0) return { ulcerIndex: 0, painRatio: 0 };
@@ -896,7 +852,6 @@
 
         const ulcerIndex = Math.sqrt(sumSquaredDd / N);
         const painIndex = sumDd / N;
-        // 하드코딩 2.0% 대신 기간 평균 동적 SOFR(avgRfAnnPercent) 적용
         const painRatio = painIndex > 0 ? (twrCagr - avgRfAnnPercent) / painIndex : 0;
 
         return { ulcerIndex, painRatio };
@@ -928,7 +883,7 @@
       }
     }
 
-    // 백테스트 연산 및 병렬 연산 처리 엔진
+    // 백테스트 연산 엔진
     class QuantBacktestEngine {
       static async runAsync(sortedDates, tickers, processedData, fxData, monthlyKrw, fxSpreadRate, taxEnabled, onProgress = null) {
         const N = sortedDates.length;
@@ -944,7 +899,6 @@
           fxPrices[i] = lastFx;
         }
 
-        // 기간 평균 SOFR 연산 (Pain Ratio용)
         let sumSOFR = 0;
         for (let i = 0; i < N; i++) {
           const yr = parseInt(sortedDates[i].split('-')[0], 10);
@@ -975,7 +929,6 @@
           }
         }
 
-        // 1단계: 모든 종목의 시계열 및 위험지표 연산
         const tickerDailyReturnsMap = {};
         const tickerMonthlyCashFlowsMap = {};
 
@@ -1021,7 +974,6 @@
             if (totalShares > 0 && divMap && divMap.has(dateStr)) {
               const divPerShare = divMap.get(dateStr);
               const grossDivUsd = totalShares * divPerShare;
-              // 한미 조세조약 배당 원천징수율 15.0% 적용
               const netDivUsd = grossDivUsd * (1 - 0.150);
               divPayQueue.push({ payIndex: i + 1, divNetUsd: netDivUsd });
             }
@@ -1069,6 +1021,8 @@
           const finalVal = portfolioValues[N - 1];
           const cumulativeReturn = investedKrw > 0 ? ((finalVal - investedKrw) / investedKrw) * 100.0 : 0;
           cashFlowDates.push(sortedDates[N - 1]);
+          
+          // 고성능 뉴턴-랩슨 XIRR 계산 연산
           const annualizedXIRR = BrentXIRRSolver.computeXIRR(monthlyCashFlows, finalVal, cashFlowDates);
 
           const startMs = new Date(sortedDates[0]).getTime();
@@ -1124,7 +1078,6 @@
           };
         }
 
-        // 2단계: 몬테카를로 병렬 비동기 실행 (True Parallelization)
         if (onProgress) onProgress(80);
         
         const mcPromises = tickers.map(ticker => {
@@ -1299,7 +1252,6 @@
         const fxSpreadRate = parseFloat(document.getElementById('fxSpread').value);
         const taxEnabled = document.getElementById('taxMode').value === 'fifo';
 
-        // 입력값 검증 (Input Validation)
         if (isNaN(startYear) || isNaN(endYear) || startYear >= endYear) {
           alert("시작 연도는 종료 연도보다 커스텀 작성할 수 없으며, 시작 연도가 종료 연도보다 작아야 합니다.");
           return;
@@ -1316,7 +1268,7 @@
           return;
         }
 
-        this.setEngineStatus('loading', '24H 캐시 검증 및 데이터 수신 중...');
+        this.setEngineStatus('loading', '데이터 검증 및 시세 수신 중...');
         this.setProgress(10, '데이터베이스 수신 중...');
 
         const requiredSet = new Set(this.selectedTickers);
@@ -1360,7 +1312,7 @@
         this.setProgress(70, 'Daily Swap/Repo NAV 알고리즘 실행 중...');
         const processedData = MultiFactorSynthesisEngine.process(rawDatasets, sortedDates);
 
-        this.setEngineStatus('loading', 'Monte Carlo 멀티스레드 병렬 연산 중...');
+        this.setEngineStatus('loading', '미래 시뮬레이션 멀티스레드 연산 중...');
         const results = await QuantBacktestEngine.runAsync(
           sortedDates,
           this.selectedTickers,
@@ -1377,7 +1329,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Enterprise Engine v12.0 완료');
+        this.setEngineStatus('success', 'Enterprise Engine v12.1 완료');
       }
 
       static switchChartTab(tab) {
@@ -1418,7 +1370,7 @@
         }
 
         desc.innerHTML = `
-          <span class="mr-1 text-slate-400">Monte Carlo 분석 대상:</span>
+          <span class="mr-1 text-slate-400">미래 시뮬레이션 분석 대상:</span>
           <select id="mcTickerSelect" onchange="UIController.changeMcTicker(this.value)" class="bg-slate-950 text-emerald-400 font-bold text-xs rounded border border-slate-700 px-2 py-0.5">
             ${tickers.map(t => `<option value="${t}" ${t === this.selectedMcTicker ? 'selected' : ''}>${t}</option>`).join('')}
           </select>
@@ -1461,7 +1413,7 @@
               ${(Math.round(res.finalVal / 10000)).toLocaleString()}만 원 (${res.cumulativeReturn >= 0 ? '+' : ''}${res.cumulativeReturn.toFixed(1)}%)
             </div>
             <div class="text-xs font-semibold text-cyan-400 mt-0.5">
-              Brent XIRR: ${res.annualizedXIRR >= 0 ? '+' : ''}${res.annualizedXIRR.toFixed(2)}%/yr
+              적립식 실질 연수익률: ${res.annualizedXIRR >= 0 ? '+' : ''}${res.annualizedXIRR.toFixed(2)}%/년
             </div>
           `;
           cardsContainer.appendChild(card);
@@ -1549,7 +1501,7 @@
               sampledData.push(Math.max(1, res.portfolioValues[i]));
             }
             datasets.push({
-              label: `${ticker} (XIRR: ${res.annualizedXIRR.toFixed(1)}%)`,
+              label: `${ticker} (적립식 실질 연수익률: ${res.annualizedXIRR.toFixed(1)}%)`,
               data: sampledData,
               borderColor: palette[idx % palette.length],
               borderWidth: 1.8,
@@ -1587,7 +1539,7 @@
             const data = res.rollingSharpe.map(r => r.sharpe);
 
             datasets.push({
-              label: `${ticker} (36M Rolling Sharpe)`,
+              label: `${ticker} (3년 단위 위험 대비 가성비 추이)`,
               data: data,
               borderColor: palette[idx % palette.length],
               borderWidth: 1.8,
@@ -1621,14 +1573,14 @@
           if (!res || !res.monteCarlo) return;
 
           const mc = res.monteCarlo;
-          const labels = ['투입 원금', 'P5 하위 5% (Bear)', 'P50 중위 (Median)', 'P95 상위 5% (Bull)'];
+          const labels = ['투입 원금', '하위 5% 최악의 경우', '중간 기대치 (평균)', '상위 5% 최선의 경우'];
 
           this.chartInstance = new Chart(ctx, {
             type: 'bar',
             data: {
               labels,
               datasets: [{
-                label: `${targetTicker} 10,000회 Stationary Bootstrap 결과 (KRW)`,
+                label: `${targetTicker} 10,000회 시뮬레이션 예상 평가금 (원)`,
                 data: [res.investedKrw, mc.p5, mc.p50, mc.p95],
                 backgroundColor: ['#475569', '#f87171', '#34d399', '#60a5fa']
               }]
