@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v11.5 Ultimate Enterprise</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v11.6 Ultimate Enterprise</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,9 +13,9 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🏛️ Institutional Quant DCA Engine v11.5 Ultimate</h1>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🏛️ Institutional Quant DCA Engine v11.6 Ultimate</h1>
         <p class="text-slate-400 text-xs mt-1">
-          Householder QR OLS · Stationary Bootstrap Monte Carlo · Dynamic SOFR $r_f$ · Daily Swap/Repo NAV Engine
+          Householder QR OLS · Stationary Bootstrap Monte Carlo · Dynamic SOFR $r_f$ · Robust Brent XIRR
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -56,7 +56,7 @@
       </div>
       <div class="col-span-2 sm:col-span-1 flex items-end">
         <button onclick="UIController.runBacktest()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
-          v11.5 시뮬레이션 실행
+          v11.6 시뮬레이션 실행
         </button>
       </div>
     </div>
@@ -207,7 +207,7 @@
 
     // IndexedDB 캐싱 레이어
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v11_5";
+      static dbName = "QuantBacktestCacheDB_v11_6";
       static storeName = "timeSeriesStore";
 
       static async openDB() {
@@ -324,19 +324,16 @@
           return;
         }
 
-        const p = 1.0 / (meanBlockSize || 21); // 기하분포 파라미터 (평균 블록 길이 21일)
+        const p = 1.0 / (meanBlockSize || 21);
         const terminalValues = new Float64Array(iterations);
 
         for (let iter = 0; iter < iterations; iter++) {
           let val = 0.0;
           for (let m = 0; m < months; m++) {
             val += monthlyCashFlows[m];
-            
-            // Stationary Bootstrap: Random starting index & geometric block jump
             let idx = Math.floor(Math.random() * N);
             for (let d = 0; d < 21; d++) {
               val *= (1.0 + dailyReturns[idx]);
-              
               if (Math.random() < p) {
                 idx = Math.floor(Math.random() * N);
               } else {
@@ -455,7 +452,7 @@
     // Fetcher
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v11_5`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v11_6`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -513,39 +510,67 @@
       }
     }
 
-    // Brent's Method XIRR Solver (확장된 브래킷 탐색 포함)
+    // Brent's Method XIRR Solver (오버플로우 및 부호 불일치 완벽 방어)
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
-        if (m === 0 || finalVal <= 0) return -100.0;
+        if (m === 0 || finalVal <= 0 || isNaN(finalVal)) return -100.0;
 
         const t0 = new Date(dates[0]).getTime();
+        if (isNaN(t0)) return -100.0;
+
         const daysArr = dates.map(d => (new Date(d).getTime() - t0) / (1000 * 3600 * 24));
-        const finalDay = (new Date(dates[dates.length - 1]).getTime() - t0) / (1000 * 3600 * 24);
+        const finalDay = daysArr[daysArr.length - 1];
 
         const f = (r) => {
+          if (r <= -0.99) return Infinity; // 오버플로우 방지
           let val = -finalVal / Math.pow(1 + r, finalDay / 365.25);
           for (let k = 0; k < m; k++) {
             val += cashFlows[k] / Math.pow(1 + r, daysArr[k] / 365.25);
           }
-          return val;
+          return isNaN(val) ? Infinity : val;
         };
 
-        let a = -0.9999, b = 100.0;
+        let a = -0.90, b = 10.0;
         let fa = f(a), fb = f(b);
 
-        // 초고수익/극단적 손실 케이스를 대비한 Dynamic Bracket Expansion
-        if (fa * fb > 0) {
+        if (fa * fb > 0 || !isFinite(fa) || !isFinite(fb)) {
           let found = false;
-          for (let upper = 10.0; upper <= 1000.0; upper *= 2) {
-            if (f(upper) * fa < 0) {
+
+          for (let upper = 20.0; upper <= 10000.0; upper *= 2) {
+            let fUpper = f(upper);
+            if (isFinite(fUpper) && fUpper * fa < 0) {
               b = upper;
-              fb = f(b);
+              fb = fUpper;
               found = true;
               break;
             }
           }
-          if (!found) return -100.0;
+
+          if (!found) {
+            for (let lower = -0.50; lower >= -0.98; lower -= 0.1) {
+              let fLower = f(lower);
+              if (isFinite(fLower) && fLower * fb < 0) {
+                a = lower;
+                fa = fLower;
+                found = true;
+                break;
+              }
+            }
+          }
+
+          if (!found) {
+            let bestR = -0.5;
+            let minDiff = Infinity;
+            for (let rTest = -0.90; rTest <= 10.0; rTest += 0.05) {
+              let diff = Math.abs(f(rTest));
+              if (isFinite(diff) && diff < minDiff) {
+                minDiff = diff;
+                bestR = rTest;
+              }
+            }
+            return bestR * 100.0;
+          }
         }
 
         let c = a, fc = fa, d = b - a, e = d;
@@ -921,7 +946,7 @@
             const priceUsd = prices[i];
             const totalShares = taxLotMgr.getTotalShares();
 
-            // 배당금 현금 유입 및 T+1 재투자 처리
+            // 배당금 현금 유입 및 T+1 재투자
             for (let k = divPayQueue.length - 1; k >= 0; k--) {
               if (i >= divPayQueue[k].payIndex) {
                 const divNetUsd = divPayQueue[k].divNetUsd;
@@ -939,8 +964,7 @@
             if (totalShares > 0 && divMap && divMap.has(dateStr)) {
               const divPerShare = divMap.get(dateStr);
               const grossDivUsd = totalShares * divPerShare;
-              const netDivUsd = grossDivUsd * (1 - 0.154); // 원천징수 15.4%
-              // T+1 거래일에 재투자되도록 스케줄링
+              const netDivUsd = grossDivUsd * (1 - 0.154);
               divPayQueue.push({ payIndex: i + 1, divNetUsd: netDivUsd });
             }
 
@@ -1055,7 +1079,7 @@
       static activeTab = 'portfolio';
       static currentResults = null;
       static currentSortedDates = [];
-      static selectedMcTicker = null; // Monte Carlo 전용 선택 티커
+      static selectedMcTicker = null;
 
       static init() {
         this.updateActiveChips();
@@ -1252,7 +1276,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Ultimate Engine v11.5 완료');
+        this.setEngineStatus('success', 'Ultimate Engine v11.6 완료');
       }
 
       static switchChartTab(tab) {
