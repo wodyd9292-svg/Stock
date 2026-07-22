@@ -115,7 +115,7 @@
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-          <h3 class="font-bold text-sm text-emerald-400">20개 주요 미국 ETF 목록</h3>
+          <h3 class="font-bold text-sm text-emerald-400">20개 주요 미국 ETF 목록 (상장 연도 안내 포함)</h3>
           <button onclick="UIController.toggleModal()" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
         </div>
         <div class="p-4 overflow-y-auto space-y-4 text-xs">
@@ -156,19 +156,19 @@
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Proxy Matrix)</h3>
-        <span class="text-[10px] text-slate-500">* 웹 환경 단순화를 위해 대표 ETF(SCHD/SPMO/IWM)를 프록시로 사용함</span>
+        <span class="text-[10px] text-slate-500">* 항목을 터치하면 모바일에서도 상세 설명 팝업이 나타납니다.</span>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
             <tr>
               <th class="px-3 py-2.5">종목코드</th>
-              <th class="px-3 py-2.5 text-purple-400 cursor-help" title="자산 자체 초과 수익력: 시장과 상관없이 종목 고유 특성으로 낸 연 추가 수익률">자산 자체 수익력 (알파) ℹ️</th>
-              <th class="px-3 py-2.5 cursor-help" title="시장 민감도: S&P500 시장이 1% 움직일 때 종목이 반응하는 정도">시장 민감도 (베타) ℹ️</th>
-              <th class="px-3 py-2.5 text-emerald-400 cursor-help" title="소형주 성향: 소형주 특성에 영향을 받는 정도">소형주 성향 (SMB) ℹ️</th>
-              <th class="px-3 py-2.5 text-amber-400 cursor-help" title="가치주 성향: 저평가/가치주 특성에 영향을 받는 정도">가치주 성향 (HML) ℹ️</th>
-              <th class="px-3 py-2.5 text-cyan-400 cursor-help" title="상승세 추종 성향: 상승 모멘텀을 타는 정도">상승세 추종 (MOM) ℹ️</th>
-              <th class="px-3 py-2.5 cursor-help" title="모델 설명력: 지표 공식이 이 종목 움직임을 얼마나 정밀하게 설명하는지 (1.0에 가까울수록 완벽)">모델 설명력 (R²) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('자산 자체 수익력 (알파)', '시장과 상관없이 종목 고유의 역량으로 낸 연간 추가 초과 수익률입니다.')" class="px-3 py-2.5 text-purple-400 cursor-pointer hover:bg-slate-800 transition">자산 자체 수익력 (알파) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('시장 민감도 (베타)', 'S&P 500 시장 지수가 1% 변동할 때 이 종목이 얼마나 민감하게 반응하는지 나타냅니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">시장 민감도 (베타) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('소형주 성향 (SMB)', '대형주 대비 소형주 특성(Small Minus Big)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-emerald-400 cursor-pointer hover:bg-slate-800 transition">소형주 성향 (SMB) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('가치주 성향 (HML)', '성장주 대비 가치주/저평가 특성(High Minus Low)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-amber-400 cursor-pointer hover:bg-slate-800 transition">가치주 성향 (HML) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('상승세 추종 (MOM)', '최근 상승 모멘텀 추세(Momentum)를 얼마나 강하게 추종하는지 보여줍니다.')" class="px-3 py-2.5 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">상승세 추종 (MOM) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('모델 설명력 (R²)', '이 요인 모델이 해당 종목의 주가 변동을 얼마나 정확히 설명하는지 비율입니다. (1.0에 가까울수록 정밀)')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">모델 설명력 (R²) ℹ️</th>
             </tr>
           </thead>
           <tbody id="ffTableBody" class="divide-y divide-slate-800/60">
@@ -180,24 +180,24 @@
 
     <!-- 성과 정량 데이터 종합 테이블 -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
-      <table class="w-full text-xs text-left text-slate-300 min-w-[1550px]">
+      <table class="w-full text-xs text-left text-slate-300 min-w-[1600px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
           <tr>
-            <th class="px-3 py-3">종목코드</th>
+            <th class="px-3 py-3">종목코드 / 상장년도구분</th>
             <th class="px-3 py-3">총 원금</th>
             <th class="px-3 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
-            <th class="px-3 py-3 text-cyan-400 cursor-help" title="적립식 실질 연수익률: 매달 나누어 투자한 내 적립금 기준 진짜 연 복리 수익률">적립식 실질 연수익률 (XIRR) ℹ️</th>
-            <th class="px-3 py-3 cursor-help" title="자산 순수 연성장률: 입출금과 상관없이 종목 자체가 성장한 순수 연평균 성장률">자산 순수 연성장률 (CAGR) ℹ️</th>
-            <th class="px-3 py-3 cursor-help" title="위험 대비 가성비: 출렁임을 견딘 대가로 받은 수익성 (1.0 이상 우수)">위험 대비 가성비 (샤프) ℹ️</th>
-            <th class="px-3 py-3 text-amber-400 cursor-help" title="하락위험 가성비: 상승은 제외하고 하락 폭락 위험만 따진 가성비">하락위험 가성비 (소티노) ℹ️</th>
-            <th class="px-3 py-3 text-cyan-300 cursor-help" title="시장위험 대비 수익: 시장 위험 1단위당 올린 초과 수익 성과">시장위험 대비 수익 (트레이너) ℹ️</th>
-            <th class="px-3 py-3 text-emerald-300 cursor-help" title="손익 확률 비율: 손실 가능성 대비 수익 가능성의 비율">손익 확률 비율 (오메가) ℹ️</th>
-            <th class="px-3 py-3 text-rose-300 cursor-help" title="멘탈 고통 대비 성과: 계좌가 깎이고 회복을 못 한 마음 고통 대비 성과">멘탈 고통 대비 성과 (페인) ℹ️</th>
-            <th class="px-3 py-3 cursor-help" title="지수 추종 오차율: 원본 지수와 얼마나 차이가 발생하는지 오차 비율">지수 추종 오차율 ℹ️</th>
-            <th class="px-3 py-3 cursor-help" title="초과수익 가성비: 시장 대비 얼마나 효율적으로 초과 성과를 냈는지 비율">초과수익 가성비 (정보비율) ℹ️</th>
-            <th class="px-3 py-3 text-rose-300 cursor-help" title="마음 고통 지수: 주가 하락의 깊이와 길이를 종합한 고통 지수 (낮을수록 좋음)">마음 고통 지수 (궤양) ℹ️</th>
-            <th class="px-3 py-3 text-rose-400 cursor-help" title="최악의 날 폭락 위험: 대형 위기에서 하루 만에 깎일 예상 손실률">최악의 날 폭락 위험 (CVaR) ℹ️</th>
-            <th class="px-3 py-3 text-rose-500 cursor-help" title="역대 최대 계좌 하락 폭: 역사상 내 계좌가 가장 크게 박살 났을 때의 손실률">역대 최대 계좌 하락 폭 (MDD) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('적립식 실질 연수익률 (XIRR)', '매달 나누어 입금한 내 실제 적립금 입출금 날짜 기준의 진짜 연 복리 수익률입니다.')" class="px-3 py-3 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">적립식 실질 연수익률 (XIRR) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('자산 순수 연성장률 (CAGR)', '추가 적립금 효과를 제외하고 종목 자산 자체가 순수하게 복리로 성장한 연평균 성장률입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">자산 순수 연성장률 (CAGR) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('위험 대비 가성비 (샤프 지수)', '주가 변동 위험을 견딘 대가로 얻은 초과 수익성 지수입니다. (1.0 이상 우수, 2.0 이상 최우수)')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">위험 대비 가성비 (샤프) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('하락위험 가성비 (소티노 지수)', '상승 출렁임은 제외하고 순수 하락 폭락 위험만 따져 계산한 위험 대비 수익 가성비입니다.')" class="px-3 py-3 text-amber-400 cursor-pointer hover:bg-slate-800 transition">하락위험 가성비 (소티노) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('시장위험 대비 수익 (트레이너 지수)', '시장 베타 위험 1단위당 올린 초과 수익 성과입니다.')" class="px-3 py-3 text-cyan-300 cursor-pointer hover:bg-slate-800 transition">시장위험 대비 수익 (트레이너) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('손익 확률 비율 (오메가 비율)', '전체 투자 기간 중 손실 가능성 대비 수익 가능성의 통합 비율입니다.')" class="px-3 py-3 text-emerald-300 cursor-pointer hover:bg-slate-800 transition">손익 확률 비율 (오메가) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('멘탈 고통 대비 성과 (페인 Ratio)', '계좌가 깎이고 회복을 못해 겪은 고통의 누적 크기 대비 올린 성과 비율입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">멘탈 고통 대비 성과 (페인) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('지수 추종 오차율 (Tracking Error)', '원본 지수나 목표 포트폴리오 변동성과의 추종 오차율 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">지수 추종 오차율 ℹ️</th>
+            <th onclick="UIController.showMetricInfo('초과수익 가성비 (정보비율)', '벤치마크 지수 대비 얼마나 안정적이고 효율적으로 초과 수익을 만들어냈는지 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">초과수익 가성비 (정보비율) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('마음 고통 지수 (Ulcer Index)', '주가 하락의 깊이와 하락 기간의 길이를 종합하여 투자자가 느낀 고통을 수치화한 지수입니다. (낮을수록 좋음)')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">마음 고통 지수 (궤양) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('최악의 날 폭락 위험 (CVaR 95%)', '하위 5% 최악의 시장 위기 상황이 닥쳤을 때 단 하루 만에 발생할 수 있는 평균 예상 손실률입니다.')" class="px-3 py-3 text-rose-400 cursor-pointer hover:bg-slate-800 transition">최악의 날 폭락 위험 (CVaR) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('역대 최대 계좌 하락 폭 (MDD)', '전체 투자 기간 동안 전고점 대비 계좌 평가금이 가장 깊게 박살 났을 때의 최대 손실 비율입니다.')" class="px-3 py-3 text-rose-500 cursor-pointer hover:bg-slate-800 transition">역대 최대 계좌 하락 폭 (MDD) ℹ️</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
@@ -210,28 +210,28 @@
   <script>
     'use strict';
 
-    // 티커 유니버스 및 팩터 프록시 매핑
+    // 🌟 티커 유니버스 및 실제 상장년도(inceptYear) 매핑
     const TICKER_UNIVERSE = {
-      'QQQ':  { name: 'Invesco QQQ Trust', base: null, leverage: 1, fee: 0.0020, proxyType: 'direct' },
-      'QLD':  { name: 'ProShares Ultra QQQ (2x)', base: 'QQQ', leverage: 2, fee: 0.0095, trackingError: 0.002, swapSpread: 0.0045, proxyType: 'leveraged' },
-      'TQQQ': { name: 'ProShares UltraPro QQQ (3x)', base: 'QQQ', leverage: 3, fee: 0.0098, trackingError: 0.0035, swapSpread: 0.0055, proxyType: 'leveraged' },
-      'SQQQ': { name: 'ProShares Short QQQ (-3x)', base: 'QQQ', leverage: -3, fee: 0.0095, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
-      'SPY':  { name: 'SPDR S&P 500 ETF Trust', base: null, leverage: 1, fee: 0.0009, proxyType: 'direct' },
-      'SSO':  { name: 'ProShares Ultra S&P500 (2x)', base: 'SPY', leverage: 2, fee: 0.0091, trackingError: 0.0015, swapSpread: 0.0040, proxyType: 'leveraged' },
-      'UPRO': { name: 'ProShares UltraPro S&P500 (3x)', base: 'SPY', leverage: 3, fee: 0.0091, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
-      'SMH':  { name: 'VanEck Semiconductor ETF', base: null, leverage: 1, fee: 0.0035, proxyType: 'direct' },
-      'SOXL': { name: 'Direxion Semi Bull 3X', base: 'SMH', leverage: 3, fee: 0.0094, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
-      'SCHD': { name: 'Schwab U.S. Dividend Equity', base: 'SPY', leverage: 1, fee: 0.0006, beta: 0.82, proxyType: 'quality_dividend' },
-      'SPMO': { name: 'Invesco S&P 500 Momentum', base: 'SPY', leverage: 1, fee: 0.0013, momAlpha: 0.038, proxyType: 'momentum_factor' },
-      'JEPI': { name: 'JPMorgan Equity Premium', base: 'SPY', leverage: 0.75, fee: 0.0035, capMonthly: 0.018, proxyType: 'covered_call' },
-      'TLT':  { name: 'iShares 20+ Year Treasury', base: null, leverage: 1, fee: 0.0015, proxyType: 'direct' },
-      'TMF':  { name: 'Direxion 20+ Yr Bull 3x', base: 'TLT', leverage: 3, fee: 0.0101, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
-      'GLD':  { name: 'SPDR Gold Shares', base: null, leverage: 1, fee: 0.0040, proxyType: 'direct' },
-      'ARKK': { name: 'ARK Innovation ETF', base: 'QQQ', leverage: 1.25, fee: 0.0075, volFactor: 1.4, proxyType: 'high_beta' },
-      'IWM':  { name: 'iShares Russell 2000 ETF', base: null, leverage: 1, fee: 0.0019, proxyType: 'direct' },
-      'XLK':  { name: 'Technology Select SPDR', base: 'QQQ', leverage: 1, fee: 0.0010, proxyType: 'direct' },
-      'XLE':  { name: 'Energy Select SPDR', base: 'SPY', leverage: 1, fee: 0.0010, proxyType: 'direct' },
-      'XBI':  { name: 'SPDR S&P Biotech ETF', base: 'IWM', leverage: 1, fee: 0.0035, proxyType: 'direct' }
+      'QQQ':  { name: 'Invesco QQQ Trust', base: null, leverage: 1, fee: 0.0020, inceptYear: 1999, proxyType: 'direct' },
+      'QLD':  { name: 'ProShares Ultra QQQ (2x)', base: 'QQQ', leverage: 2, fee: 0.0095, inceptYear: 2006, trackingError: 0.002, swapSpread: 0.0045, proxyType: 'leveraged' },
+      'TQQQ': { name: 'ProShares UltraPro QQQ (3x)', base: 'QQQ', leverage: 3, fee: 0.0098, inceptYear: 2010, trackingError: 0.0035, swapSpread: 0.0055, proxyType: 'leveraged' },
+      'SQQQ': { name: 'ProShares Short QQQ (-3x)', base: 'QQQ', leverage: -3, fee: 0.0095, inceptYear: 2010, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
+      'SPY':  { name: 'SPDR S&P 500 ETF Trust', base: null, leverage: 1, fee: 0.0009, inceptYear: 1993, proxyType: 'direct' },
+      'SSO':  { name: 'ProShares Ultra S&P500 (2x)', base: 'SPY', leverage: 2, fee: 0.0091, inceptYear: 2006, trackingError: 0.0015, swapSpread: 0.0040, proxyType: 'leveraged' },
+      'UPRO': { name: 'ProShares UltraPro S&P500 (3x)', base: 'SPY', leverage: 3, fee: 0.0091, inceptYear: 2009, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
+      'SMH':  { name: 'VanEck Semiconductor ETF', base: null, leverage: 1, fee: 0.0035, inceptYear: 2011, proxyType: 'direct' },
+      'SOXL': { name: 'Direxion Semi Bull 3X', base: 'SMH', leverage: 3, fee: 0.0094, inceptYear: 2010, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
+      'SCHD': { name: 'Schwab U.S. Dividend Equity', base: 'SPY', leverage: 1, fee: 0.0006, inceptYear: 2011, beta: 0.82, proxyType: 'quality_dividend' },
+      'SPMO': { name: 'Invesco S&P 500 Momentum', base: 'SPY', leverage: 1, fee: 0.0013, inceptYear: 2017, momAlpha: 0.038, proxyType: 'momentum_factor' },
+      'JEPI': { name: 'JPMorgan Equity Premium', base: 'SPY', leverage: 0.75, fee: 0.0035, inceptYear: 2020, capMonthly: 0.018, proxyType: 'covered_call' },
+      'TLT':  { name: 'iShares 20+ Year Treasury', base: null, leverage: 1, fee: 0.0015, inceptYear: 2002, proxyType: 'direct' },
+      'TMF':  { name: 'Direxion 20+ Yr Bull 3x', base: 'TLT', leverage: 3, fee: 0.0101, inceptYear: 2009, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
+      'GLD':  { name: 'SPDR Gold Shares', base: null, leverage: 1, fee: 0.0040, inceptYear: 2004, proxyType: 'direct' },
+      'ARKK': { name: 'ARK Innovation ETF', base: 'QQQ', leverage: 1.25, fee: 0.0075, inceptYear: 2014, volFactor: 1.4, proxyType: 'high_beta' },
+      'IWM':  { name: 'iShares Russell 2000 ETF', base: null, leverage: 1, fee: 0.0019, inceptYear: 2000, proxyType: 'direct' },
+      'XLK':  { name: 'Technology Select SPDR', base: 'QQQ', leverage: 1, fee: 0.0010, inceptYear: 1998, proxyType: 'direct' },
+      'XLE':  { name: 'Energy Select SPDR', base: 'SPY', leverage: 1, fee: 0.0010, inceptYear: 1998, proxyType: 'direct' },
+      'XBI':  { name: 'SPDR S&P Biotech ETF', base: 'IWM', leverage: 1, fee: 0.0035, inceptYear: 2006, proxyType: 'direct' }
     };
 
     // IndexedDB 캐싱 레이어 (24시간 TTL 적용)
@@ -1010,7 +1010,7 @@
 
             let currentValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
 
-            // 🌟 연말 과세 정산 (i < N - 1 조건 추가로 마지막 날 이중 공제 완벽 방지)
+            // 연말 과세 정산
             if (taxEnabled && isYearEnd[i] && i < N - 1 && taxLotMgr.getTotalShares() > 0 && priceUsd > 0) {
               const totalCostBasis = taxLotMgr.getTotalCostBasisKrw();
               const unrealizedGain = currentValKrw - totalCostBasis;
@@ -1037,16 +1037,16 @@
 
           let finalVal = portfolioValues[N - 1];
 
-          // 🌟 백테스트 최종일: 마지막 해 단 1회 통합 과세 정산 (250만 원 1회만 공제)
+          // 최종일 통합 과세 정산
           if (taxEnabled && taxLotMgr.getTotalShares() > 0) {
             const finalCostBasis = taxLotMgr.getTotalCostBasisKrw();
             const finalUnrealizedGain = Math.max(0, finalVal - finalCostBasis);
-            const totalFinalYearGain = finalUnrealizedGain + yearRealizedGainKrw; // 마지막 해의 총 손익
+            const totalFinalYearGain = finalUnrealizedGain + yearRealizedGainKrw;
 
             if (totalFinalYearGain > TAX_LIMIT) {
               const finalTaxable = totalFinalYearGain - TAX_LIMIT;
               const finalTax = finalTaxable * 0.22;
-              finalVal -= finalTax; // 세후 최종 평가금 정산
+              finalVal -= finalTax;
             }
           }
 
@@ -1146,6 +1146,11 @@
         this.runBacktest();
       }
 
+      // 🌟 모바일 대응 팝업 알림창 함수
+      static showMetricInfo(title, description) {
+        alert(`[${title}]\n\n${description}`);
+      }
+
       static toggleBeginnerGuide() {
         const content = document.getElementById('beginnerGuideContent');
         const icon = document.getElementById('guideToggleIcon');
@@ -1168,6 +1173,7 @@
         }
       }
 
+      // 🌟 자산 선택 모달 내 실제 상장 연도 태그 렌더링
       static renderModalCheckboxes() {
         const grid = document.getElementById('modalCheckboxGrid');
         const fragment = document.createDocumentFragment();
@@ -1182,8 +1188,11 @@
           
           label.innerHTML = `
             <input type="checkbox" id="chk-${ticker}" value="${ticker}" ${isChecked ? 'checked' : ''} onchange="UIController.toggleTicker('${ticker}')" class="accent-emerald-500">
-            <div class="truncate">
-              <span class="font-bold text-slate-200 block">${ticker}</span>
+            <div class="truncate w-full">
+              <div class="flex items-center justify-between gap-1">
+                <span class="font-bold text-slate-200">${ticker}</span>
+                <span class="text-[9px] bg-slate-800 text-slate-400 px-1 rounded font-semibold">${item.inceptYear}년 상장</span>
+              </div>
               <span class="text-[10px] text-slate-500 truncate block">${item.name}</span>
             </div>
           `;
@@ -1414,7 +1423,9 @@
         }
       }
 
+      // 🌟 대시보드 및 결과 데이터 테이블 렌더링 (실제 상장 vs 추정 백필 구분 뱃지 추가)
       static renderDashboard(results, sortedDates, taxEnabled) {
+        const startYear = parseInt(document.getElementById('startYear').value, 10);
         document.getElementById('thFinalVal').innerText = taxEnabled ? '실제 세후 평가금' : '세전 최종 평가금';
 
         const cardsContainer = document.getElementById('summaryCards');
@@ -1469,11 +1480,26 @@
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
         for (const [ticker, res] of Object.entries(results)) {
+          const inceptYear = TICKER_UNIVERSE[ticker]?.inceptYear || 2000;
+          const isBackfilled = startYear < inceptYear;
+
+          const backfillBadge = isBackfilled 
+            ? `<span class="text-[9px] bg-amber-950/80 text-amber-400 px-1 py-0.5 rounded border border-amber-800/50" title="실제 데이터: ${inceptYear}년~ / 이전 구간: 추정 백필">실제 ${inceptYear}년~ (이전 추정)</span>`
+            : `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50">실제 데이터 100%</span>`;
+
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-800/40 border-b border-slate-800/60';
           
           tr.innerHTML = `
-            <td class="px-3 py-3 font-bold text-slate-200">${ticker} <span class="text-[10px] text-slate-500 font-normal">(${res.name})</span></td>
+            <td class="px-3 py-3 font-bold text-slate-200">
+              <div class="flex flex-col gap-0.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-sm">${ticker}</span>
+                  ${backfillBadge}
+                </div>
+                <span class="text-[10px] text-slate-500 font-normal truncate">${res.name}</span>
+              </div>
+            </td>
             <td class="px-3 py-3">${Math.round(res.investedKrw).toLocaleString()}원</td>
             <td class="px-3 py-3 font-bold text-emerald-400">${Math.round(res.finalVal).toLocaleString()}원</td>
             <td class="px-3 py-3 ${res.annualizedXIRR >= 0 ? 'text-cyan-400' : 'text-blue-400'} font-bold">${res.annualizedXIRR >= 0 ? '+' : ''}${res.annualizedXIRR.toFixed(2)}%</td>
