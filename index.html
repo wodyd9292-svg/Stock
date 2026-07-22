@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v12.1 Ultimate Enterprise</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v12.3 Enterprise</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -14,10 +14,10 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.1 Pro</span>
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.3 Pro</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Newton-Raphson XIRR · True Parallel Stationary Bootstrap · Dynamic SOFR · 24H TTL Cache Engine
+          Exact 22% Capital Gains Tax (Single Allowance) · True Parallel Stationary Bootstrap · Robust NAV Backfilling
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -37,15 +37,15 @@
       <div id="beginnerGuideContent" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-slate-300 border-t border-slate-800">
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
           <span class="font-bold text-cyan-400 block mb-1">📈 적립식 실질 연수익률 (XIRR)</span>
-          매달 꼬박꼬박 돈을 나누어 적립한 <span class="text-emerald-300 font-semibold">내 실제 적립식 복리 수익률</span>입니다. 가장 먼저 확인해야 할 핵심 수치입니다.
+          매달 꼬박꼬박 돈을 나누어 적립한 <span class="text-emerald-300 font-semibold">내 실제 적립식 복리 수익률</span>입니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
           <span class="font-bold text-amber-400 block mb-1">⚖️ 위험 대비 가성비 (샤프 지수)</span>
-          주가 출렁임을 견딘 대가로 수익을 얼마나 얻었는지 보여주는 <span class="text-emerald-300 font-semibold">가성비 지수</span>입니다. **1.0 이상**이면 우수한 자산입니다.
+          주가 출렁임을 견딘 대가로 수익을 얼마나 얻었는지 보여주는 <span class="text-emerald-300 font-semibold">가성비 지수</span>입니다. (1.0 이상 우수)
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
           <span class="font-bold text-rose-400 block mb-1">🛡️ 역대 최대 계좌 하락 폭 (MDD)</span>
-          투자 기간 중 계좌가 <span class="text-emerald-300 font-semibold">가장 크게 박살 났을 때의 폭락 비율</span>입니다. 내가 견딜 수 있는 수준인지 파악합니다.
+          투자 기간 중 계좌가 <span class="text-emerald-300 font-semibold">가장 크게 박살 났을 때의 폭락 비율</span>입니다.
         </div>
       </div>
     </div>
@@ -74,15 +74,15 @@
         </select>
       </div>
       <div>
-        <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">절세 전략 엔진</label>
+        <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">과세/절세 엔진</label>
         <select id="taxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
-          <option value="fifo">FIFO 22% 양도세 (250만 공제)</option>
-          <option value="disabled">세전 (원금 단순 합산)</option>
+          <option value="fifo">실제 세후 (22% 양도세 + 250만 공제)</option>
+          <option value="disabled">세전 (Gross Aggregate)</option>
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1 flex items-end">
         <button onclick="UIController.runBacktest()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
-          v12.1 시뮬레이션 실행
+          v12.3 시뮬레이션 실행
         </button>
       </div>
     </div>
@@ -154,7 +154,10 @@
 
     <!-- 요인 분석 테이블 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-      <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Matrix)</h3>
+      <div class="flex justify-between items-center">
+        <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Proxy Matrix)</h3>
+        <span class="text-[10px] text-slate-500">* 웹 환경 단순화를 위해 대표 ETF(SCHD/SPMO/IWM)를 프록시로 사용함</span>
+      </div>
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
@@ -231,9 +234,9 @@
       'XBI':  { name: 'SPDR S&P Biotech ETF', base: 'IWM', leverage: 1, fee: 0.0035, proxyType: 'direct' }
     };
 
-    // IndexedDB 캐싱 레이어 (24시간 자동 만료)
+    // IndexedDB 캐싱 레이어 (24시간 TTL 적용)
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v12_1";
+      static dbName = "QuantBacktestCacheDB_v12_3";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -449,6 +452,10 @@
 
           if (lotGainPerShareKrw <= 0) continue;
 
+          const taxSavedPerShare = lotGainPerShareKrw * 0.22;
+          const transactionCostPerShare = (lot.priceUsd * lot.fxRate) * (friction * 2);
+          if (taxSavedPerShare <= transactionCostPerShare) continue;
+
           const neededGain = targetGainKrw - accumulatedGain;
           const sharesToSellFromLot = Math.min(lot.shares, neededGain / lotGainPerShareKrw);
 
@@ -484,10 +491,10 @@
       }
     }
 
-    // Fetcher (CORS Proxy 다중 우회)
+    // Fetcher
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_1`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_3`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -551,7 +558,7 @@
       }
     }
 
-    // 🌟 안전 고성능 Newton-Raphson + Bisection XIRR 연산 엔진 (수치 에러 완벽 방어)
+    // Newton-Raphson + Bisection XIRR 연산 엔진
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
@@ -583,7 +590,6 @@
           return deriv;
         };
 
-        // 1차 시도: Newton-Raphson 미분법 탐색 (r0 = 10%)
         let r = 0.10;
         for (let iter = 0; iter < 50; iter++) {
           let y = f(r);
@@ -595,7 +601,6 @@
           r = rNext;
         }
 
-        // 2차 시도: 안전 이분법 (Bisection Method)
         let low = -0.50, high = 10.0;
         let fLow = f(low), fHigh = f(high);
 
@@ -621,7 +626,7 @@
       }
     }
 
-    // Daily Reset Leveraged NAV Engine
+    // Daily Reset Leveraged NAV Engine & Safe Backfilling
     class MultiFactorSynthesisEngine {
       static process(rawDatasets, sortedDates) {
         const processedPrices = {};
@@ -682,7 +687,7 @@
 
                 priceArr[i] = priceArr[i + 1] / Math.max(0.001, 1 + synthReturn);
               } else {
-                priceArr[i] = 0;
+                priceArr[i] = priceArr[i + 1] || 1.0;
               }
             }
           }
@@ -941,6 +946,7 @@
           const taxLotMgr = new FIFOTaxLotManager();
           let cashKrw = 0.0;
           let investedKrw = 0.0;
+          let yearRealizedGainKrw = 0.0;
 
           const cashFlowDates = [];
           const monthlyCashFlows = [];
@@ -1004,25 +1010,49 @@
 
             let currentValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
 
-            if (taxEnabled && isYearEnd[i] && taxLotMgr.getTotalShares() > 0 && priceUsd > 0) {
+            // 🌟 연말 과세 정산 (i < N - 1 조건 추가로 마지막 날 이중 공제 완벽 방지)
+            if (taxEnabled && isYearEnd[i] && i < N - 1 && taxLotMgr.getTotalShares() > 0 && priceUsd > 0) {
               const totalCostBasis = taxLotMgr.getTotalCostBasisKrw();
               const unrealizedGain = currentValKrw - totalCostBasis;
 
-              if (unrealizedGain > 0) {
-                taxLotMgr.harvestTax(TAX_LIMIT, priceUsd, fx, fxSpreadRate);
-                currentValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
+              const remainingAllowance = Math.max(0, TAX_LIMIT - yearRealizedGainKrw);
+              if (unrealizedGain > 0 && remainingAllowance > 0) {
+                const harvestRes = taxLotMgr.harvestTax(remainingAllowance, priceUsd, fx, fxSpreadRate);
+                yearRealizedGainKrw += harvestRes.accumulatedGain;
               }
+
+              if (yearRealizedGainKrw > TAX_LIMIT) {
+                const taxableGain = yearRealizedGainKrw - TAX_LIMIT;
+                const taxPaid = taxableGain * 0.22;
+                cashKrw -= taxPaid;
+              }
+
+              yearRealizedGainKrw = 0.0;
+              currentValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
             }
 
             portfolioValues[i] = currentValKrw;
             investedSeries[i] = investedKrw;
           }
 
-          const finalVal = portfolioValues[N - 1];
+          let finalVal = portfolioValues[N - 1];
+
+          // 🌟 백테스트 최종일: 마지막 해 단 1회 통합 과세 정산 (250만 원 1회만 공제)
+          if (taxEnabled && taxLotMgr.getTotalShares() > 0) {
+            const finalCostBasis = taxLotMgr.getTotalCostBasisKrw();
+            const finalUnrealizedGain = Math.max(0, finalVal - finalCostBasis);
+            const totalFinalYearGain = finalUnrealizedGain + yearRealizedGainKrw; // 마지막 해의 총 손익
+
+            if (totalFinalYearGain > TAX_LIMIT) {
+              const finalTaxable = totalFinalYearGain - TAX_LIMIT;
+              const finalTax = finalTaxable * 0.22;
+              finalVal -= finalTax; // 세후 최종 평가금 정산
+            }
+          }
+
           const cumulativeReturn = investedKrw > 0 ? ((finalVal - investedKrw) / investedKrw) * 100.0 : 0;
           cashFlowDates.push(sortedDates[N - 1]);
           
-          // 고성능 뉴턴-랩슨 XIRR 계산 연산
           const annualizedXIRR = BrentXIRRSolver.computeXIRR(monthlyCashFlows, finalVal, cashFlowDates);
 
           const startMs = new Date(sortedDates[0]).getTime();
@@ -1253,11 +1283,11 @@
         const taxEnabled = document.getElementById('taxMode').value === 'fifo';
 
         if (isNaN(startYear) || isNaN(endYear) || startYear >= endYear) {
-          alert("시작 연도는 종료 연도보다 커스텀 작성할 수 없으며, 시작 연도가 종료 연도보다 작아야 합니다.");
+          alert("시작 연도가 종료 연도보다 작아야 합니다.");
           return;
         }
         if (isNaN(monthlyKrw) || monthlyKrw <= 0) {
-          alert("월 적립금은 0원보다 큰 올바른 숫자를 입력하십시오.");
+          alert("월 적립금은 0원보다 큰 숫자를 입력하십시오.");
           return;
         }
 
@@ -1329,7 +1359,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Enterprise Engine v12.1 완료');
+        this.setEngineStatus('success', 'Enterprise Engine v12.3 완료');
       }
 
       static switchChartTab(tab) {
@@ -1385,7 +1415,7 @@
       }
 
       static renderDashboard(results, sortedDates, taxEnabled) {
-        document.getElementById('thFinalVal').innerText = taxEnabled ? '세후 실질 평가금' : '세전 최종 평가금';
+        document.getElementById('thFinalVal').innerText = taxEnabled ? '실제 세후 평가금' : '세전 최종 평가금';
 
         const cardsContainer = document.getElementById('summaryCards');
         cardsContainer.innerHTML = '';
