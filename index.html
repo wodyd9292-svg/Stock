@@ -6,18 +6,25 @@
   <title>기관급 퀀트 DCA 백테스트 엔진 v12.3 Enterprise</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* Custom Scrollbar for visual touch */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #020617; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+  </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono select-none">
 
   <div class="max-w-7xl mx-auto space-y-5">
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.3 Pro</span>
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.3 Refactored</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Exact 22% Capital Gains Tax (Single Allowance) · True Parallel Stationary Bootstrap · Robust NAV Backfilling
+          Exact 22% Capital Gains Tax · Strategy Index Backfill · Strict Non-Backfill Cash Holding
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -26,7 +33,7 @@
       </div>
     </header>
 
-    <!-- 💡 초보자용 3초 핵심 지표 쉬운 말 가이드 -->
+    <!-- 초보자용 3초 핵심 지표 쉬운 말 가이드 -->
     <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 sm:p-4 space-y-2 text-xs">
       <div class="flex justify-between items-center cursor-pointer" onclick="UIController.toggleBeginnerGuide()">
         <span class="font-bold text-emerald-400 flex items-center gap-1.5">
@@ -81,7 +88,7 @@
         </select>
       </div>
       <div class="col-span-2 sm:col-span-1 flex items-end">
-        <button onclick="UIController.runBacktest()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
+        <button onclick="UIController.runBacktest()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
           v12.3 시뮬레이션 실행
         </button>
       </div>
@@ -115,7 +122,7 @@
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-          <h3 class="font-bold text-sm text-emerald-400">20개 주요 미국 ETF 목록 (상장 연도 안내 포함)</h3>
+          <h3 class="font-bold text-sm text-emerald-400">20개 주요 미국 ETF 목록 (백필 정책 안내 포함)</h3>
           <button onclick="UIController.toggleModal()" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
         </div>
         <div class="p-4 overflow-y-auto space-y-4 text-xs">
@@ -156,7 +163,7 @@
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Proxy Matrix)</h3>
-        <span class="text-[10px] text-slate-500">* 항목을 터치하면 모바일에서도 상세 설명 팝업이 나타납니다.</span>
+        <span class="text-[10px] text-slate-500">* 항목을 터치하면 상세 설명 팝업이 나타납니다.</span>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
@@ -210,28 +217,50 @@
   <script>
     'use strict';
 
-    // 🌟 티커 유니버스 및 실제 상장년도(inceptYear) 매핑
+    // 🌟 글로벌 유틸리티 모듈
+    class QuantUtils {
+      static formatKRW(val) {
+        if (isNaN(val) || val === null) return '0원';
+        const absVal = Math.abs(val);
+        const sign = val < 0 ? '-' : '';
+        if (absVal >= 1e8) {
+          const uk = Math.floor(absVal / 1e8);
+          const man = Math.round((absVal % 1e8) / 1e4);
+          return `${sign}${uk}억 ${man.toLocaleString()}만 원`;
+        } else if (absVal >= 1e4) {
+          return `${sign}${Math.round(absVal / 1e4).toLocaleString()}만 원`;
+        }
+        return `${sign}${Math.round(absVal).toLocaleString()}원`;
+      }
+
+      static parseDateUTC(dateStr) {
+        const parts = dateStr.split('-');
+        return Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+    }
+
+    // 🌟 티커 유니버스 매핑
     const TICKER_UNIVERSE = {
-      'QQQ':  { name: 'Invesco QQQ Trust', base: null, leverage: 1, fee: 0.0020, inceptYear: 1999, proxyType: 'direct' },
-      'QLD':  { name: 'ProShares Ultra QQQ (2x)', base: 'QQQ', leverage: 2, fee: 0.0095, inceptYear: 2006, trackingError: 0.002, swapSpread: 0.0045, proxyType: 'leveraged' },
-      'TQQQ': { name: 'ProShares UltraPro QQQ (3x)', base: 'QQQ', leverage: 3, fee: 0.0098, inceptYear: 2010, trackingError: 0.0035, swapSpread: 0.0055, proxyType: 'leveraged' },
-      'SQQQ': { name: 'ProShares Short QQQ (-3x)', base: 'QQQ', leverage: -3, fee: 0.0095, inceptYear: 2010, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
-      'SPY':  { name: 'SPDR S&P 500 ETF Trust', base: null, leverage: 1, fee: 0.0009, inceptYear: 1993, proxyType: 'direct' },
-      'SSO':  { name: 'ProShares Ultra S&P500 (2x)', base: 'SPY', leverage: 2, fee: 0.0091, inceptYear: 2006, trackingError: 0.0015, swapSpread: 0.0040, proxyType: 'leveraged' },
-      'UPRO': { name: 'ProShares UltraPro S&P500 (3x)', base: 'SPY', leverage: 3, fee: 0.0091, inceptYear: 2009, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
-      'SMH':  { name: 'VanEck Semiconductor ETF', base: null, leverage: 1, fee: 0.0035, inceptYear: 2011, proxyType: 'direct' },
-      'SOXL': { name: 'Direxion Semi Bull 3X', base: 'SMH', leverage: 3, fee: 0.0094, inceptYear: 2010, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
-      'SCHD': { name: 'Schwab U.S. Dividend Equity', base: 'SPY', leverage: 1, fee: 0.0006, inceptYear: 2011, beta: 0.82, proxyType: 'quality_dividend' },
-      'SPMO': { name: 'Invesco S&P 500 Momentum', base: '^SPXXMO', leverage: 1, fee: 0.0013, inceptYear: 2017, proxyType: 'index_tracking' },
-      'JEPI': { name: 'JPMorgan Equity Premium', base: 'SPY', leverage: 0.75, fee: 0.0035, inceptYear: 2020, capMonthly: 0.018, proxyType: 'covered_call' },
-      'TLT':  { name: 'iShares 20+ Year Treasury', base: null, leverage: 1, fee: 0.0015, inceptYear: 2002, proxyType: 'direct' },
-      'TMF':  { name: 'Direxion 20+ Yr Bull 3x', base: 'TLT', leverage: 3, fee: 0.0101, inceptYear: 2009, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
-      'GLD':  { name: 'SPDR Gold Shares', base: null, leverage: 1, fee: 0.0040, inceptYear: 2004, proxyType: 'direct' },
-      'ARKK': { name: 'ARK Innovation ETF', base: 'QQQ', leverage: 1.25, fee: 0.0075, inceptYear: 2014, volFactor: 1.4, proxyType: 'high_beta' },
-      'IWM':  { name: 'iShares Russell 2000 ETF', base: null, leverage: 1, fee: 0.0019, inceptYear: 2000, proxyType: 'direct' },
-      'XLK':  { name: 'Technology Select SPDR', base: 'QQQ', leverage: 1, fee: 0.0010, inceptYear: 1998, proxyType: 'direct' },
-      'XLE':  { name: 'Energy Select SPDR', base: 'SPY', leverage: 1, fee: 0.0010, inceptYear: 1998, proxyType: 'direct' },
-      'XBI':  { name: 'SPDR S&P Biotech ETF', base: 'IWM', leverage: 1, fee: 0.0035, inceptYear: 2006, proxyType: 'direct' }
+      'QQQ':  { name: 'Invesco QQQ Trust', base: '^NDX', leverage: 1, fee: 0.0020, inceptYear: 1999, allowBackfill: true, proxyType: 'index_tracking' },
+      'QLD':  { name: 'ProShares Ultra QQQ (2x)', base: 'QQQ', leverage: 2, fee: 0.0095, inceptYear: 2006, allowBackfill: true, trackingError: 0.002, swapSpread: 0.0045, proxyType: 'leveraged' },
+      'TQQQ': { name: 'ProShares UltraPro QQQ (3x)', base: 'QQQ', leverage: 3, fee: 0.0098, inceptYear: 2010, allowBackfill: true, trackingError: 0.0035, swapSpread: 0.0055, proxyType: 'leveraged' },
+      'SQQQ': { name: 'ProShares Short QQQ (-3x)', base: 'QQQ', leverage: -3, fee: 0.0095, inceptYear: 2010, allowBackfill: true, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
+      'SPY':  { name: 'SPDR S&P 500 ETF Trust', base: null, leverage: 1, fee: 0.0009, inceptYear: 1993, allowBackfill: true, proxyType: 'direct' },
+      'SSO':  { name: 'ProShares Ultra S&P500 (2x)', base: 'SPY', leverage: 2, fee: 0.0091, inceptYear: 2006, allowBackfill: true, trackingError: 0.0015, swapSpread: 0.0040, proxyType: 'leveraged' },
+      'UPRO': { name: 'ProShares UltraPro S&P500 (3x)', base: 'SPY', leverage: 3, fee: 0.0091, inceptYear: 2009, allowBackfill: true, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
+      'SMH':  { name: 'VanEck Semiconductor ETF', base: '^SOX', leverage: 1, fee: 0.0035, inceptYear: 2011, allowBackfill: true, proxyType: 'index_tracking' },
+      'SOXL': { name: 'Direxion Semi Bull 3X', base: 'SMH', leverage: 3, fee: 0.0094, inceptYear: 2010, allowBackfill: true, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
+      'SCHD': { name: 'Schwab U.S. Dividend Equity', base: null, leverage: 1, fee: 0.0006, inceptYear: 2011, allowBackfill: false, warningReason: '고유 배당성장 스크리닝 전략으로 2011년 이전 백필 불가', proxyType: 'unsupported' },
+      'SPMO': { name: 'Invesco S&P 500 Momentum', base: '^SPXXMO', leverage: 1, fee: 0.0013, inceptYear: 2017, allowBackfill: true, proxyType: 'index_tracking' },
+      'JEPI': { name: 'JPMorgan Equity Premium', base: null, leverage: 1, fee: 0.0035, inceptYear: 2020, allowBackfill: false, warningReason: '액티브 옵션 커버드콜 구조로 2020년 이전 백필 불가', proxyType: 'unsupported' },
+      'TLT':  { name: 'iShares 20+ Year Treasury', base: '^TYX', leverage: 1, fee: 0.0015, inceptYear: 2002, allowBackfill: true, proxyType: 'index_tracking' },
+      'TMF':  { name: 'Direxion 20+ Yr Bull 3x', base: 'TLT', leverage: 3, fee: 0.0101, inceptYear: 2009, allowBackfill: true, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
+      'GLD':  { name: 'SPDR Gold Shares', base: 'GC=F', leverage: 1, fee: 0.0040, inceptYear: 2004, allowBackfill: true, proxyType: 'index_tracking' },
+      'ARKK': { name: 'ARK Innovation ETF', base: null, leverage: 1, fee: 0.0075, inceptYear: 2014, allowBackfill: false, warningReason: '액티브 파괴적 혁신 종목 선별 전략으로 2014년 이전 백필 불가', proxyType: 'unsupported' },
+      'IWM':  { name: 'iShares Russell 2000 ETF', base: '^RUT', leverage: 1, fee: 0.0019, inceptYear: 2000, allowBackfill: true, proxyType: 'index_tracking' },
+      'XLK':  { name: 'Technology Select SPDR', base: null, leverage: 1, fee: 0.0010, inceptYear: 1998, allowBackfill: true, proxyType: 'direct' },
+      'XLE':  { name: 'Energy Select SPDR', base: null, leverage: 1, fee: 0.0010, inceptYear: 1998, allowBackfill: true, proxyType: 'direct' },
+      'XBI':  { name: 'SPDR S&P Biotech ETF', base: '^SPSIBI', leverage: 1, fee: 0.0035, inceptYear: 2006, allowBackfill: true, proxyType: 'index_tracking' }
     };
 
     // IndexedDB 캐싱 레이어 (24시간 TTL 적용)
@@ -279,7 +308,7 @@
           const tx = db.transaction(this.storeName, "readwrite");
           value.timestamp = Date.now();
           tx.objectStore(this.storeName).put(value, key);
-        } catch (e) { console.warn("Cache write error:", e); }
+        } catch (e) { console.warn("[Cache] Write error:", e); }
       }
     }
 
@@ -304,6 +333,7 @@
     class QROLSMatrixSolver {
       static solve(X_data, Y_data) {
         const m = X_data.length;
+        if (m === 0) return null;
         const n = X_data[0].length;
 
         const R = X_data.map(row => Array.from(row));
@@ -327,16 +357,16 @@
           v[0] = 1.0;
           for (let i = k + 1; i < m; i++) v[i - k] = R[i][k] / u1;
 
+          const tau = 2.0 / Math.max(1e-12, normU * normU);
+
           for (let j = k; j < n; j++) {
             let dot = 0;
             for (let i = k; i < m; i++) dot += v[i - k] * R[i][j];
-            const tau = 2.0 / (normU * normU);
             for (let i = k; i < m; i++) R[i][j] -= tau * v[i - k] * dot;
           }
 
           let dotB = 0;
           for (let i = k; i < m; i++) dotB += v[i - k] * Q_T_b[i];
-          const tau = 2.0 / (normU * normU);
           for (let i = k; i < m; i++) Q_T_b[i] -= tau * v[i - k] * dotB;
         }
 
@@ -351,7 +381,7 @@
       }
     }
 
-    // Web Worker 멀티스레딩 Stationary Bootstrap Engine Code
+    // Web Worker Stationary Bootstrap Engine
     const workerCode = `
       self.onmessage = function(e) {
         const { dailyReturns, monthlyCashFlows, iterations, meanBlockSize } = e.data;
@@ -403,18 +433,27 @@
       static runMonteCarloAsync(dailyReturns, monthlyCashFlows, iterations = 10000, onProgress = null) {
         return new Promise((resolve) => {
           const blob = new Blob([workerCode], { type: 'application/javascript' });
-          const worker = new Worker(URL.createObjectURL(blob));
+          const blobUrl = URL.createObjectURL(blob);
+          const worker = new Worker(blobUrl);
 
           worker.onmessage = (e) => {
             if (e.data.type === 'PROGRESS') {
               if (onProgress) onProgress(e.data.progress);
             } else if (e.data.type === 'COMPLETE') {
               worker.terminate();
+              URL.revokeObjectURL(blobUrl); // 🌟 메모리 누수 방지
               resolve(e.data.result);
             } else if (e.data.type === 'ERROR') {
               worker.terminate();
+              URL.revokeObjectURL(blobUrl);
               resolve(null);
             }
+          };
+
+          worker.onerror = () => {
+            worker.terminate();
+            URL.revokeObjectURL(blobUrl);
+            resolve(null);
           };
 
           worker.postMessage({
@@ -434,6 +473,7 @@
       }
 
       buy(shares, priceUsd, fxRate) {
+        if (shares <= 0 || priceUsd <= 0 || fxRate <= 0) return;
         const costBasisKrw = shares * priceUsd * fxRate;
         this.lots.push({ shares, priceUsd, fxRate, costBasisKrw });
       }
@@ -491,7 +531,7 @@
       }
     }
 
-    // Fetcher
+    // Yahoo Finance Fetcher (Multi-Proxy Failover)
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
         const cacheKey = `${ticker}_${startYear}_${endYear}_v12_3`;
@@ -510,7 +550,8 @@
         
         const proxies = [
           `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
-          `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
+          `https://corsproxy.org/?${encodeURIComponent(yahooUrl)}`
         ];
 
         for (const proxyUrl of proxies) {
@@ -532,6 +573,7 @@
             timestamps.forEach((ts, idx) => {
               const price = closes[idx];
               if (price !== null && price !== undefined && !isNaN(price)) {
+                // UTC 기준 YYYY-MM-DD 변환
                 const dateStr = new Date(ts * 1000).toISOString().split('T')[0];
                 priceMap.set(dateStr, price);
               }
@@ -544,12 +586,13 @@
               }
             });
 
-            await QuantDataCache.set(cacheKey, {
-              priceMapEntries: Array.from(priceMap.entries()),
-              divMapEntries: Array.from(divMap.entries())
-            });
-
-            return { priceMap, divMap };
+            if (priceMap.size > 0) {
+              await QuantDataCache.set(cacheKey, {
+                priceMapEntries: Array.from(priceMap.entries()),
+                divMapEntries: Array.from(divMap.entries())
+              });
+              return { priceMap, divMap };
+            }
           } catch (err) {
             console.warn(`[YahooFetcher] ${ticker} proxy failed, trying next...`);
           }
@@ -558,16 +601,14 @@
       }
     }
 
-    // Newton-Raphson + Bisection XIRR 연산 엔진
+    // Brent-Newton Hybrid XIRR Engine
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
         if (m === 0 || finalVal <= 0 || isNaN(finalVal)) return 0.0;
 
-        const t0 = new Date(dates[0]).getTime();
-        if (isNaN(t0)) return 0.0;
-
-        const daysArr = dates.map(d => (new Date(d).getTime() - t0) / (1000 * 3600 * 24));
+        const t0 = QuantUtils.parseDateUTC(dates[0]);
+        const daysArr = dates.map(d => (QuantUtils.parseDateUTC(d) - t0) / (1000 * 3600 * 24));
         const finalDay = daysArr[daysArr.length - 1];
 
         if (finalDay <= 0) return 0.0;
@@ -601,11 +642,11 @@
           r = rNext;
         }
 
-        let low = -0.50, high = 10.0;
+        let low = -0.90, high = 50.0;
         let fLow = f(low), fHigh = f(high);
 
         if (fLow * fHigh > 0) {
-          for (let h = 10.0; h <= 100.0; h *= 2) {
+          for (let h = 50.0; h <= 200.0; h *= 2) {
             if (f(h) * fLow < 0) { high = h; break; }
           }
         }
@@ -626,7 +667,7 @@
       }
     }
 
-    // Daily Reset Leveraged NAV Engine & Safe Backfilling
+    // Daily NAV Synthesis & Strategy Backfill Engine
     class MultiFactorSynthesisEngine {
       static process(rawDatasets, sortedDates) {
         const processedPrices = {};
@@ -648,7 +689,7 @@
             }
           }
 
-          if (firstInceptIdx > 0 && config.base && processedPrices[config.base]) {
+          if (config.allowBackfill && firstInceptIdx > 0 && config.base && processedPrices[config.base]) {
             const basePrices = processedPrices[config.base];
 
             for (let i = firstInceptIdx - 1; i >= 0; i--) {
@@ -670,25 +711,11 @@
                   const expenseDaily = (config.fee + trackingErr) / 252;
 
                   synthReturn = (lev * baseReturn) - repoCostDaily - expenseDaily;
-                } else if (config.proxyType === 'index_tracking') {
-                  // S&P 공식 발표 백테스트 지수(^SPXXMO) 기반 정밀 추정 (운용 수수료 차감)
-                  synthReturn = baseReturn - (config.fee / 252);
-                } else if (config.proxyType === 'momentum_factor') {
-                  const dailyAlpha = (config.momAlpha || 0.038) / 252;
-                  const momMult = baseReturn >= 0 ? 1.10 : 0.90;
-                  synthReturn = (baseReturn * momMult) + dailyAlpha - (config.fee / 252);
-                } else if (config.proxyType === 'covered_call') {
-                  const dailyCap = (config.capMonthly || 0.018) / 21;
-                  synthReturn = Math.min(baseReturn * (config.leverage || 0.75), dailyCap) - (config.fee / 252);
-                } else if (config.proxyType === 'quality_dividend') {
-                  synthReturn = baseReturn * (config.beta || 0.82) - (config.fee / 252);
-                } else if (config.proxyType === 'high_beta') {
-                  synthReturn = baseReturn * (config.volFactor || 1.4) - (config.fee / 252);
                 } else {
                   synthReturn = baseReturn - (config.fee / 252);
                 }
 
-                priceArr[i] = priceArr[i + 1] / Math.max(0.001, 1 + synthReturn);
+                priceArr[i] = priceArr[i + 1] / Math.max(0.0001, 1 + synthReturn);
               } else {
                 priceArr[i] = priceArr[i + 1] || 1.0;
               }
@@ -696,7 +723,8 @@
           }
 
           let lastP = 0;
-          for (let i = 0; i < N; i++) {
+          const startIdx = config.allowBackfill ? 0 : (firstInceptIdx >= 0 ? firstInceptIdx : 0);
+          for (let i = startIdx; i < N; i++) {
             if (priceArr[i] > 0) lastP = priceArr[i];
             else if (lastP > 0) priceArr[i] = lastP;
           }
@@ -709,7 +737,7 @@
       }
     }
 
-    // Fama-French 4-Factor QR-OLS Solver
+    // Fama-French 4-Factor QR OLS Solver
     class FamaFrenchEngine {
       static solve(portDailyReturns, processedData, dates) {
         const N = portDailyReturns.length;
@@ -758,7 +786,7 @@
           ssTot += Math.pow(Y[i] - meanY, 2);
           ssRes += Math.pow(Y[i] - yPred, 2);
         }
-        const rSquared = ssTot > 0 ? 1.0 - (ssRes / ssTot) : 0.0;
+        const rSquared = ssTot > 0 ? Math.max(0, 1.0 - (ssRes / ssTot)) : 0.0;
 
         return {
           alpha: alphaAnn,
@@ -771,11 +799,11 @@
       }
     }
 
-    // Institutional Risk Metrics Engine
+    // Institutional Analytics Engine
     class InstitutionalAnalyticsEngine {
       static analyze(portDailyReturns, marketDailyReturns, dates) {
         const len = Math.min(portDailyReturns.length, marketDailyReturns.length);
-        if (len === 0) return { sharpe: 0, sortino: 0, treynor: 0, omega: 0, painRatio: 0, cvar95: 0, ulcerIndex: 0, trackingError: 0, informationRatio: 0 };
+        if (len === 0) return { sharpe: 0, sortino: 0, treynor: 0, omega: 0, trackingError: 0, informationRatio: 0, cvar95: 0 };
 
         const excessPortReturns = new Float64Array(len);
         const excessMarketReturns = new Float64Array(len);
@@ -891,7 +919,7 @@
       }
     }
 
-    // 백테스트 연산 엔진
+    // 메인 백테스트 엔진
     class QuantBacktestEngine {
       static async runAsync(sortedDates, tickers, processedData, fxData, monthlyKrw, fxSpreadRate, taxEnabled, onProgress = null) {
         const N = sortedDates.length;
@@ -1013,7 +1041,6 @@
 
             let currentValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
 
-            // 연말 과세 정산
             if (taxEnabled && isYearEnd[i] && i < N - 1 && taxLotMgr.getTotalShares() > 0 && priceUsd > 0) {
               const totalCostBasis = taxLotMgr.getTotalCostBasisKrw();
               const unrealizedGain = currentValKrw - totalCostBasis;
@@ -1034,13 +1061,12 @@
               currentValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
             }
 
-            portfolioValues[i] = currentValKrw;
+            portfolioValues[i] = Math.max(0, currentValKrw);
             investedSeries[i] = investedKrw;
           }
 
           let finalVal = portfolioValues[N - 1];
 
-          // 최종일 통합 과세 정산
           if (taxEnabled && taxLotMgr.getTotalShares() > 0) {
             const finalCostBasis = taxLotMgr.getTotalCostBasisKrw();
             const finalUnrealizedGain = Math.max(0, finalVal - finalCostBasis);
@@ -1058,8 +1084,8 @@
           
           const annualizedXIRR = BrentXIRRSolver.computeXIRR(monthlyCashFlows, finalVal, cashFlowDates);
 
-          const startMs = new Date(sortedDates[0]).getTime();
-          const endMs = new Date(sortedDates[N - 1]).getTime();
+          const startMs = QuantUtils.parseDateUTC(sortedDates[0]);
+          const endMs = QuantUtils.parseDateUTC(sortedDates[N - 1]);
           const elapsedCalendarDays = (endMs - startMs) / (1000 * 3600 * 24);
 
           const finalPortTwr = portTwrSeries[N - 1];
@@ -1135,6 +1161,7 @@
       }
     }
 
+    // UI 컨트롤러
     class UIController {
       static selectedTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
       static chartInstance = null;
@@ -1149,7 +1176,6 @@
         this.runBacktest();
       }
 
-      // 🌟 모바일 대응 팝업 알림창 함수
       static showMetricInfo(title, description) {
         alert(`[${title}]\n\n${description}`);
       }
@@ -1176,7 +1202,6 @@
         }
       }
 
-      // 🌟 자산 선택 모달 내 실제 상장 연도 태그 렌더링
       static renderModalCheckboxes() {
         const grid = document.getElementById('modalCheckboxGrid');
         const fragment = document.createDocumentFragment();
@@ -1189,12 +1214,16 @@
             isChecked ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300' : 'bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700'
           }`;
           
+          const backfillTag = item.allowBackfill 
+            ? `<span class="text-[9px] bg-cyan-950 text-cyan-400 px-1 rounded font-semibold">${item.inceptYear}년전 전략지수 백필</span>`
+            : `<span class="text-[9px] bg-rose-950 text-rose-400 px-1 rounded font-semibold">${item.inceptYear}년전 현금보유</span>`;
+
           label.innerHTML = `
             <input type="checkbox" id="chk-${ticker}" value="${ticker}" ${isChecked ? 'checked' : ''} onchange="UIController.toggleTicker('${ticker}')" class="accent-emerald-500">
             <div class="truncate w-full">
               <div class="flex items-center justify-between gap-1">
                 <span class="font-bold text-slate-200">${ticker}</span>
-                <span class="text-[9px] bg-slate-800 text-slate-400 px-1 rounded font-semibold">${item.inceptYear}년 상장</span>
+                ${backfillTag}
               </div>
               <span class="text-[10px] text-slate-500 truncate block">${item.name}</span>
             </div>
@@ -1208,14 +1237,12 @@
 
       static toggleTicker(ticker) {
         const idx = this.selectedTickers.indexOf(ticker);
-        const label = document.getElementById(`label-chk-${ticker}`);
         if (idx > -1) {
           this.selectedTickers.splice(idx, 1);
-          if (label) label.className = 'flex items-center gap-2 p-2 rounded border cursor-pointer transition bg-slate-950 border-slate-800 text-slate-500 hover:border-slate-700';
         } else {
           this.selectedTickers.push(ticker);
-          if (label) label.className = 'flex items-center gap-2 p-2 rounded border cursor-pointer transition bg-emerald-950/60 border-emerald-500/80 text-emerald-300';
         }
+        this.renderModalCheckboxes();
         this.updateActiveChips();
       }
 
@@ -1306,7 +1333,10 @@
         if (this.selectedTickers.length === 0) {
           document.getElementById('summaryCards').innerHTML = '';
           document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="15" class="px-4 py-6 text-center text-rose-400">분석 대상 자산을 지정하십시오.</td></tr>`;
-          if (this.chartInstance) this.chartInstance.destroy();
+          if (this.chartInstance) {
+            this.chartInstance.destroy();
+            this.chartInstance = null;
+          }
           return;
         }
 
@@ -1319,7 +1349,8 @@
         requiredSet.add('SCHD');
         requiredSet.add('SPMO');
         this.selectedTickers.forEach(t => {
-          if (TICKER_UNIVERSE[t]?.base) requiredSet.add(TICKER_UNIVERSE[t].base);
+          const cfg = TICKER_UNIVERSE[t];
+          if (cfg?.base) requiredSet.add(cfg.base);
         });
         const fullTickers = Array.from(requiredSet);
 
@@ -1426,7 +1457,6 @@
         }
       }
 
-      // 🌟 대시보드 및 결과 데이터 테이블 렌더링 (실제 상장 vs 추정 백필 구분 뱃지 추가)
       static renderDashboard(results, sortedDates, taxEnabled) {
         const startYear = parseInt(document.getElementById('startYear').value, 10);
         document.getElementById('thFinalVal').innerText = taxEnabled ? '실제 세후 평가금' : '세전 최종 평가금';
@@ -1443,7 +1473,7 @@
         invCard.innerHTML = `
           <span class="text-xs text-slate-500 font-bold block">총 원금 (Principal)</span>
           <div class="text-lg sm:text-xl font-bold mt-1 text-slate-200">
-            ${(Math.round(results[firstTicker].investedKrw / 10000)).toLocaleString()}만 원
+            ${QuantUtils.formatKRW(results[firstTicker].investedKrw)}
           </div>
         `;
         cardsContainer.appendChild(invCard);
@@ -1454,7 +1484,7 @@
           card.innerHTML = `
             <span class="text-xs text-slate-400 font-bold block truncate">${res.name}</span>
             <div class="text-sm font-bold mt-1 truncate" style="color: ${palette[idx % palette.length]}">
-              ${(Math.round(res.finalVal / 10000)).toLocaleString()}만 원 (${res.cumulativeReturn >= 0 ? '+' : ''}${res.cumulativeReturn.toFixed(1)}%)
+              ${QuantUtils.formatKRW(res.finalVal)} (${res.cumulativeReturn >= 0 ? '+' : ''}${res.cumulativeReturn.toFixed(1)}%)
             </div>
             <div class="text-xs font-semibold text-cyan-400 mt-0.5">
               적립식 실질 연수익률: ${res.annualizedXIRR >= 0 ? '+' : ''}${res.annualizedXIRR.toFixed(2)}%/년
@@ -1483,12 +1513,18 @@
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
         for (const [ticker, res] of Object.entries(results)) {
-          const inceptYear = TICKER_UNIVERSE[ticker]?.inceptYear || 2000;
+          const config = TICKER_UNIVERSE[ticker];
+          const inceptYear = config?.inceptYear || 2000;
           const isBackfilled = startYear < inceptYear;
 
-          const backfillBadge = isBackfilled 
-            ? `<span class="text-[9px] bg-amber-950/80 text-amber-400 px-1 py-0.5 rounded border border-amber-800/50" title="실제 데이터: ${inceptYear}년~ / 이전 구간: 추정 백필">실제 ${inceptYear}년~ (이전 추정)</span>`
-            : `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50">실제 데이터 100%</span>`;
+          let backfillBadge = '';
+          if (!isBackfilled) {
+            backfillBadge = `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50">실제 데이터 100%</span>`;
+          } else if (config.allowBackfill) {
+            backfillBadge = `<span class="text-[9px] bg-cyan-950/80 text-cyan-300 px-1 py-0.5 rounded border border-cyan-800/50" title="공식 전략 지수 기반 정밀 백필 완료">전략지수 백필 (${inceptYear}년전)</span>`;
+          } else {
+            backfillBadge = `<span class="text-[9px] bg-rose-950/80 text-rose-300 px-1 py-0.5 rounded border border-rose-800/50" title="${config.warningReason}">⚠️ 백필 제한 (${inceptYear}년전 현금보유)</span>`;
+          }
 
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-800/40 border-b border-slate-800/60';
@@ -1503,8 +1539,8 @@
                 <span class="text-[10px] text-slate-500 font-normal truncate">${res.name}</span>
               </div>
             </td>
-            <td class="px-3 py-3">${Math.round(res.investedKrw).toLocaleString()}원</td>
-            <td class="px-3 py-3 font-bold text-emerald-400">${Math.round(res.finalVal).toLocaleString()}원</td>
+            <td class="px-3 py-3">${QuantUtils.formatKRW(res.investedKrw)}</td>
+            <td class="px-3 py-3 font-bold text-emerald-400">${QuantUtils.formatKRW(res.finalVal)}</td>
             <td class="px-3 py-3 ${res.annualizedXIRR >= 0 ? 'text-cyan-400' : 'text-blue-400'} font-bold">${res.annualizedXIRR >= 0 ? '+' : ''}${res.annualizedXIRR.toFixed(2)}%</td>
             <td class="px-3 py-3 font-semibold text-slate-300">${res.twrCagr.toFixed(2)}%</td>
             <td class="px-3 py-3 font-semibold text-slate-300">${res.sharpe.toFixed(2)}</td>
@@ -1530,7 +1566,10 @@
 
       static renderChart(results, sortedDates) {
         const ctx = document.getElementById('quantChart').getContext('2d');
-        if (this.chartInstance) this.chartInstance.destroy();
+        if (this.chartInstance) {
+          this.chartInstance.destroy();
+          this.chartInstance = null;
+        }
 
         const palette = ['#34d399', '#60a5fa', '#f59e0b', '#f87171', '#c084fc', '#fb923c'];
         const firstTicker = Object.keys(results)[0];
@@ -1560,7 +1599,7 @@
               sampledData.push(Math.max(1, res.portfolioValues[i]));
             }
             datasets.push({
-              label: `${ticker} (적립식 실질 연수익률: ${res.annualizedXIRR.toFixed(1)}%)`,
+              label: `${ticker} (XIRR: ${res.annualizedXIRR.toFixed(1)}%)`,
               data: sampledData,
               borderColor: palette[idx % palette.length],
               borderWidth: 1.8,
@@ -1582,7 +1621,7 @@
                   grid: { color: '#1e293b' }, 
                   ticks: { 
                     color: '#64748b', 
-                    callback: (val) => val >= 1e8 ? (val/1e8).toFixed(1)+'억' : (val>=1e4 ? Math.round(val/1e4).toLocaleString()+'만' : val)
+                    callback: (val) => QuantUtils.formatKRW(val)
                   } 
                 }
               },
@@ -1594,11 +1633,10 @@
           const datasets = [];
           Object.entries(results).forEach(([ticker, res], idx) => {
             if (!res.rollingSharpe || res.rollingSharpe.length === 0) return;
-            const labels = res.rollingSharpe.map(r => r.date);
             const data = res.rollingSharpe.map(r => r.sharpe);
 
             datasets.push({
-              label: `${ticker} (3년 단위 위험 대비 가성비 추이)`,
+              label: `${ticker} (3년 단위 위험 대비 가성비)`,
               data: data,
               borderColor: palette[idx % palette.length],
               borderWidth: 1.8,
@@ -1654,7 +1692,7 @@
                   grid: { color: '#1e293b' }, 
                   ticks: { 
                     color: '#64748b',
-                    callback: (val) => val >= 1e8 ? (val/1e8).toFixed(1)+'억' : (val>=1e4 ? Math.round(val/1e4).toLocaleString()+'만' : val)
+                    callback: (val) => QuantUtils.formatKRW(val)
                   } 
                 }
               },
