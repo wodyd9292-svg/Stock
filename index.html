@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    /* Custom Scrollbar for visual touch */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #020617; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
@@ -17,7 +16,6 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono select-none">
 
   <div class="max-w-7xl mx-auto space-y-5">
-    <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
@@ -33,7 +31,6 @@
       </div>
     </header>
 
-    <!-- 초보자용 3초 핵심 지표 쉬운 말 가이드 -->
     <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 sm:p-4 space-y-2 text-xs">
       <div class="flex justify-between items-center cursor-pointer" onclick="UIController.toggleBeginnerGuide()">
         <span class="font-bold text-emerald-400 flex items-center gap-1.5">
@@ -44,20 +41,19 @@
       <div id="beginnerGuideContent" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-slate-300 border-t border-slate-800">
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
           <span class="font-bold text-cyan-400 block mb-1">📈 적립식 실질 연수익률 (XIRR)</span>
-          매달 꼬박꼬박 돈을 나누어 적립한 <span class="text-emerald-300 font-semibold">내 실제 적립식 복리 수익률</span>입니다.
+          매달 나누어 적립한 <span class="text-emerald-300 font-semibold">실제 현금흐름 기준 복리 연수익률</span>입니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
           <span class="font-bold text-amber-400 block mb-1">⚖️ 위험 대비 가성비 (샤프 지수)</span>
-          주가 출렁임을 견딘 대가로 수익을 얼마나 얻었는지 보여주는 <span class="text-emerald-300 font-semibold">가성비 지수</span>입니다. (1.0 이상 우수)
+          총 변동성 위험 1단위 대비 초과 수익 성능을 측정합니다. (1.0 이상 우수)
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
           <span class="font-bold text-rose-400 block mb-1">🛡️ 역대 최대 계좌 하락 폭 (MDD)</span>
-          투자 기간 중 계좌가 <span class="text-emerald-300 font-semibold">가장 크게 박살 났을 때의 폭락 비율</span>입니다.
+          전체 검증 기간 중 고점 대비 발생한 <span class="text-emerald-300 font-semibold">최대 손실 비율</span>입니다.
         </div>
       </div>
     </div>
 
-    <!-- 제어 파라미터 패널 -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900 p-4 rounded-xl border border-slate-800">
       <div>
         <label for="startYear" class="block text-xs font-semibold text-slate-400 mb-1">시작 연도</label>
@@ -94,7 +90,6 @@
       </div>
     </div>
 
-    <!-- 진행바 모듈 -->
     <div id="progressContainer" class="hidden bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-1.5">
       <div class="flex justify-between text-xs text-slate-400">
         <span id="progressLabel">데이터 로딩 중...</span>
@@ -105,7 +100,6 @@
       </div>
     </div>
 
-    <!-- 종목 셀렉터 모듈 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <span class="text-xs font-semibold text-slate-300">
@@ -118,7 +112,6 @@
       <div id="activeChips" class="flex flex-wrap gap-1.5"></div>
     </div>
 
-    <!-- 종목 선택 모달 -->
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
@@ -141,10 +134,8 @@
       </div>
     </div>
 
-    <!-- 대시보드 요약 카드 -->
     <div id="summaryCards" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
-    <!-- 차트 탭 전환 및 메인 시계열 차트 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center flex-wrap gap-2">
         <div class="flex gap-2">
@@ -159,7 +150,6 @@
       </div>
     </div>
 
-    <!-- 요인 분석 테이블 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Proxy Matrix)</h3>
@@ -185,7 +175,6 @@
       </div>
     </div>
 
-    <!-- 성과 정량 데이터 종합 테이블 -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
       <table class="w-full text-xs text-left text-slate-300 min-w-[1600px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
@@ -217,7 +206,6 @@
   <script>
     'use strict';
 
-    // 🌟 글로벌 유틸리티 모듈
     class QuantUtils {
       static formatKRW(val) {
         if (isNaN(val) || val === null) return '0원';
@@ -239,7 +227,6 @@
       }
     }
 
-    // 🌟 티커 유니버스 매핑
     const TICKER_UNIVERSE = {
       'QQQ':  { name: 'Invesco QQQ Trust', base: '^NDX', leverage: 1, fee: 0.0020, inceptYear: 1999, allowBackfill: true, proxyType: 'index_tracking' },
       'QLD':  { name: 'ProShares Ultra QQQ (2x)', base: 'QQQ', leverage: 2, fee: 0.0095, inceptYear: 2006, allowBackfill: true, trackingError: 0.002, swapSpread: 0.0045, proxyType: 'leveraged' },
@@ -263,7 +250,6 @@
       'XBI':  { name: 'SPDR S&P Biotech ETF', base: '^SPSIBI', leverage: 1, fee: 0.0035, inceptYear: 2006, allowBackfill: true, proxyType: 'index_tracking' }
     };
 
-    // IndexedDB 캐싱 레이어 (24시간 TTL 적용)
     class QuantDataCache {
       static dbName = "QuantBacktestCacheDB_v12_3";
       static storeName = "timeSeriesStore";
@@ -312,7 +298,6 @@
       }
     }
 
-    // 미 연준 Dynamic SOFR 시계열
     class HistoricalInterestRates {
       static getSOFR(year) {
         if (year >= 2025) return 0.041;
@@ -329,7 +314,6 @@
       }
     }
 
-    // Householder QR Decomposition OLS Matrix Solver
     class QROLSMatrixSolver {
       static solve(X_data, Y_data) {
         const m = X_data.length;
@@ -371,17 +355,18 @@
         }
 
         const x = new Float64Array(n);
+        const RIDGE_DAMPING = 1e-12;
         for (let i = n - 1; i >= 0; i--) {
           let sum = Q_T_b[i];
           for (let j = i + 1; j < n; j++) sum -= R[i][j] * x[j];
-          x[i] = Math.abs(R[i][i]) > 1e-12 ? sum / R[i][i] : 0;
+          const denom = R[i][i] + (R[i][i] >= 0 ? RIDGE_DAMPING : -RIDGE_DAMPING);
+          x[i] = sum / denom;
         }
 
         return x;
       }
     }
 
-    // Web Worker Stationary Bootstrap Engine
     const workerCode = `
       self.onmessage = function(e) {
         const { dailyReturns, monthlyCashFlows, iterations, meanBlockSize } = e.data;
@@ -466,7 +451,6 @@
       }
     }
 
-    // FIFO Tax Lot 엔진
     class FIFOTaxLotManager {
       constructor() {
         this.lots = [];
@@ -531,7 +515,6 @@
       }
     }
 
-    // Yahoo Finance Fetcher (Multi-Proxy Failover)
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
         const cacheKey = `${ticker}_${startYear}_${endYear}_v12_3`;
@@ -600,7 +583,6 @@
       }
     }
 
-    // Brent-Newton Hybrid XIRR Engine
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
@@ -613,7 +595,7 @@
         if (finalDay <= 0) return 0.0;
 
         const f = (r) => {
-          if (r <= -0.99) return 1e12;
+          if (r <= -0.9999) return 1e12;
           let val = -finalVal / Math.pow(1 + r, finalDay / 365.25);
           for (let k = 0; k < m; k++) {
             val += cashFlows[k] / Math.pow(1 + r, daysArr[k] / 365.25);
@@ -622,7 +604,7 @@
         };
 
         const df = (r) => {
-          if (r <= -0.99) return -1e12;
+          if (r <= -0.9999) return -1e12;
           let deriv = (finalDay / 365.25) * finalVal / Math.pow(1 + r, (finalDay / 365.25) + 1);
           for (let k = 0; k < m; k++) {
             deriv -= (daysArr[k] / 365.25) * cashFlows[k] / Math.pow(1 + r, (daysArr[k] / 365.25) + 1);
@@ -636,12 +618,12 @@
           let dy = df(r);
           if (Math.abs(dy) < 1e-12) break;
           let rNext = r - y / dy;
-          if (rNext <= -0.90) rNext = -0.50;
+          if (rNext <= -0.99) rNext = -0.50;
           if (Math.abs(rNext - r) < 1e-6) return rNext * 100.0;
           r = rNext;
         }
 
-        let low = -0.90, high = 50.0;
+        let low = -0.99, high = 50.0;
         let fLow = f(low), fHigh = f(high);
 
         if (fLow * fHigh > 0) {
@@ -666,7 +648,6 @@
       }
     }
 
-    // Daily NAV Synthesis & Strategy Backfill Engine
     class MultiFactorSynthesisEngine {
       static process(rawDatasets, sortedDates) {
         const processedPrices = {};
@@ -697,8 +678,8 @@
               const basePrev = basePrices[i];
 
               if (baseCurr > 0 && basePrev > 0) {
-                const baseReturn = (baseCurr - basePrev) / basePrev;
-                let synthReturn = 0.0;
+                const logBaseReturn = Math.log(baseCurr / basePrev);
+                let synthLogReturn = 0.0;
 
                 if (config.proxyType === 'leveraged') {
                   const sofr = HistoricalInterestRates.getSOFR(year);
@@ -709,16 +690,15 @@
                   const repoCostDaily = (Math.abs(lev - 1) * (sofr + swapSpread)) / 252;
                   const expenseDaily = (config.fee + trackingErr) / 252;
 
-                  synthReturn = (lev * baseReturn) - repoCostDaily - expenseDaily;
+                  synthLogReturn = (lev * logBaseReturn) - repoCostDaily - expenseDaily;
                 } else {
-                  synthReturn = baseReturn - (config.fee / 252);
+                  synthLogReturn = logBaseReturn - (config.fee / 252);
                 }
 
-                // 💥 [수정 완료] 주가가 0 이하/0 근처로 붕괴하지 않도록 최소 $0.01 Floor 설정
-                const nextPrice = priceArr[i + 1] / Math.max(0.0001, 1 + synthReturn);
-                priceArr[i] = Math.max(0.01, nextPrice);
+                const prevPrice = priceArr[i + 1] * Math.exp(-synthLogReturn);
+                priceArr[i] = Math.max(0.001, prevPrice);
               } else {
-                priceArr[i] = Math.max(0.01, priceArr[i + 1] || 1.0);
+                priceArr[i] = Math.max(0.001, priceArr[i + 1] || 1.0);
               }
             }
           }
@@ -738,7 +718,6 @@
       }
     }
 
-    // Fama-French 4-Factor QR OLS Solver
     class FamaFrenchEngine {
       static solve(portDailyReturns, processedData, dates) {
         const N = portDailyReturns.length;
@@ -800,7 +779,6 @@
       }
     }
 
-    // Institutional Analytics Engine
     class InstitutionalAnalyticsEngine {
       static analyze(portDailyReturns, marketDailyReturns, dates) {
         const len = Math.min(portDailyReturns.length, marketDailyReturns.length);
@@ -913,7 +891,6 @@
           for (let k = 0; k < windowSize; k++) varP += Math.pow((sub[k] - rfDaily) - meanP, 2);
           const vol = Math.sqrt((varP / windowSize) * 252);
 
-          // 💥 [수정 완료] 수치 이상치 및 NaN/Infinity 예외 처리
           const sh = (vol > 1e-6 && !isNaN(vol) && isFinite(vol)) ? (meanP * 252) / vol : 0;
           rolling.push({ date: dates[i], sharpe: sh });
         }
@@ -921,7 +898,6 @@
       }
     }
 
-    // 메인 백테스트 엔진
     class QuantBacktestEngine {
       static async runAsync(sortedDates, tickers, processedData, fxData, monthlyKrw, fxSpreadRate, taxEnabled, onProgress = null) {
         const N = sortedDates.length;
@@ -1092,7 +1068,7 @@
           const elapsedCalendarDays = (endMs - startMs) / (1000 * 3600 * 24);
 
           const finalPortTwr = portTwrSeries[N - 1];
-          const twrCagr = (Math.pow(finalPortTwr, 365.25 / Math.max(1, elapsedCalendarDays)) - 1) * 100.0;
+          const twrCagr = (Math.pow(Math.max(1e-6, finalPortTwr), 365.25 / Math.max(1, elapsedCalendarDays)) - 1) * 100.0;
 
           const portDailyReturns = new Float64Array(N - 1);
           let twrPeak = 0.0, twrMdd = 0.0;
@@ -1103,7 +1079,6 @@
             const dd = twrPeak > 0 ? (val - twrPeak) / twrPeak : 0;
             if (dd < twrMdd) twrMdd = dd;
 
-            // 💥 [수정 완료] TWR 기반 일간 수익률 계산시 극단값 / 0나누기 캡핑 예외 처리
             if (i > 0) {
               const prevTwr = portTwrSeries[i - 1];
               if (prevTwr > 1e-6) {
@@ -1171,7 +1146,6 @@
       }
     }
 
-    // UI 컨트롤러
     class UIController {
       static selectedTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
       static chartInstance = null;
