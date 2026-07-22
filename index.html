@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v11.6 Ultimate Enterprise</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v12.0 Ultimate Enterprise</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -13,9 +13,11 @@
     <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
-        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400">🏛️ Institutional Quant DCA Engine v11.6 Ultimate</h1>
+        <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.0 Pro</span>
+        </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Householder QR OLS · Stationary Bootstrap Monte Carlo · Dynamic SOFR $r_f$ · Robust Brent XIRR
+          Householder QR OLS · True Parallel Stationary Bootstrap · Dynamic SOFR · 24H TTL Cache Engine
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -23,6 +25,30 @@
         <span id="statusText">Engine Standby</span>
       </div>
     </header>
+
+    <!-- 💡 초보자용 3초 핵심 지표 쉬운 말 가이드 -->
+    <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 sm:p-4 space-y-2 text-xs">
+      <div class="flex justify-between items-center cursor-pointer" onclick="UIController.toggleBeginnerGuide()">
+        <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+          💡 퀀트 용어가 어려우신가요? (초보자 3초 핵심 가이드)
+        </span>
+        <span id="guideToggleIcon" class="text-slate-400 font-bold">▲ 접기</span>
+      </div>
+      <div id="beginnerGuideContent" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-slate-300 border-t border-slate-800">
+        <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
+          <span class="font-bold text-cyan-400 block mb-1">📈 Brent XIRR (실질 연수익률)</span>
+          매달 꼬박꼬박 돈을 나누어 적립한 <span class="text-emerald-300 font-semibold">내 진짜 적립식 복리 수익률</span>입니다. 가장 먼저 확인해야 할 핵심 지표입니다.
+        </div>
+        <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
+          <span class="font-bold text-amber-400 block mb-1">⚖️ Sharpe Ratio (위험 대비 가성비)</span>
+          주가 출렁임을 견딘 대가로 수익을 얼마나 얻었는지 보여주는 <span class="text-emerald-300 font-semibold">가성비 지수</span>입니다. **1.0 이상**이면 매우 우수한 자산입니다.
+        </div>
+        <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
+          <span class="font-bold text-rose-400 block mb-1">🛡️ Port MDD (최대 계좌 하락 폭)</span>
+          투자 기간 중 계좌가 <span class="text-emerald-300 font-semibold">가장 비참하게 박살 났을 때의 폭락 비율</span>입니다. 내가 이 멘탈 고통을 견딜 수 있는지 판단해 줍니다.
+        </div>
+      </div>
+    </div>
 
     <!-- 제어 파라미터 패널 -->
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-slate-900 p-4 rounded-xl border border-slate-800">
@@ -56,7 +82,7 @@
       </div>
       <div class="col-span-2 sm:col-span-1 flex items-end">
         <button onclick="UIController.runBacktest()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
-          v11.6 시뮬레이션 실행
+          v12.0 시뮬레이션 실행
         </button>
       </div>
     </div>
@@ -134,12 +160,12 @@
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
             <tr>
               <th class="px-3 py-2.5">Ticker</th>
-              <th class="px-3 py-2.5 text-purple-400">FF $\alpha$ (Ann.)</th>
-              <th class="px-3 py-2.5">MKT Beta ($\beta_{MKT}$)</th>
-              <th class="px-3 py-2.5 text-emerald-400">Size Beta ($\beta_{SMB}$)</th>
-              <th class="px-3 py-2.5 text-amber-400">Value Beta ($\beta_{HML}$)</th>
-              <th class="px-3 py-2.5 text-cyan-400">Momentum Beta ($\beta_{MOM}$)</th>
-              <th class="px-3 py-2.5">$R^2$ (Factor Fit)</th>
+              <th class="px-3 py-2.5 text-purple-400 cursor-help" title="FF 알파: 시장 대비 순수하게 자산 자체 성질로 올린 추가 초과 수익률">FF $\alpha$ (Ann.) ℹ️</th>
+              <th class="px-3 py-2.5 cursor-help" title="MKT 베타: 시장(S&P500) 대비 주가 민감도 (1.0 = 시장과 동일)">MKT Beta ($\beta_{MKT}$) ℹ️</th>
+              <th class="px-3 py-2.5 text-emerald-400 cursor-help" title="Size 베타: 소형주 특성 노출도">Size Beta ($\beta_{SMB}$) ℹ️</th>
+              <th class="px-3 py-2.5 text-amber-400 cursor-help" title="Value 베타: 가치주/저평가주 성향 노출도">Value Beta ($\beta_{HML}$) ℹ️</th>
+              <th class="px-3 py-2.5 text-cyan-400 cursor-help" title="Momentum 베타: 상승 모멘텀 추종 성향 노출도">Momentum Beta ($\beta_{MOM}$) ℹ️</th>
+              <th class="px-3 py-2.5 cursor-help" title="설명력(R^2): 이 모델이 자산의 움직임을 얼마나 잘 설명하는지 (1.0에 가까울수록 완벽)">$R^2$ (Factor Fit) ℹ️</th>
             </tr>
           </thead>
           <tbody id="ffTableBody" class="divide-y divide-slate-800/60">
@@ -157,18 +183,18 @@
             <th class="px-3 py-3">Ticker</th>
             <th class="px-3 py-3">총 원금</th>
             <th class="px-3 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
-            <th class="px-3 py-3 text-cyan-400">Brent XIRR</th>
-            <th class="px-3 py-3">TWR CAGR</th>
-            <th class="px-3 py-3">Sharpe ($r_f$ Dynamic)</th>
-            <th class="px-3 py-3 text-amber-400">Sortino</th>
-            <th class="px-3 py-3 text-cyan-300">Treynor Ratio</th>
-            <th class="px-3 py-3 text-emerald-300">Omega Ratio</th>
-            <th class="px-3 py-3 text-rose-300">Pain Ratio</th>
-            <th class="px-3 py-3">Tracking Error</th>
-            <th class="px-3 py-3">Info Ratio</th>
-            <th class="px-3 py-3 text-rose-300">Ulcer Index</th>
-            <th class="px-3 py-3 text-rose-400">CVaR (95%)</th>
-            <th class="px-3 py-3 text-rose-500">Port MDD</th>
+            <th class="px-3 py-3 text-cyan-400 cursor-help" title="Brent XIRR: 매달 적립 투자를 감안한 내 실질 복리 연수익률">Brent XIRR ℹ️</th>
+            <th class="px-3 py-3 cursor-help" title="TWR CAGR: 자산 자체의 순수 연평균 성장률">TWR CAGR ℹ️</th>
+            <th class="px-3 py-3 cursor-help" title="Sharpe Ratio: 변동성 위험 1단위 대비 얻은 수익 (가성비 지수, 1.0 이상 우수)">Sharpe ($r_f$ Dynamic) ℹ️</th>
+            <th class="px-3 py-3 text-amber-400 cursor-help" title="Sortino Ratio: 하락 위험만을 깐깐하게 반영한 위험 대비 가성비">Sortino ℹ️</th>
+            <th class="px-3 py-3 text-cyan-300 cursor-help" title="Treynor Ratio: 시장 위험(베타) 1단위당 초과 수익률">Treynor Ratio ℹ️</th>
+            <th class="px-3 py-3 text-emerald-300 cursor-help" title="Omega Ratio: 손실 가능성 대비 수익 가능성의 비율 (1.0 이상 우수)">Omega Ratio ℹ️</th>
+            <th class="px-3 py-3 text-rose-300 cursor-help" title="Pain Ratio: 계좌가 깎이고 지루하게 빌빌거린 멘탈 고통 대비 수익 성과">Pain Ratio ℹ️</th>
+            <th class="px-3 py-3 cursor-help" title="Tracking Error: 추종 대상과 비교해 얼마나 벗어나는지 오차율">Tracking Error ℹ️</th>
+            <th class="px-3 py-3 cursor-help" title="Information Ratio: 벤치마크 대비 적극적 운용으로 올린 가성비">Info Ratio ℹ️</th>
+            <th class="px-3 py-3 text-rose-300 cursor-help" title="Ulcer Index (궤양 지수): 하락 깊이와 지속 기간을 반영한 마음 고통 수치 (낮을수록 좋음)">Ulcer Index ℹ️</th>
+            <th class="px-3 py-3 text-rose-400 cursor-help" title="CVaR 95%: 리먼사태 같은 최악의 폭락장에서 예상되는 하루 최대 손실">CVaR (95%) ℹ️</th>
+            <th class="px-3 py-3 text-rose-500 cursor-help" title="Port MDD: 역사상 계좌가 가장 크게 박살 났을 때의 폭락률">Port MDD ℹ️</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
@@ -205,10 +231,11 @@
       'XBI':  { name: 'SPDR S&P Biotech ETF', base: 'IWM', leverage: 1, fee: 0.0035, proxyType: 'direct' }
     };
 
-    // IndexedDB 캐싱 레이어
+    // IndexedDB 캐싱 레이어 (24시간 TTL 만료 적용)
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v11_6";
+      static dbName = "QuantBacktestCacheDB_v12_0";
       static storeName = "timeSeriesStore";
+      static TTL_MS = 24 * 60 * 60 * 1000; // 24시간 후 데이터 자동 만료
 
       static async openDB() {
         return new Promise((resolve, reject) => {
@@ -230,7 +257,14 @@
           return new Promise((resolve) => {
             const tx = db.transaction(this.storeName, "readonly");
             const req = tx.objectStore(this.storeName).get(key);
-            req.onsuccess = () => resolve(req.result || null);
+            req.onsuccess = () => {
+              const res = req.result;
+              if (res && res.timestamp && (Date.now() - res.timestamp < this.TTL_MS)) {
+                resolve(res);
+              } else {
+                resolve(null); // 만료되거나 없으면 null
+              }
+            };
             req.onerror = () => resolve(null);
           });
         } catch { return null; }
@@ -240,6 +274,7 @@
         try {
           const db = await this.openDB();
           const tx = db.transaction(this.storeName, "readwrite");
+          value.timestamp = Date.now(); // 저장 시간 기록
           tx.objectStore(this.storeName).put(value, key);
         } catch (e) { console.warn("Cache write error:", e); }
       }
@@ -313,7 +348,7 @@
       }
     }
 
-    // Web Worker 멀티스레딩 10,000회 Stationary Bootstrap Engine (Politis & Romano, 1994)
+    // Web Worker 멀티스레딩 Stationary Bootstrap Engine Code
     const workerCode = `
       self.onmessage = function(e) {
         const { dailyReturns, monthlyCashFlows, iterations, meanBlockSize } = e.data;
@@ -343,7 +378,7 @@
           }
           terminalValues[iter] = val;
 
-          if (iter % 1000 === 0) {
+          if (iter % 2000 === 0) {
             self.postMessage({ type: 'PROGRESS', progress: (iter / iterations) * 100 });
           }
         }
@@ -389,7 +424,7 @@
       }
     }
 
-    // FIFO Tax Lot 엔진 (22% 해외주식 양도소득세 정산)
+    // FIFO Tax Lot 엔진 (수정: break -> continue로 수익 Lot을 건너뛰지 않고 검색)
     class FIFOTaxLotManager {
       constructor() {
         this.lots = [];
@@ -408,11 +443,12 @@
         let totalSharesSold = 0.0;
         let totalReinvestKrw = 0.0;
 
-        while (this.lots.length > 0 && accumulatedGain < targetGainKrw) {
-          const lot = this.lots[0];
+        for (let i = 0; i < this.lots.length && accumulatedGain < targetGainKrw; i++) {
+          const lot = this.lots[i];
           const lotGainPerShareKrw = (netSellPriceUsd * netSellFx) - (lot.priceUsd * lot.fxRate);
 
-          if (lotGainPerShareKrw <= 0) break;
+          // 손실 Lot이라도 중단하지 않고 다음 수익 Lot 탐색 (continue)
+          if (lotGainPerShareKrw <= 0) continue;
 
           const neededGain = targetGainKrw - accumulatedGain;
           const sharesToSellFromLot = Math.min(lot.shares, neededGain / lotGainPerShareKrw);
@@ -426,9 +462,10 @@
 
           lot.shares -= sharesToSellFromLot;
           lot.costBasisKrw -= (sharesToSellFromLot * lot.priceUsd * lot.fxRate);
-
-          if (lot.shares <= 1e-7) this.lots.shift();
         }
+
+        // 잔여 주수가 0인 Lot 정리
+        this.lots = this.lots.filter(l => l.shares > 1e-7);
 
         if (totalSharesSold > 0) {
           const netBuyPriceUsd = currentPriceUsd * (1 + friction);
@@ -449,10 +486,10 @@
       }
     }
 
-    // Fetcher
+    // Fetcher (CORS Proxy 다중 우회 로직 포함)
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v11_6`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_0`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -465,52 +502,59 @@
         const endSec = Math.floor(new Date(`${endYear}-12-31T23:59:59Z`).getTime() / 1000);
         
         const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${startSec}&period2=${endSec}&interval=1d&events=div`;
-        const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`;
+        
+        // CORS 프록시 주소 폴백 배열
+        const proxies = [
+          `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`
+        ];
 
-        try {
-          const res = await fetch(proxyUrl);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const json = await res.json();
-          
-          const result = json.chart?.result?.[0];
-          if (!result) return null;
+        for (const proxyUrl of proxies) {
+          try {
+            const res = await fetch(proxyUrl);
+            if (!res.ok) continue;
+            const json = await res.json();
+            
+            const result = json.chart?.result?.[0];
+            if (!result) continue;
 
-          const timestamps = result.timestamp || result.timestamps || [];
-          const closes = result.indicators?.quote?.[0]?.close || [];
-          const eventsDiv = result.events?.dividends || {};
+            const timestamps = result.timestamp || result.timestamps || [];
+            const closes = result.indicators?.quote?.[0]?.close || [];
+            const eventsDiv = result.events?.dividends || {};
 
-          const priceMap = new Map();
-          const divMap = new Map();
+            const priceMap = new Map();
+            const divMap = new Map();
 
-          timestamps.forEach((ts, idx) => {
-            const price = closes[idx];
-            if (price !== null && price !== undefined && !isNaN(price)) {
-              const dateStr = new Date(ts * 1000).toISOString().split('T')[0];
-              priceMap.set(dateStr, price);
-            }
-          });
+            timestamps.forEach((ts, idx) => {
+              const price = closes[idx];
+              if (price !== null && price !== undefined && !isNaN(price)) {
+                const dateStr = new Date(ts * 1000).toISOString().split('T')[0];
+                priceMap.set(dateStr, price);
+              }
+            });
 
-          Object.values(eventsDiv).forEach(div => {
-            if (div.amount && div.date) {
-              const dateStr = new Date(div.date * 1000).toISOString().split('T')[0];
-              divMap.set(dateStr, div.amount);
-            }
-          });
+            Object.values(eventsDiv).forEach(div => {
+              if (div.amount && div.date) {
+                const dateStr = new Date(div.date * 1000).toISOString().split('T')[0];
+                divMap.set(dateStr, div.amount);
+              }
+            });
 
-          await QuantDataCache.set(cacheKey, {
-            priceMapEntries: Array.from(priceMap.entries()),
-            divMapEntries: Array.from(divMap.entries())
-          });
+            await QuantDataCache.set(cacheKey, {
+              priceMapEntries: Array.from(priceMap.entries()),
+              divMapEntries: Array.from(divMap.entries())
+            });
 
-          return { priceMap, divMap };
-        } catch (err) {
-          console.warn(`[YahooFetcher] ${ticker} fetch failed:`, err);
-          return null;
+            return { priceMap, divMap };
+          } catch (err) {
+            console.warn(`[YahooFetcher] ${ticker} proxy failed, trying next...`);
+          }
         }
+        return null;
       }
     }
 
-    // Brent's Method XIRR Solver (오버플로우 및 부호 불일치 완벽 방어)
+    // Brent's Method XIRR Solver
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
@@ -523,7 +567,7 @@
         const finalDay = daysArr[daysArr.length - 1];
 
         const f = (r) => {
-          if (r <= -0.99) return Infinity; // 오버플로우 방지
+          if (r <= -0.99) return Infinity;
           let val = -finalVal / Math.pow(1 + r, finalDay / 365.25);
           for (let k = 0; k < m; k++) {
             val += cashFlows[k] / Math.pow(1 + r, daysArr[k] / 365.25);
@@ -620,7 +664,7 @@
       }
     }
 
-    // Daily Reset Leveraged NAV Engine & Proxy Synthesizer
+    // Daily Reset Leveraged NAV Engine
     class MultiFactorSynthesisEngine {
       static process(rawDatasets, sortedDates) {
         const processedPrices = {};
@@ -700,7 +744,7 @@
       }
     }
 
-    // Fama-French 4-Factor (Carhart) QR-OLS Solver
+    // Fama-French 4-Factor QR-OLS Solver
     class FamaFrenchEngine {
       static solve(portDailyReturns, processedData, dates) {
         const N = portDailyReturns.length;
@@ -832,7 +876,8 @@
         return { sharpe, sortino, treynor, omega, trackingError, informationRatio, cvar95 };
       }
 
-      static computeUlcerAndPainRatio(twrSeries, twrCagr) {
+      // Pain Ratio 무위험수익률 Dynamic SOFR 평균 연동으로 정밀 교정
+      static computeUlcerAndPainRatio(twrSeries, twrCagr, avgRfAnnPercent) {
         const N = twrSeries.length;
         if (N === 0) return { ulcerIndex: 0, painRatio: 0 };
 
@@ -851,7 +896,8 @@
 
         const ulcerIndex = Math.sqrt(sumSquaredDd / N);
         const painIndex = sumDd / N;
-        const painRatio = painIndex > 0 ? (twrCagr - 2.0) / painIndex : 0;
+        // 하드코딩 2.0% 대신 기간 평균 동적 SOFR(avgRfAnnPercent) 적용
+        const painRatio = painIndex > 0 ? (twrCagr - avgRfAnnPercent) / painIndex : 0;
 
         return { ulcerIndex, painRatio };
       }
@@ -882,7 +928,7 @@
       }
     }
 
-    // 백테스트 연산 및 GIPS Sub-period TWR 엔진
+    // 백테스트 연산 및 병렬 연산 처리 엔진
     class QuantBacktestEngine {
       static async runAsync(sortedDates, tickers, processedData, fxData, monthlyKrw, fxSpreadRate, taxEnabled, onProgress = null) {
         const N = sortedDates.length;
@@ -897,6 +943,14 @@
           if (fxData?.priceMap?.has(d)) lastFx = fxData.priceMap.get(d);
           fxPrices[i] = lastFx;
         }
+
+        // 기간 평균 SOFR 연산 (Pain Ratio용)
+        let sumSOFR = 0;
+        for (let i = 0; i < N; i++) {
+          const yr = parseInt(sortedDates[i].split('-')[0], 10);
+          sumSOFR += HistoricalInterestRates.getSOFR(yr);
+        }
+        const avgRfAnnPercent = (sumSOFR / N) * 100.0;
 
         const isNewMonth = new Array(N).fill(false);
         const isYearEnd = new Array(N).fill(false);
@@ -920,6 +974,10 @@
             spyDailyReturns[i - 1] = spyPrices[i - 1] > 0 ? (spyPrices[i] - spyPrices[i - 1]) / spyPrices[i - 1] : 0;
           }
         }
+
+        // 1단계: 모든 종목의 시계열 및 위험지표 연산
+        const tickerDailyReturnsMap = {};
+        const tickerMonthlyCashFlowsMap = {};
 
         for (let tIdx = 0; tIdx < tickers.length; tIdx++) {
           const ticker = tickers[tIdx];
@@ -946,7 +1004,6 @@
             const priceUsd = prices[i];
             const totalShares = taxLotMgr.getTotalShares();
 
-            // 배당금 현금 유입 및 T+1 재투자
             for (let k = divPayQueue.length - 1; k >= 0; k--) {
               if (i >= divPayQueue[k].payIndex) {
                 const divNetUsd = divPayQueue[k].divNetUsd;
@@ -964,7 +1021,8 @@
             if (totalShares > 0 && divMap && divMap.has(dateStr)) {
               const divPerShare = divMap.get(dateStr);
               const grossDivUsd = totalShares * divPerShare;
-              const netDivUsd = grossDivUsd * (1 - 0.154);
+              // 한미 조세조약 배당 원천징수율 15.0% 적용
+              const netDivUsd = grossDivUsd * (1 - 0.150);
               divPayQueue.push({ payIndex: i + 1, divNetUsd: netDivUsd });
             }
 
@@ -1036,11 +1094,11 @@
 
           const ff = FamaFrenchEngine.solve(portDailyReturns, processedData, sortedDates);
           const analytics = InstitutionalAnalyticsEngine.analyze(portDailyReturns, spyDailyReturns, sortedDates);
-          const { ulcerIndex, painRatio } = InstitutionalAnalyticsEngine.computeUlcerAndPainRatio(portTwrSeries, twrCagr);
+          const { ulcerIndex, painRatio } = InstitutionalAnalyticsEngine.computeUlcerAndPainRatio(portTwrSeries, twrCagr, avgRfAnnPercent);
           const rollingSharpe = InstitutionalAnalyticsEngine.compute36MRollingSharpe(portDailyReturns, sortedDates);
 
-          // Web Worker 기반 10,000회 Stationary Bootstrap 실행
-          const monteCarlo = await WorkerManager.runMonteCarloAsync(portDailyReturns, monthlyCashFlows, 10000);
+          tickerDailyReturnsMap[ticker] = portDailyReturns;
+          tickerMonthlyCashFlowsMap[ticker] = monthlyCashFlows;
 
           results[ticker] = {
             name: TICKER_UNIVERSE[ticker]?.name || ticker,
@@ -1060,14 +1118,32 @@
             informationRatio: analytics.informationRatio,
             ff,
             rollingSharpe,
-            monteCarlo,
             twrMdd: twrMdd * 100.0,
             portfolioValues,
             investedSeries
           };
-
-          if (onProgress) onProgress(((tIdx + 1) / tickers.length) * 100);
         }
+
+        // 2단계: 몬테카를로 병렬 비동기 실행 (True Parallelization)
+        if (onProgress) onProgress(80);
+        
+        const mcPromises = tickers.map(ticker => {
+          if (!tickerDailyReturnsMap[ticker]) return Promise.resolve(null);
+          return WorkerManager.runMonteCarloAsync(
+            tickerDailyReturnsMap[ticker],
+            tickerMonthlyCashFlowsMap[ticker],
+            10000
+          ).then(mcRes => ({ ticker, mcRes }));
+        });
+
+        const mcResults = await Promise.all(mcPromises);
+        mcResults.forEach(item => {
+          if (item && item.ticker && results[item.ticker]) {
+            results[item.ticker].monteCarlo = item.mcRes;
+          }
+        });
+
+        if (onProgress) onProgress(100);
 
         return results;
       }
@@ -1080,10 +1156,25 @@
       static currentResults = null;
       static currentSortedDates = [];
       static selectedMcTicker = null;
+      static isGuideOpen = true;
 
       static init() {
         this.updateActiveChips();
         this.runBacktest();
+      }
+
+      static toggleBeginnerGuide() {
+        const content = document.getElementById('beginnerGuideContent');
+        const icon = document.getElementById('guideToggleIcon');
+        this.isGuideOpen = !this.isGuideOpen;
+        
+        if (this.isGuideOpen) {
+          content.classList.remove('hidden');
+          icon.innerText = '▲ 접기';
+        } else {
+          content.classList.add('hidden');
+          icon.innerText = '▼ 펼치기';
+        }
       }
 
       static toggleModal() {
@@ -1202,6 +1293,22 @@
       }
 
       static async runBacktest() {
+        const startYear = parseInt(document.getElementById('startYear').value, 10);
+        const endYear = parseInt(document.getElementById('endYear').value, 10);
+        const monthlyKrw = parseFloat(document.getElementById('monthlyKrw').value);
+        const fxSpreadRate = parseFloat(document.getElementById('fxSpread').value);
+        const taxEnabled = document.getElementById('taxMode').value === 'fifo';
+
+        // 입력값 검증 (Input Validation)
+        if (isNaN(startYear) || isNaN(endYear) || startYear >= endYear) {
+          alert("시작 연도는 종료 연도보다 커스텀 작성할 수 없으며, 시작 연도가 종료 연도보다 작아야 합니다.");
+          return;
+        }
+        if (isNaN(monthlyKrw) || monthlyKrw <= 0) {
+          alert("월 적립금은 0원보다 큰 올바른 숫자를 입력하십시오.");
+          return;
+        }
+
         if (this.selectedTickers.length === 0) {
           document.getElementById('summaryCards').innerHTML = '';
           document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="15" class="px-4 py-6 text-center text-rose-400">분석 대상 자산을 지정하십시오.</td></tr>`;
@@ -1209,14 +1316,8 @@
           return;
         }
 
-        const startYear = parseInt(document.getElementById('startYear').value, 10);
-        const endYear = parseInt(document.getElementById('endYear').value, 10);
-        const monthlyKrw = parseFloat(document.getElementById('monthlyKrw').value);
-        const fxSpreadRate = parseFloat(document.getElementById('fxSpread').value);
-        const taxEnabled = document.getElementById('taxMode').value === 'fifo';
-
-        this.setEngineStatus('loading', 'IndexedDB 데이터 검증 중...');
-        this.setProgress(10, '데이터베이스 확인 중...');
+        this.setEngineStatus('loading', '24H 캐시 검증 및 데이터 수신 중...');
+        this.setProgress(10, '데이터베이스 수신 중...');
 
         const requiredSet = new Set(this.selectedTickers);
         requiredSet.add('SPY');
@@ -1238,7 +1339,7 @@
           if (fetchedResults[idx]) rawDatasets[t] = fetchedResults[idx];
         });
 
-        this.setProgress(50, '통합 달력 및 Map 인덱싱 구축 중...');
+        this.setProgress(50, '통합 달력 인덱싱 중...');
 
         const allDatesSet = new Set();
         Object.values(rawDatasets).forEach(ds => {
@@ -1251,15 +1352,15 @@
 
         if (sortedDates.length === 0) {
           this.setEngineStatus('error', '데이터 수신 실패');
-          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="15" class="px-4 py-6 text-center text-rose-400">시계열 데이터를 수신할 수 없습니다. CORS 상태를 확인하십시오.</td></tr>`;
+          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="15" class="px-4 py-6 text-center text-rose-400">시계열 데이터를 수신할 수 없습니다. CORS 상태나 인터넷 연결을 확인하십시오.</td></tr>`;
           this.setProgress(100, '오류 발생');
           return;
         }
 
-        this.setProgress(70, 'Daily Reset Swap/Repo NAV 알고리즘 실행 중...');
+        this.setProgress(70, 'Daily Swap/Repo NAV 알고리즘 실행 중...');
         const processedData = MultiFactorSynthesisEngine.process(rawDatasets, sortedDates);
 
-        this.setEngineStatus('loading', 'Web Worker 10,000회 Stationary Bootstrap 연산 중...');
+        this.setEngineStatus('loading', 'Monte Carlo 멀티스레드 병렬 연산 중...');
         const results = await QuantBacktestEngine.runAsync(
           sortedDates,
           this.selectedTickers,
@@ -1268,7 +1369,7 @@
           monthlyKrw,
           fxSpreadRate,
           taxEnabled,
-          (pct) => this.setProgress(70 + (pct * 0.28), `Monte Carlo Worker 병렬 연산 중... (${Math.round(pct)}%)`)
+          (pct) => this.setProgress(pct, `Parallel Worker 연산 중... (${Math.round(pct)}%)`)
         );
 
         this.currentResults = results;
@@ -1276,7 +1377,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Ultimate Engine v11.6 완료');
+        this.setEngineStatus('success', 'Enterprise Engine v12.0 완료');
       }
 
       static switchChartTab(tab) {
