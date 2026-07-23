@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v12.3 Enterprise</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v12.4 Pro Custom</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -11,6 +11,7 @@
     ::-webkit-scrollbar-track { background: #020617; }
     ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono select-none">
@@ -19,10 +20,10 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.3 Pro</span>
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.4 Custom</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Multi-Asset Portfolio Mix · Dynamic DCA Dip-Buying · Lump-Sum Comparison · 22% Tax Engine
+          Monthly Granularity · Dedicated Lump-Sum UI · Customizable Smart DCA · 22% Tax Engine
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -53,71 +54,111 @@
       </button>
     </div>
 
-    <!-- 3초 가이드 -->
-    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3 sm:p-4 space-y-2 text-xs">
-      <div class="flex justify-between items-center cursor-pointer" onclick="UIController.toggleBeginnerGuide()">
-        <span class="font-bold text-emerald-400 flex items-center gap-1.5">
-          💡 한눈에 보는 핵심 투자 지표 3초 가이드
-        </span>
-        <span id="guideToggleIcon" class="text-slate-400 font-bold">▲ 접기</span>
-      </div>
-      <div id="beginnerGuideContent" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-slate-300 border-t border-slate-800">
-        <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-cyan-400 block mb-1">📈 적립식 실질 연수익률 (XIRR)</span>
-          매달 나누어 적립한 <span class="text-emerald-300 font-semibold">실제 현금흐름 기준 복리 연수익률</span>입니다.
-        </div>
-        <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-amber-400 block mb-1">⚖️ 위험 대비 가성비 (샤프 지수)</span>
-          총 변동성 위험 1단위 대비 초과 수익 성능을 측정합니다. (1.0 이상 우수)
-        </div>
-        <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-rose-400 block mb-1">🛡️ 역대 최대 계좌 하락 폭 (MDD)</span>
-          전체 검증 기간 중 고점 대비 발생한 <span class="text-emerald-300 font-semibold">최대 손실 비율</span>입니다.
-        </div>
-      </div>
-    </div>
-
     <!-- 조건 설정 영역 -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 bg-slate-900 p-4 rounded-xl border border-slate-800">
-      <div>
-        <label for="startYear" class="block text-xs font-semibold text-slate-400 mb-1">시작 연도</label>
-        <input type="number" id="startYear" value="2000" min="1995" max="2026" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
+    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-4">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div>
+          <label for="startMonth" class="block text-xs font-semibold text-slate-400 mb-1">시작 월 (YYYY-MM)</label>
+          <input type="month" id="startMonth" value="2000-01" min="1995-01" max="2026-12" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
+        </div>
+        <div>
+          <label for="endMonth" class="block text-xs font-semibold text-slate-400 mb-1">종료 월 (YYYY-MM)</label>
+          <input type="month" id="endMonth" value="2026-07" min="1995-01" max="2026-12" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
+        </div>
+        <div>
+          <label for="investMode" class="block text-xs font-semibold text-amber-400 mb-1">투자 전략 방식</label>
+          <select id="investMode" onchange="UIController.onInvestModeChange()" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-amber-400 font-bold">
+            <option value="dca">월 적립식 (DCA)</option>
+            <option value="lumpSum">초기 목돈 거치식 (Lump-Sum)</option>
+            <option value="dynamicDCA">스마트 적립식 (커스텀 딥바잉)</option>
+          </select>
+        </div>
+        <div>
+          <label for="fxSpread" class="block text-xs font-semibold text-slate-400 mb-1">환전 수수료 우대</label>
+          <select id="fxSpread" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
+            <option value="0.0003">90% 우대 (0.03%)</option>
+            <option value="0.0005">80% 우대 (0.05%)</option>
+            <option value="0.0015">50% 우대 (0.15%)</option>
+            <option value="0.0025">기본 환율 (0.25%)</option>
+          </select>
+        </div>
+        <div>
+          <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">과세/절세 엔진</label>
+          <select id="taxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
+            <option value="fifo">실제 세후 (22% 양도세 + 250만 공제)</option>
+            <option value="disabled">세전 (Gross Aggregate)</option>
+          </select>
+        </div>
       </div>
-      <div>
-        <label for="endYear" class="block text-xs font-semibold text-slate-400 mb-1">종료 연도</label>
-        <input type="number" id="endYear" value="2026" min="1996" max="2026" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
+
+      <!-- 전략별 가변 패널 -->
+      <div id="dynamicStrategyPanel" class="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800">
+        <!-- 1. 월 적립식 패널 -->
+        <div id="panelDCA" class="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-3">
+            <label for="monthlyKrw" class="font-bold text-emerald-400 whitespace-nowrap">월 적립금 (원):</label>
+            <input type="number" id="monthlyKrw" value="500000" step="50000" class="bg-slate-900 border border-slate-700 rounded px-3 py-1.5 w-44 text-emerald-300 font-bold focus:border-emerald-500">
+          </div>
+          <span class="text-slate-400 text-[11px]">💡 매월 정해진 금액을 변동 없이 고정으로 분할 매수합니다.</span>
+        </div>
+
+        <!-- 2. 목돈 거치식 패널 -->
+        <div id="panelLumpSum" class="hidden flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div class="flex items-center gap-3">
+            <label for="lumpSumKrw" class="font-bold text-amber-400 whitespace-nowrap">초기 거치 목돈 원금 (원):</label>
+            <input type="number" id="lumpSumKrw" value="50000000" step="1000000" class="bg-slate-900 border border-slate-700 rounded px-3 py-1.5 w-52 text-amber-300 font-bold focus:border-amber-500">
+          </div>
+          <span class="text-slate-400 text-[11px]">💡 시작 월에 해당 목돈을 전액 투입하고, 이후 추가 적립 없이 자산 추이를 추적합니다.</span>
+        </div>
+
+        <!-- 3. 스마트 적립식 커스텀 패널 -->
+        <div id="panelDynamicDCA" class="hidden space-y-2.5 text-xs">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+            <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+              ⚙️ 스마트 딥바잉 (Smart DCA) 커스텀 매수 가중치 설정
+            </span>
+            <span class="text-[11px] text-slate-400">전고점(Peak) 대비 하락률에 따라 월 적립금을 자동으로 늘려 매수합니다.</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1">
+            <div>
+              <label class="block text-slate-400 mb-1 font-semibold">기본 월 적립금 (원)</label>
+              <input type="number" id="smartMonthlyKrw" value="500000" step="50000" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-slate-200">
+            </div>
+            <div>
+              <label class="block text-amber-400 mb-1 font-semibold">1차 하락 기준 (-%)</label>
+              <div class="flex items-center gap-1">
+                <input type="number" id="smartDrop1" value="10" min="1" max="90" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-amber-300">
+                <span>%</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-amber-400 mb-1 font-semibold">1차 매수 배율 (배)</label>
+              <div class="flex items-center gap-1">
+                <input type="number" id="smartMult1" value="1.5" step="0.1" min="1.0" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-amber-300">
+                <span>배</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-rose-400 mb-1 font-semibold">2차 하락 기준 (-%)</label>
+              <div class="flex items-center gap-1">
+                <input type="number" id="smartDrop2" value="20" min="1" max="90" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-rose-300">
+                <span>%</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-rose-400 mb-1 font-semibold">2차 매수 배율 (배)</label>
+              <div class="flex items-center gap-1">
+                <input type="number" id="smartMult2" value="2.0" step="0.1" min="1.0" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-rose-300">
+                <span>배</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div>
-        <label for="investMode" class="block text-xs font-semibold text-amber-400 mb-1">투자 전략 방식</label>
-        <select id="investMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-amber-400 font-bold">
-          <option value="dca">월 적립식 (DCA)</option>
-          <option value="lumpSum">초기 목돈 거치식 (Lump-Sum)</option>
-          <option value="dynamicDCA">스마트 적립식 (폭락장 가중 매수)</option>
-        </select>
-      </div>
-      <div>
-        <label for="monthlyKrw" class="block text-xs font-semibold text-slate-400 mb-1" id="monthlyKrwLabel">월 적립금 (원)</label>
-        <input type="number" id="monthlyKrw" value="500000" step="50000" class="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-xs focus:border-emerald-500 text-slate-100">
-      </div>
-      <div>
-        <label for="fxSpread" class="block text-xs font-semibold text-slate-400 mb-1">환전 수수료 우대</label>
-        <select id="fxSpread" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
-          <option value="0.0003">90% 우대 (0.03%)</option>
-          <option value="0.0005">80% 우대 (0.05%)</option>
-          <option value="0.0015">50% 우대 (0.15%)</option>
-          <option value="0.0025">기본 환율 (0.25%)</option>
-        </select>
-      </div>
-      <div>
-        <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">과세/절세 엔진</label>
-        <select id="taxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
-          <option value="fifo">실제 세후 (22% 양도세 + 250만 공제)</option>
-          <option value="disabled">세전 (Gross Aggregate)</option>
-        </select>
-      </div>
-      <div class="col-span-2 sm:col-span-1 flex items-end">
-        <button onclick="UIController.runBacktest()" id="runBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold py-2 px-3 rounded text-xs transition shadow-md">
-          v12.3 시뮬레이션 실행
+
+      <div class="flex justify-end pt-1">
+        <button onclick="UIController.runBacktest()" id="runBtn" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold py-2.5 px-8 rounded-lg text-xs transition shadow-md flex items-center justify-center gap-2">
+          🚀 v12.4 커스텀 시뮬레이션 실행
         </button>
       </div>
     </div>
@@ -221,16 +262,16 @@
             <th class="px-3 py-3">종목코드 / 상장년도구분</th>
             <th class="px-3 py-3">총 원금</th>
             <th class="px-3 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
-            <th onclick="UIController.showMetricInfo('적립식 실질 연수익률 (XIRR)', '매달 나누어 입금한 내 실제 적립금 입출금 날짜 기준의 진짜 연 복리 수익률입니다.')" class="px-3 py-3 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">실질 연수익률 (XIRR) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('실질 연수익률 (XIRR)', '실제 적립금 입출금 날짜 기준의 진짜 연 복리 수익률입니다.')" class="px-3 py-3 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">실질 연수익률 (XIRR) ℹ️</th>
             <th onclick="UIController.showMetricInfo('자산 순수 연성장률 (CAGR)', '추가 적립금 효과를 제외하고 종목 자산 자체가 순수하게 복리로 성장한 연평균 성장률입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">자산 순수 연성장률 (CAGR) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('위험 대비 가성비 (샤프 지수)', '주가 변동 위험을 견딘 대가로 얻은 초과 수익성 지수입니다. (1.0 이상 우수, 2.0 이상 최우수)')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">위험 대비 가성비 (샤프) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('하락위험 가성비 (소티노 지수)', '상승 출렁임은 제외하고 순수 하락 폭락 위험만 따져 계산한 위험 대비 수익 가성비입니다.')" class="px-3 py-3 text-amber-400 cursor-pointer hover:bg-slate-800 transition">하락위험 가성비 (소티노) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('위험 대비 가성비 (샤프 지수)', '주가 변동 위험을 견딘 대가로 얻은 초과 수익성 지수입니다. (1.0 이상 우수)')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">위험 대비 가성비 (샤프) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('하락위험 가성비 (소티노 지수)', '상승 출렁임은 제외하고 순수 하락 폭락 위험만 따져 계산한 수익 가성비입니다.')" class="px-3 py-3 text-amber-400 cursor-pointer hover:bg-slate-800 transition">하락위험 가성비 (소티노) ℹ️</th>
             <th onclick="UIController.showMetricInfo('시장위험 대비 수익 (트레이너 지수)', '시장 베타 위험 1단위당 올린 초과 수익 성과입니다.')" class="px-3 py-3 text-cyan-300 cursor-pointer hover:bg-slate-800 transition">시장위험 대비 수익 (트레이너) ℹ️</th>
             <th onclick="UIController.showMetricInfo('손익 확률 비율 (오메가 비율)', '전체 투자 기간 중 손실 가능성 대비 수익 가능성의 통합 비율입니다.')" class="px-3 py-3 text-emerald-300 cursor-pointer hover:bg-slate-800 transition">손익 확률 비율 (오메가) ℹ️</th>
             <th onclick="UIController.showMetricInfo('멘탈 고통 대비 성과 (페인 Ratio)', '계좌가 깎이고 회복을 못해 겪은 고통의 누적 크기 대비 올린 성과 비율입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">멘탈 고통 대비 성과 (페인) ℹ️</th>
             <th onclick="UIController.showMetricInfo('지수 추종 오차율 (Tracking Error)', '원본 지수나 목표 포트폴리오 변동성과의 추종 오차율 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">지수 추종 오차율 ℹ️</th>
             <th onclick="UIController.showMetricInfo('초과수익 가성비 (정보비율)', '벤치마크 지수 대비 얼마나 안정적이고 효율적으로 초과 수익을 만들어냈는지 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">초과수익 가성비 (정보비율) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('마음 고통 지수 (Ulcer Index)', '주가 하락의 깊이와 하락 기간의 길이를 종합하여 투자자가 느낀 고통을 수치화한 지수입니다. (낮을수록 좋음)')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">마음 고통 지수 (궤양) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('마음 고통 지수 (Ulcer Index)', '주가 하락의 깊이와 하락 기간의 길이를 종합하여 투자자가 느낀 고통을 수치화한 지수입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">마음 고통 지수 (궤양) ℹ️</th>
             <th onclick="UIController.showMetricInfo('최악의 날 폭락 위험 (CVaR 95%)', '하위 5% 최악의 시장 위기 상황이 닥쳤을 때 단 하루 만에 발생할 수 있는 평균 예상 손실률입니다.')" class="px-3 py-3 text-rose-400 cursor-pointer hover:bg-slate-800 transition">최악의 날 폭락 위험 (CVaR) ℹ️</th>
             <th onclick="UIController.showMetricInfo('역대 최대 계좌 하락 폭 (MDD)', '전체 투자 기간 동안 전고점 대비 계좌 평가금이 가장 깊게 박살 났을 때의 최대 손실 비율입니다.')" class="px-3 py-3 text-rose-500 cursor-pointer hover:bg-slate-800 transition">역대 최대 계좌 하락 폭 (MDD) ℹ️</th>
           </tr>
@@ -290,7 +331,7 @@
     };
 
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v12_3";
+      static dbName = "QuantBacktestCacheDB_v12_4";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -556,7 +597,7 @@
 
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_3`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_4`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -938,7 +979,7 @@
     }
 
     class QuantBacktestEngine {
-      static async runAsync(sortedDates, tickers, processedData, fxData, monthlyKrw, fxSpreadRate, taxEnabled, investMode = 'dca', onProgress = null) {
+      static async runAsync(sortedDates, tickers, processedData, fxData, investConfig, fxSpreadRate, taxEnabled, onProgress = null) {
         const N = sortedDates.length;
         const { processedPrices, processedDivs } = processedData;
         const results = {};
@@ -962,13 +1003,11 @@
         const isNewMonth = new Array(N).fill(false);
         const isYearEnd = new Array(N).fill(false);
         let lastM = "";
-        let monthCount = 0;
 
         for (let i = 0; i < N; i++) {
           const mStr = sortedDates[i].substring(0, 7);
           if (mStr !== lastM) {
             isNewMonth[i] = true;
-            monthCount++;
             lastM = mStr;
           }
           if (i === N - 1 || sortedDates[i].substring(0, 4) !== sortedDates[i + 1].substring(0, 4)) {
@@ -1007,7 +1046,7 @@
           portTwrSeries[0] = 1.0;
 
           const divPayQueue = [];
-          let currentMonthIndex = 0;
+          let monthCounter = 0;
 
           for (let i = 0; i < N; i++) {
             const dateStr = sortedDates[i];
@@ -1046,18 +1085,22 @@
             }
 
             if (isNewMonth[i]) {
-              currentMonthIndex++;
+              monthCounter++;
               let depositKrw = 0;
 
-              if (investMode === 'dca') {
-                depositKrw = monthlyKrw;
-              } else if (investMode === 'lumpSum') {
-                depositKrw = (currentMonthIndex === 1) ? (monthlyKrw * monthCount) : 0;
-              } else if (investMode === 'dynamicDCA') {
+              if (investConfig.mode === 'dca') {
+                depositKrw = investConfig.monthlyKrw;
+              } else if (investConfig.mode === 'lumpSum') {
+                depositKrw = (monthCounter === 1) ? investConfig.lumpSumKrw : 0;
+              } else if (investConfig.mode === 'dynamicDCA') {
                 const drawDown = peakPriceUsd > 0 ? (priceUsd - peakPriceUsd) / peakPriceUsd : 0;
-                if (drawDown <= -0.20) depositKrw = monthlyKrw * 2.0;
-                else if (drawDown <= -0.10) depositKrw = monthlyKrw * 1.5;
-                else depositKrw = monthlyKrw;
+                if (drawDown <= -investConfig.smartDrop2) {
+                  depositKrw = investConfig.monthlyKrw * investConfig.smartMult2;
+                } else if (drawDown <= -investConfig.smartDrop1) {
+                  depositKrw = investConfig.monthlyKrw * investConfig.smartMult1;
+                } else {
+                  depositKrw = investConfig.monthlyKrw;
+                }
               }
 
               investedKrw += depositKrw;
@@ -1296,19 +1339,30 @@
       static currentResults = null;
       static currentSortedDates = [];
       static selectedMcTicker = null;
-      static isGuideOpen = true;
 
       static init() {
-        document.getElementById('investMode').addEventListener('change', (e) => {
-          const lbl = document.getElementById('monthlyKrwLabel');
-          if (e.target.value === 'lumpSum') {
-            lbl.innerText = '초기 거치 원금 (월단위 기준값)';
-          } else {
-            lbl.innerText = '월 적립금 (원)';
-          }
-        });
+        this.onInvestModeChange();
         this.updateActiveChips();
         this.runBacktest();
+      }
+
+      static onInvestModeChange() {
+        const mode = document.getElementById('investMode').value;
+        const panelDCA = document.getElementById('panelDCA');
+        const panelLumpSum = document.getElementById('panelLumpSum');
+        const panelDynamicDCA = document.getElementById('panelDynamicDCA');
+
+        panelDCA.classList.add('hidden');
+        panelLumpSum.classList.add('hidden');
+        panelDynamicDCA.classList.add('hidden');
+
+        if (mode === 'dca') {
+          panelDCA.classList.remove('hidden');
+        } else if (mode === 'lumpSum') {
+          panelLumpSum.classList.remove('hidden');
+        } else if (mode === 'dynamicDCA') {
+          panelDynamicDCA.classList.remove('hidden');
+        }
       }
 
       static applyPreset(type) {
@@ -1329,20 +1383,6 @@
 
       static showMetricInfo(title, description) {
         alert(`[${title}]\n\n${description}`);
-      }
-
-      static toggleBeginnerGuide() {
-        const content = document.getElementById('beginnerGuideContent');
-        const icon = document.getElementById('guideToggleIcon');
-        this.isGuideOpen = !this.isGuideOpen;
-        
-        if (this.isGuideOpen) {
-          content.classList.remove('hidden');
-          icon.innerText = '▲ 접기';
-        } else {
-          content.classList.add('hidden');
-          icon.innerText = '▼ 펼치기';
-        }
       }
 
       static toggleModal() {
@@ -1466,20 +1506,33 @@
       }
 
       static async runBacktest() {
-        const startYear = parseInt(document.getElementById('startYear').value, 10);
-        const endYear = parseInt(document.getElementById('endYear').value, 10);
-        const monthlyKrw = parseFloat(document.getElementById('monthlyKrw').value);
+        const startMonth = document.getElementById('startMonth').value;
+        const endMonth = document.getElementById('endMonth').value;
+        const mode = document.getElementById('investMode').value;
         const fxSpreadRate = parseFloat(document.getElementById('fxSpread').value);
         const taxEnabled = document.getElementById('taxMode').value === 'fifo';
-        const investMode = document.getElementById('investMode').value;
 
-        if (isNaN(startYear) || isNaN(endYear) || startYear >= endYear) {
-          alert("시작 연도가 종료 연도보다 작아야 합니다.");
+        if (!startMonth || !endMonth || startMonth >= endMonth) {
+          alert("시작 월이 종료 월보다 앞서야 합니다.");
           return;
         }
-        if (isNaN(monthlyKrw) || monthlyKrw <= 0) {
-          alert("월 적립금(또는 투자금)은 0원보다 큰 숫자를 입력하십시오.");
-          return;
+
+        const startYear = parseInt(startMonth.split('-')[0], 10);
+        const endYear = parseInt(endMonth.split('-')[0], 10);
+
+        const investConfig = {
+          mode,
+          monthlyKrw: parseFloat(document.getElementById('monthlyKrw').value) || 0,
+          lumpSumKrw: parseFloat(document.getElementById('lumpSumKrw').value) || 0,
+          smartMonthlyKrw: parseFloat(document.getElementById('smartMonthlyKrw').value) || 0,
+          smartDrop1: (parseFloat(document.getElementById('smartDrop1').value) || 10) / 100.0,
+          smartMult1: parseFloat(document.getElementById('smartMult1').value) || 1.5,
+          smartDrop2: (parseFloat(document.getElementById('smartDrop2').value) || 20) / 100.0,
+          smartMult2: parseFloat(document.getElementById('smartMult2').value) || 2.0
+        };
+
+        if (mode === 'dynamicDCA') {
+          investConfig.monthlyKrw = investConfig.smartMonthlyKrw;
         }
 
         if (this.selectedTickers.length === 0) {
@@ -1522,14 +1575,15 @@
         Object.values(rawDatasets).forEach(ds => {
           if (ds?.priceMap) ds.priceMap.forEach((v, d) => allDatesSet.add(d));
         });
-        const sortedDates = Array.from(allDatesSet).sort().filter(d => {
-          const y = parseInt(d.split('-')[0], 10);
-          return y >= startYear && y <= endYear;
-        });
+
+        const startBound = `${startMonth}-01`;
+        const endBound = `${endMonth}-31`;
+
+        const sortedDates = Array.from(allDatesSet).sort().filter(d => d >= startBound && d <= endBound);
 
         if (sortedDates.length === 0) {
           this.setEngineStatus('error', '데이터 수신 실패');
-          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="15" class="px-4 py-6 text-center text-rose-400">시계열 데이터를 수신할 수 없습니다. CORS 상태나 인터넷 연결을 확인하십시오.</td></tr>`;
+          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="15" class="px-4 py-6 text-center text-rose-400">지정한 기간 내 시계열 데이터를 찾을 수 없습니다.</td></tr>`;
           this.setProgress(100, '오류 발생');
           return;
         }
@@ -1543,10 +1597,9 @@
           this.selectedTickers,
           processedData,
           fxData,
-          monthlyKrw,
+          investConfig,
           fxSpreadRate,
           taxEnabled,
-          investMode,
           (pct) => this.setProgress(pct, `Parallel Worker 연산 중... (${Math.round(pct)}%)`)
         );
 
@@ -1555,7 +1608,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Enterprise Engine v12.3 완료');
+        this.setEngineStatus('success', 'Enterprise Engine v12.4 완료');
       }
 
       static switchChartTab(tab) {
@@ -1611,7 +1664,8 @@
       }
 
       static renderDashboard(results, sortedDates, taxEnabled) {
-        const startYear = parseInt(document.getElementById('startYear').value, 10);
+        const startMonth = document.getElementById('startMonth').value;
+        const startYear = parseInt(startMonth.split('-')[0], 10);
         document.getElementById('thFinalVal').innerText = taxEnabled ? '실제 세후 평가금' : '세전 최종 평가금';
 
         const cardsContainer = document.getElementById('summaryCards');
