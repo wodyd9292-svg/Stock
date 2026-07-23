@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v12.5 Enterprise</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v12.6 Custom Multi-Mix Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -20,10 +20,10 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.5 Pro</span>
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.6 Multi-Mix</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Custom Portfolio Weights · Flexible Rebalancing Strategies · Responsive UI Fix · 22% Tax Engine
+          Independent Custom Portfolio Comparison · Auto Save Presets · Responsive UI · 22% Tax Engine
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -31,28 +31,6 @@
         <span id="statusText">Engine Standby</span>
       </div>
     </header>
-
-    <!-- 원클릭 퀀트 프리셋 패널 -->
-    <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 flex flex-wrap items-center gap-2 text-xs">
-      <span class="font-bold text-emerald-400 flex items-center gap-1.5 mr-1">
-        ⚡ 원클릭 퀀트 포트폴리오 프리셋:
-      </span>
-      <button onclick="UIController.applyPreset('allWeather')" class="bg-slate-800 hover:bg-emerald-950 hover:border-emerald-500/50 text-slate-200 hover:text-emerald-300 px-2.5 py-1 rounded border border-slate-700 transition">
-        🛡️ 올웨더 (SPY+TLT+GLD+IWM)
-      </button>
-      <button onclick="UIController.applyPreset('techLeverage')" class="bg-slate-800 hover:bg-emerald-950 hover:border-emerald-500/50 text-slate-200 hover:text-emerald-300 px-2.5 py-1 rounded border border-slate-700 transition">
-        🚀 기술주 레버리지 (QQQ+QLD+TQQQ)
-      </button>
-      <button onclick="UIController.applyPreset('dividendGrowth')" class="bg-slate-800 hover:bg-emerald-950 hover:border-emerald-500/50 text-slate-200 hover:text-emerald-300 px-2.5 py-1 rounded border border-slate-700 transition">
-        💰 배당 성장 (SCHD+JEPI+SPY)
-      </button>
-      <button onclick="UIController.applyPreset('semiConductor')" class="bg-slate-800 hover:bg-emerald-950 hover:border-emerald-500/50 text-slate-200 hover:text-emerald-300 px-2.5 py-1 rounded border border-slate-700 transition">
-        ⚡ 반도체 모멘텀 (SMH+SOXL+SPMO)
-      </button>
-      <button onclick="UIController.applyPreset('classic6040')" class="bg-slate-800 hover:bg-emerald-950 hover:border-emerald-500/50 text-slate-200 hover:text-emerald-300 px-2.5 py-1 rounded border border-slate-700 transition">
-        🏛️ 클래식 60/40 (SPY+TLT)
-      </button>
-    </div>
 
     <!-- 조건 설정 영역 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-4">
@@ -91,7 +69,7 @@
         </div>
       </div>
 
-      <!-- 전략별 가변 패널 (반응형 UI 수정 완료) -->
+      <!-- 전략별 가변 패널 -->
       <div id="dynamicStrategyPanel" class="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800 w-full overflow-hidden">
         <!-- 1. 월 적립식 패널 -->
         <div id="panelDCA" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs w-full">
@@ -102,7 +80,7 @@
           <span class="text-slate-400 text-[11px]">💡 매월 정해진 금액을 변동 없이 고정으로 분할 매수합니다.</span>
         </div>
 
-        <!-- 2. 목돈 거치식 패널 (UI 이탈 버그 수정) -->
+        <!-- 2. 목돈 거치식 패널 -->
         <div id="panelLumpSum" class="hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs w-full">
           <div class="flex items-center gap-2 w-full sm:w-auto">
             <label for="lumpSumKrw" class="font-bold text-amber-400 whitespace-nowrap min-w-max">초기 거치 목돈 원금 (원):</label>
@@ -158,9 +136,39 @@
 
       <div class="flex justify-end pt-1">
         <button onclick="UIController.runBacktest()" id="runBtn" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold py-2.5 px-8 rounded-lg text-xs transition shadow-md flex items-center justify-center gap-2">
-          🚀 v12.5 커스텀 시뮬레이션 실행
+          🚀 v12.6 시뮬레이션 실행
         </button>
       </div>
+    </div>
+
+    <!-- 신규: 나만의 커스텀 믹스 전략 관리 및 비교 패널 -->
+    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-4">
+      <div class="flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+            ⚖️ 나만의 커스텀 믹스 전략 관리 & 비교 (독립 종목 조합 및 원클릭 저장)
+          </h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">개별 ETF 선택 없이도 종목을 자유롭게 조합하여 여러 믹스 전략 간 성과를 직접 비교할 수 있습니다.</p>
+        </div>
+        <button onclick="UIController.addNewMixStrategy()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded transition flex items-center gap-1">
+          ➕ 새 믹스 전략 추가
+        </button>
+      </div>
+
+      <div id="customMixList" class="space-y-3"></div>
+    </div>
+
+    <!-- 개별 자산 선택 칩 -->
+    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+      <div class="flex justify-between items-center">
+        <span class="text-xs font-semibold text-slate-300">
+          개별 비교 분석 대상 자산 (선택: <span id="selectedCount" class="text-emerald-400 font-bold">0</span>/20)
+        </span>
+        <button onclick="UIController.toggleModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+          ⚙️ 단일 자산 선택 및 변경
+        </button>
+      </div>
+      <div id="activeChips" class="flex flex-wrap gap-1.5"></div>
     </div>
 
     <!-- 연산 진행바 -->
@@ -171,45 +179,6 @@
       </div>
       <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
         <div id="progressBar" class="bg-emerald-500 h-2 transition-all duration-200" style="width: 0%"></div>
-      </div>
-    </div>
-
-    <!-- 자산 선택 칩 -->
-    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-      <div class="flex justify-between items-center">
-        <span class="text-xs font-semibold text-slate-300">
-          분석 대상 자산 (선택: <span id="selectedCount" class="text-emerald-400 font-bold">0</span>/20)
-        </span>
-        <button onclick="UIController.toggleModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
-          ⚙️ 자산 선택 및 변경
-        </button>
-      </div>
-      <div id="activeChips" class="flex flex-wrap gap-1.5"></div>
-    </div>
-
-    <!-- 새로 추가된 자산 혼합 비중 & 리밸런싱 설정 패널 -->
-    <div id="mixSettingsContainer" class="hidden bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-      <div class="flex justify-between items-center flex-wrap gap-2">
-        <span class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-          ⚖️ [MIX] 혼합 포트폴리오 비중 & 리밸런싱 상세 설정
-        </span>
-        <button onclick="UIController.equalizeWeights()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1 rounded border border-slate-700 transition">
-          ⚖️ 균등 비중 (1/N) 설정
-        </button>
-      </div>
-
-      <div id="tickerWeightsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 text-xs"></div>
-
-      <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800 text-xs">
-        <div class="flex items-center gap-2">
-          <label for="rebalanceFreq" class="font-bold text-slate-300 whitespace-nowrap">리밸런싱 전략:</label>
-          <select id="rebalanceFreq" class="bg-slate-950 border border-slate-700 rounded px-2.5 py-1 text-xs text-emerald-400 font-bold">
-            <option value="none">리밸런싱 없음 (구매시 비중 매수 후 방치)</option>
-            <option value="monthly">매월 정기 리밸런싱 (월초 목표비중 재조정)</option>
-            <option value="yearly">매년 정기 리밸런싱 (연초 목표비중 재조정)</option>
-          </select>
-        </div>
-        <span id="weightSumLabel" class="text-emerald-400 text-[11px] font-bold">비중 합계: 100% ✅</span>
       </div>
     </div>
 
@@ -224,7 +193,7 @@
           <div class="flex gap-2">
             <button onclick="UIController.selectAll(true)" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 border border-slate-700">전체 선택</button>
             <button onclick="UIController.selectAll(false)" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded text-slate-300 border border-slate-700">전체 해제</button>
-            <button onclick="UIController.resetDefaults()" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs px-2.5 py-1 rounded">기본 6개 복원</button>
+            <button onclick="UIController.resetDefaults()" class="bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-700 text-xs px-2.5 py-1 rounded">기본 복원</button>
           </div>
           <div id="modalCheckboxGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
         </div>
@@ -264,13 +233,13 @@
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
             <tr>
-              <th class="px-3 py-2.5">종목코드</th>
-              <th onclick="UIController.showMetricInfo('자산 자체 수익력 (알파)', '시장과 상관없이 종목 고유의 역량으로 낸 연간 추가 초과 수익률입니다.')" class="px-3 py-2.5 text-purple-400 cursor-pointer hover:bg-slate-800 transition">자산 자체 수익력 (알파) ℹ️</th>
-              <th onclick="UIController.showMetricInfo('시장 민감도 (베타)', 'S&P 500 시장 지수가 1% 변동할 때 이 종목이 얼마나 민감하게 반응하는지 나타냅니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">시장 민감도 (베타) ℹ️</th>
+              <th class="px-3 py-2.5">종목코드 / 믹스명</th>
+              <th onclick="UIController.showMetricInfo('자산 자체 수익력 (알파)', '시장과 상관없이 고유 역량으로 낸 연간 추가 초과 수익률입니다.')" class="px-3 py-2.5 text-purple-400 cursor-pointer hover:bg-slate-800 transition">자산 자체 수익력 (알파) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('시장 민감도 (베타)', 'S&P 500 시장 지수가 1% 변동할 때 얼마나 민감하게 반응하는지 나타냅니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">시장 민감도 (베타) ℹ️</th>
               <th onclick="UIController.showMetricInfo('소형주 성향 (SMB)', '대형주 대비 소형주 특성(Small Minus Big)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-emerald-400 cursor-pointer hover:bg-slate-800 transition">소형주 성향 (SMB) ℹ️</th>
               <th onclick="UIController.showMetricInfo('가치주 성향 (HML)', '성장주 대비 가치주/저평가 특성(High Minus Low)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-amber-400 cursor-pointer hover:bg-slate-800 transition">가치주 성향 (HML) ℹ️</th>
               <th onclick="UIController.showMetricInfo('상승세 추종 (MOM)', '최근 상승 모멘텀 추세(Momentum)를 얼마나 강하게 추종하는지 보여줍니다.')" class="px-3 py-2.5 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">상승세 추종 (MOM) ℹ️</th>
-              <th onclick="UIController.showMetricInfo('모델 설명력 (R²)', '이 요인 모델이 해당 종목의 주가 변동을 얼마나 정확히 설명하는지 비율입니다. (1.0에 가까울수록 정밀)')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">모델 설명력 (R²) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('모델 설명력 (R²)', '이 요인 모델이 주가 변동을 얼마나 정확히 설명하는지 비율입니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">모델 설명력 (R²) ℹ️</th>
             </tr>
           </thead>
           <tbody id="ffTableBody" class="divide-y divide-slate-800/60">
@@ -285,11 +254,11 @@
       <table class="w-full text-xs text-left text-slate-300 min-w-[1600px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
           <tr>
-            <th class="px-3 py-3">종목코드 / 상장년도구분</th>
+            <th class="px-3 py-3">종목코드 / 전략 구분</th>
             <th class="px-3 py-3">총 원금</th>
             <th class="px-3 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
             <th onclick="UIController.showMetricInfo('실질 연수익률 (XIRR)', '실제 적립금 입출금 날짜 기준의 진짜 연 복리 수익률입니다.')" class="px-3 py-3 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">실질 연수익률 (XIRR) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('자산 순수 연성장률 (CAGR)', '추가 적립금 효과를 제외하고 종목 자산 자체가 순수하게 복리로 성장한 연평균 성장률입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">자산 순수 연성장률 (CAGR) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('자산 순수 연성장률 (CAGR)', '추가 적립금 효과를 제외하고 순수하게 복리로 성장한 연평균 성장률입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">자산 순수 연성장률 (CAGR) ℹ️</th>
             <th onclick="UIController.showMetricInfo('위험 대비 가성비 (샤프 지수)', '주가 변동 위험을 견딘 대가로 얻은 초과 수익성 지수입니다. (1.0 이상 우수)')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">위험 대비 가성비 (샤프) ℹ️</th>
             <th onclick="UIController.showMetricInfo('하락위험 가성비 (소티노 지수)', '상승 출렁임은 제외하고 순수 하락 폭락 위험만 따져 계산한 수익 가성비입니다.')" class="px-3 py-3 text-amber-400 cursor-pointer hover:bg-slate-800 transition">하락위험 가성비 (소티노) ℹ️</th>
             <th onclick="UIController.showMetricInfo('시장위험 대비 수익 (트레이너 지수)', '시장 베타 위험 1단위당 올린 초과 수익 성과입니다.')" class="px-3 py-3 text-cyan-300 cursor-pointer hover:bg-slate-800 transition">시장위험 대비 수익 (트레이너) ℹ️</th>
@@ -357,7 +326,7 @@
     };
 
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v12_5";
+      static dbName = "QuantBacktestCacheDB_v12_6";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -623,7 +592,7 @@
 
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_5`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_6`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -1005,7 +974,7 @@
     }
 
     class QuantBacktestEngine {
-      static async runAsync(sortedDates, tickers, processedData, fxData, investConfig, fxSpreadRate, taxEnabled, onProgress = null) {
+      static async runAsync(sortedDates, tickers, customMixes, processedData, fxData, investConfig, fxSpreadRate, taxEnabled, onProgress = null) {
         const N = sortedDates.length;
         const { processedPrices, processedDivs } = processedData;
         const results = {};
@@ -1052,7 +1021,7 @@
         const tickerDailyReturnsMap = {};
         const tickerMonthlyCashFlowsMap = {};
 
-        // 1. 개별 자산 시뮬레이션
+        // 1. 단일 개별 자산 백테스트 연산
         for (let tIdx = 0; tIdx < tickers.length; tIdx++) {
           const ticker = tickers[tIdx];
           const prices = processedPrices[ticker];
@@ -1252,21 +1221,23 @@
           };
         }
 
-        // 2. 다자산 커스텀 비중 & 리밸런싱 [MIX] 혼합 포트폴리오 연산 엔진
-        if (tickers.length > 1) {
-          const rawWeights = investConfig.tickerWeights || {};
+        // 2. 활성화된 커스텀 믹스 전략들 각각의 백테스트 시뮬레이션
+        customMixes.forEach((mix) => {
+          if (!mix.enabled) return;
+
+          const mixTickers = mix.allocations ? Object.keys(mix.allocations) : [];
+          if (mixTickers.length === 0) return;
+
           let sumW = 0;
-          tickers.forEach(t => sumW += (rawWeights[t] || 0));
-          if (sumW <= 0) sumW = tickers.length;
+          mixTickers.forEach(t => sumW += (mix.allocations[t] || 0));
+          if (sumW <= 0) return;
 
           const normWeights = {};
-          tickers.forEach(t => {
-            normWeights[t] = (rawWeights[t] !== undefined ? rawWeights[t] : (100 / tickers.length)) / sumW;
-          });
+          mixTickers.forEach(t => normWeights[t] = (mix.allocations[t] || 0) / sumW);
 
           const mixShares = {};
-          tickers.forEach(t => mixShares[t] = 0.0);
-          
+          mixTickers.forEach(t => mixShares[t] = 0.0);
+
           let mixInvested = 0.0;
           const mixPortfolioValues = new Float64Array(N);
           const mixInvestedSeries = new Float64Array(N);
@@ -1287,7 +1258,6 @@
               } else if (investConfig.mode === 'lumpSum') {
                 depositKrw = (mixMonthCounter === 1) ? investConfig.lumpSumKrw : 0;
               } else if (investConfig.mode === 'dynamicDCA') {
-                let spyPrice = processedPrices['SPY'] ? processedPrices['SPY'][i] : 1.0;
                 depositKrw = investConfig.monthlyKrw;
               }
 
@@ -1295,42 +1265,45 @@
               mixCashFlows.push(depositKrw);
               mixCashDates.push(dateStr);
 
-              if (investConfig.rebalanceFreq === 'monthly' || (investConfig.rebalanceFreq === 'yearly' && isYearEnd[i]) || (depositKrw > 0 && investConfig.rebalanceFreq === 'monthly')) {
+              if (mix.rebalanceFreq === 'monthly' || (mix.rebalanceFreq === 'yearly' && isYearEnd[i])) {
                 let currentVal = depositKrw;
-                tickers.forEach(t => {
-                  currentVal += mixShares[t] * processedPrices[t][i] * fx;
+                mixTickers.forEach(t => {
+                  const pUsd = processedPrices[t] ? processedPrices[t][i] : 1.0;
+                  currentVal += mixShares[t] * pUsd * fx;
                 });
 
-                tickers.forEach(t => {
+                mixTickers.forEach(t => {
                   const targetKrw = currentVal * normWeights[t];
-                  const priceUsd = processedPrices[t][i] * (1 + fxSpreadRate);
-                  mixShares[t] = targetKrw / (priceUsd * fx);
+                  const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0) * (1 + fxSpreadRate);
+                  mixShares[t] = targetKrw / (pUsd * fx);
                 });
               } else if (depositKrw > 0) {
-                tickers.forEach(t => {
+                mixTickers.forEach(t => {
                   const allocKrw = depositKrw * normWeights[t];
-                  const priceUsd = processedPrices[t][i] * (1 + fxSpreadRate);
-                  if (priceUsd > 0) {
-                    mixShares[t] += allocKrw / (priceUsd * fx);
+                  const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0) * (1 + fxSpreadRate);
+                  if (pUsd > 0) {
+                    mixShares[t] += allocKrw / (pUsd * fx);
                   }
                 });
               }
-            } else if (investConfig.rebalanceFreq === 'yearly' && isYearEnd[i]) {
+            } else if (mix.rebalanceFreq === 'yearly' && isYearEnd[i]) {
               let currentVal = 0;
-              tickers.forEach(t => {
-                currentVal += mixShares[t] * processedPrices[t][i] * fx;
+              mixTickers.forEach(t => {
+                const pUsd = processedPrices[t] ? processedPrices[t][i] : 1.0;
+                currentVal += mixShares[t] * pUsd * fx;
               });
 
-              tickers.forEach(t => {
+              mixTickers.forEach(t => {
                 const targetKrw = currentVal * normWeights[t];
-                const priceUsd = processedPrices[t][i] * (1 + fxSpreadRate);
-                mixShares[t] = targetKrw / (priceUsd * fx);
+                const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0) * (1 + fxSpreadRate);
+                mixShares[t] = targetKrw / (pUsd * fx);
               });
             }
 
             let todayTotalVal = 0;
-            tickers.forEach(t => {
-              todayTotalVal += mixShares[t] * processedPrices[t][i] * fx;
+            mixTickers.forEach(t => {
+              const pUsd = processedPrices[t] ? processedPrices[t][i] : 1.0;
+              todayTotalVal += mixShares[t] * pUsd * fx;
             });
 
             mixPortfolioValues[i] = Math.max(0, todayTotalVal);
@@ -1366,13 +1339,14 @@
           const mixFf = FamaFrenchEngine.solve(mixDailyReturns, processedData, sortedDates);
           const { ulcerIndex, painRatio } = InstitutionalAnalyticsEngine.computeUlcerAndPainRatio(mixPortfolioValues, mixCagr, avgRfAnnPercent);
 
-          tickerDailyReturnsMap['[MIX] 혼합 포트폴리오'] = mixDailyReturns;
-          tickerMonthlyCashFlowsMap['[MIX] 혼합 포트폴리오'] = mixCashFlows;
+          const mixKey = `[MIX] ${mix.name}`;
+          tickerDailyReturnsMap[mixKey] = mixDailyReturns;
+          tickerMonthlyCashFlowsMap[mixKey] = mixCashFlows;
 
-          const weightDescStr = tickers.map(t => `${t}:${Math.round(normWeights[t]*100)}%`).join(' ');
+          const wDescStr = mixTickers.map(t => `${t}:${Math.round(normWeights[t]*100)}%`).join(' ');
 
-          results['[MIX] 혼합 포트폴리오'] = {
-            name: `커스텀 혼합 (${weightDescStr} / ${investConfig.rebalanceFreq === 'none' ? '노리밸런싱' : investConfig.rebalanceFreq})`,
+          results[mixKey] = {
+            name: `${mix.name} (${wDescStr} / ${mix.rebalanceFreq === 'none' ? '노리밸런싱' : mix.rebalanceFreq})`,
             investedKrw: mixInvested,
             finalVal: mixFinalVal,
             cumulativeReturn: mixCumRet,
@@ -1393,7 +1367,7 @@
             portfolioValues: mixPortfolioValues,
             investedSeries: mixInvestedSeries
           };
-        }
+        });
 
         if (onProgress) onProgress(80);
         
@@ -1421,8 +1395,8 @@
     }
 
     class UIController {
-      static selectedTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
-      static tickerWeights = {};
+      static selectedTickers = ['QQQ', 'QLD']; // 기본 단일 비교 자산
+      static customMixes = []; // 커스텀 믹스 전략 목록
       static chartInstance = null;
       static activeTab = 'portfolio';
       static currentResults = null;
@@ -1430,9 +1404,210 @@
       static selectedMcTicker = null;
 
       static init() {
+        this.loadMixesFromStorage();
         this.onInvestModeChange();
+        this.renderMixStrategiesUI();
         this.updateActiveChips();
         this.runBacktest();
+      }
+
+      static loadMixesFromStorage() {
+        try {
+          const stored = localStorage.getItem('quant_custom_mixes_v12_6');
+          if (stored) {
+            this.customMixes = JSON.parse(stored);
+          } else {
+            // 기본 커스텀 믹스 프리셋 2개 초기화
+            this.customMixes = [
+              {
+                id: 'mix_1',
+                name: '기술주 2배 혼합 믹스',
+                enabled: true,
+                rebalanceFreq: 'monthly',
+                allocations: { 'QQQ': 70, 'QLD': 30 }
+              },
+              {
+                id: 'mix_2',
+                name: '올웨더 자산배분 믹스',
+                enabled: true,
+                rebalanceFreq: 'yearly',
+                allocations: { 'SPY': 40, 'TLT': 30, 'GLD': 20, 'IWM': 10 }
+              }
+            ];
+            this.saveMixesToStorage();
+          }
+        } catch {
+          this.customMixes = [];
+        }
+      }
+
+      static saveMixesToStorage() {
+        try {
+          localStorage.setItem('quant_custom_mixes_v12_6', JSON.stringify(this.customMixes));
+        } catch (e) {
+          console.warn('LocalStorage save error:', e);
+        }
+      }
+
+      static addNewMixStrategy() {
+        const id = 'mix_' + Date.now();
+        this.customMixes.push({
+          id,
+          name: `나만의 믹스 ${this.customMixes.length + 1}`,
+          enabled: true,
+          rebalanceFreq: 'monthly',
+          allocations: { 'QQQ': 50, 'QLD': 50 }
+        });
+        this.saveMixesToStorage();
+        this.renderMixStrategiesUI();
+      }
+
+      static deleteMixStrategy(id) {
+        this.customMixes = this.customMixes.filter(m => m.id !== id);
+        this.saveMixesToStorage();
+        this.renderMixStrategiesUI();
+      }
+
+      static toggleMixEnabled(id) {
+        const mix = this.customMixes.find(m => m.id === id);
+        if (mix) {
+          mix.enabled = !mix.enabled;
+          this.saveMixesToStorage();
+          this.renderMixStrategiesUI();
+        }
+      }
+
+      static updateMixName(id, name) {
+        const mix = this.customMixes.find(m => m.id === id);
+        if (mix) {
+          mix.name = name;
+          this.saveMixesToStorage();
+        }
+      }
+
+      static updateMixRebalanceFreq(id, freq) {
+        const mix = this.customMixes.find(m => m.id === id);
+        if (mix) {
+          mix.rebalanceFreq = freq;
+          this.saveMixesToStorage();
+        }
+      }
+
+      static addTickerToMix(mixId, ticker) {
+        const mix = this.customMixes.find(m => m.id === mixId);
+        if (mix && !mix.allocations[ticker]) {
+          mix.allocations[ticker] = 10;
+          this.saveMixesToStorage();
+          this.renderMixStrategiesUI();
+        }
+      }
+
+      static removeTickerFromMix(mixId, ticker) {
+        const mix = this.customMixes.find(m => m.id === mixId);
+        if (mix) {
+          delete mix.allocations[ticker];
+          this.saveMixesToStorage();
+          this.renderMixStrategiesUI();
+        }
+      }
+
+      static updateMixTickerWeight(mixId, ticker, weight) {
+        const mix = this.customMixes.find(m => m.id === mixId);
+        if (mix) {
+          mix.allocations[ticker] = Math.max(0, Math.min(100, parseFloat(weight) || 0));
+          this.saveMixesToStorage();
+          this.renderMixStrategiesUI();
+        }
+      }
+
+      static equalizeMixWeights(mixId) {
+        const mix = this.customMixes.find(m => m.id === mixId);
+        if (!mix) return;
+        const tickers = Object.keys(mix.allocations);
+        if (tickers.length === 0) return;
+
+        const eq = Math.floor(100 / tickers.length);
+        let rem = 100 - (eq * tickers.length);
+        tickers.forEach(t => {
+          mix.allocations[t] = eq + (rem > 0 ? 1 : 0);
+          if (rem > 0) rem--;
+        });
+        this.saveMixesToStorage();
+        this.renderMixStrategiesUI();
+      }
+
+      static renderMixStrategiesUI() {
+        const container = document.getElementById('customMixList');
+        container.innerHTML = '';
+
+        if (this.customMixes.length === 0) {
+          container.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs">생성된 커스텀 믹스 전략이 없습니다. '새 믹스 전략 추가' 버튼을 눌러보세요.</div>`;
+          return;
+        }
+
+        this.customMixes.forEach(mix => {
+          const card = document.createElement('div');
+          card.className = `p-3.5 rounded-xl border transition ${mix.enabled ? 'bg-slate-950/80 border-amber-500/50' : 'bg-slate-950/40 border-slate-800 opacity-60'}`;
+
+          const tickers = Object.keys(mix.allocations);
+          let sumW = 0;
+          tickers.forEach(t => sumW += (mix.allocations[t] || 0));
+
+          // 사용되지 않은 ETF 목록 추출
+          const unusedTickers = Object.keys(TICKER_UNIVERSE).filter(t => !tickers.includes(t));
+
+          card.innerHTML = `
+            <div class="flex flex-col gap-3">
+              <!-- 헤더: 이름, 활성화 스위치, 삭제 버튼 -->
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" ${mix.enabled ? 'checked' : ''} onchange="UIController.toggleMixEnabled('${mix.id}')" class="accent-amber-500 w-4 h-4 cursor-pointer">
+                  <input type="text" value="${mix.name}" onchange="UIController.updateMixName('${mix.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-amber-300 focus:border-amber-500 min-w-[160px]">
+                </div>
+                
+                <!-- 리밸런싱 전략 드롭다운 (반응형 UI 수정 적용) -->
+                <div class="flex items-center gap-2 max-w-full">
+                  <span class="text-slate-400 text-xs font-semibold whitespace-nowrap min-w-max">리밸런싱:</span>
+                  <select onchange="UIController.updateMixRebalanceFreq('${mix.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-bold max-w-full truncate">
+                    <option value="none" ${mix.rebalanceFreq === 'none' ? 'selected' : ''}>노 리밸런싱 (매수시 비중 유지)</option>
+                    <option value="monthly" ${mix.rebalanceFreq === 'monthly' ? 'selected' : ''}>매월 정기 리밸런싱</option>
+                    <option value="yearly" ${mix.rebalanceFreq === 'yearly' ? 'selected' : ''}>매년 정기 리밸런싱</option>
+                  </select>
+                  <button onclick="UIController.deleteMixStrategy('${mix.id}')" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-2 py-1 bg-slate-900 rounded border border-slate-800 hover:border-rose-950 transition">&times; 삭제</button>
+                </div>
+              </div>
+
+              <!-- 종목 비중 그리드 -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 pt-1">
+                ${tickers.map(t => `
+                  <div class="bg-slate-900 p-1.5 rounded border border-slate-800 flex items-center justify-between gap-1">
+                    <span class="font-bold text-slate-200 text-xs">${t}</span>
+                    <div class="flex items-center gap-1 w-16">
+                      <input type="number" value="${mix.allocations[t]}" onchange="UIController.updateMixTickerWeight('${mix.id}', '${t}', this.value)" class="w-full bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-center text-xs text-amber-400 font-bold min-w-0">
+                      <span class="text-slate-500 text-[10px]">%</span>
+                    </div>
+                    <button onclick="UIController.removeTickerFromMix('${mix.id}', '${t}')" class="text-slate-500 hover:text-rose-400 text-xs font-bold">&times;</button>
+                  </div>
+                `).join('')}
+              </div>
+
+              <!-- 하단 제어: 종목 추가 및 비중 합계 표시 -->
+              <div class="flex items-center justify-between pt-1 text-xs border-t border-slate-800/80 flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                  <select onchange="if(this.value){ UIController.addTickerToMix('${mix.id}', this.value); this.value=''; }" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-300">
+                    <option value="">+ 종목 추가...</option>
+                    ${unusedTickers.map(t => `<option value="${t}">${t} (${TICKER_UNIVERSE[t].name})</option>`).join('')}
+                  </select>
+                  <button onclick="UIController.equalizeMixWeights('${mix.id}')" class="text-[11px] bg-slate-900 hover:bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">⚖️ 균등 분배 (1/N)</button>
+                </div>
+                <span class="${sumW === 100 ? 'text-emerald-400' : 'text-amber-400'} font-bold text-[11px]">
+                  비중 합계: ${sumW}% ${sumW !== 100 ? '⚠️ (연산 시 정규화됨)' : '✅'}
+                </span>
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
       }
 
       static onInvestModeChange() {
@@ -1452,23 +1627,6 @@
         } else if (mode === 'dynamicDCA') {
           panelDynamicDCA.classList.remove('hidden');
         }
-      }
-
-      static applyPreset(type) {
-        if (type === 'allWeather') {
-          this.selectedTickers = ['SPY', 'TLT', 'GLD', 'IWM'];
-        } else if (type === 'techLeverage') {
-          this.selectedTickers = ['QQQ', 'QLD', 'TQQQ'];
-        } else if (type === 'dividendGrowth') {
-          this.selectedTickers = ['SCHD', 'JEPI', 'SPY'];
-        } else if (type === 'semiConductor') {
-          this.selectedTickers = ['SMH', 'SOXL', 'SPMO'];
-        } else if (type === 'classic6040') {
-          this.selectedTickers = ['SPY', 'TLT'];
-        }
-        this.equalizeWeights();
-        this.updateActiveChips();
-        this.runBacktest();
       }
 
       static showMetricInfo(title, description) {
@@ -1534,8 +1692,7 @@
       }
 
       static resetDefaults() {
-        this.selectedTickers = ['QQQ', 'QLD', 'TQQQ', 'SPMO', 'SMH', 'SOXL'];
-        this.equalizeWeights();
+        this.selectedTickers = ['QQQ', 'QLD'];
         this.updateActiveChips();
         this.renderModalCheckboxes();
       }
@@ -1545,8 +1702,7 @@
         document.getElementById('selectedCount').innerText = this.selectedTickers.length;
         
         if (this.selectedTickers.length === 0) {
-          container.innerHTML = `<span class="text-xs text-rose-400 font-semibold">선택된 자산이 없습니다.</span>`;
-          this.updateWeightsGrid();
+          container.innerHTML = `<span class="text-xs text-slate-500">선택된 개별 자산이 없습니다. (믹스 전략만으로 백테스트를 실행할 수 있습니다.)</span>`;
           return;
         }
 
@@ -1563,80 +1719,6 @@
 
         container.innerHTML = '';
         container.appendChild(fragment);
-
-        this.updateWeightsGrid();
-      }
-
-      static updateWeightsGrid() {
-        const container = document.getElementById('tickerWeightsGrid');
-        const mixPanel = document.getElementById('mixSettingsContainer');
-        
-        if (this.selectedTickers.length <= 1) {
-          mixPanel.classList.add('hidden');
-          return;
-        }
-        mixPanel.classList.remove('hidden');
-
-        const defaultWeight = Math.floor(100 / this.selectedTickers.length);
-        let remainder = 100 - (defaultWeight * this.selectedTickers.length);
-
-        this.selectedTickers.forEach(t => {
-          if (this.tickerWeights[t] === undefined) {
-            this.tickerWeights[t] = defaultWeight + (remainder > 0 ? 1 : 0);
-            if (remainder > 0) remainder--;
-          }
-        });
-
-        Object.keys(this.tickerWeights).forEach(t => {
-          if (!this.selectedTickers.includes(t)) delete this.tickerWeights[t];
-        });
-
-        container.innerHTML = '';
-        this.selectedTickers.forEach(t => {
-          const item = document.createElement('div');
-          item.className = 'bg-slate-950 p-2 rounded border border-slate-800 flex items-center justify-between gap-2';
-          item.innerHTML = `
-            <span class="font-bold text-slate-200 text-xs">${t}</span>
-            <div class="flex items-center gap-1 w-20">
-              <input type="number" min="0" max="100" value="${this.tickerWeights[t]}" 
-                onchange="UIController.onWeightChange('${t}', this.value)" 
-                class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-center text-xs font-bold text-emerald-400 focus:border-emerald-500 min-w-0">
-              <span class="text-slate-500 text-[10px]">%</span>
-            </div>
-          `;
-          container.appendChild(item);
-        });
-
-        this.updateWeightSum();
-      }
-
-      static onWeightChange(ticker, val) {
-        const num = parseFloat(val) || 0;
-        this.tickerWeights[ticker] = Math.max(0, Math.min(100, num));
-        this.updateWeightSum();
-      }
-
-      static equalizeWeights() {
-        if (this.selectedTickers.length === 0) return;
-        const eq = Math.floor(100 / this.selectedTickers.length);
-        let rem = 100 - (eq * this.selectedTickers.length);
-        this.selectedTickers.forEach(t => {
-          this.tickerWeights[t] = eq + (rem > 0 ? 1 : 0);
-          if (rem > 0) rem--;
-        });
-        this.updateWeightsGrid();
-      }
-
-      static updateWeightSum() {
-        let sum = 0;
-        this.selectedTickers.forEach(t => {
-          sum += (this.tickerWeights[t] || 0);
-        });
-        const lbl = document.getElementById('weightSumLabel');
-        if (lbl) {
-          lbl.innerText = `비중 합계: ${sum}% ${sum !== 100 ? '⚠️ (연산 시 정규화됨)' : '✅'}`;
-          lbl.className = sum === 100 ? 'text-emerald-400 text-[11px] font-bold' : 'text-amber-400 text-[11px] font-bold';
-        }
       }
 
       static setProgress(percent, label) {
@@ -1677,7 +1759,6 @@
         const mode = document.getElementById('investMode').value;
         const fxSpreadRate = parseFloat(document.getElementById('fxSpread').value);
         const taxEnabled = document.getElementById('taxMode').value === 'fifo';
-        const rebalanceFreq = document.getElementById('rebalanceFreq') ? document.getElementById('rebalanceFreq').value : 'none';
 
         if (!startMonth || !endMonth || startMonth >= endMonth) {
           alert("시작 월이 종료 월보다 앞서야 합니다.");
@@ -1695,18 +1776,19 @@
           smartDrop1: (parseFloat(document.getElementById('smartDrop1').value) || 10) / 100.0,
           smartMult1: parseFloat(document.getElementById('smartMult1').value) || 1.5,
           smartDrop2: (parseFloat(document.getElementById('smartDrop2').value) || 20) / 100.0,
-          smartMult2: parseFloat(document.getElementById('smartMult2').value) || 2.0,
-          tickerWeights: this.tickerWeights,
-          rebalanceFreq
+          smartMult2: parseFloat(document.getElementById('smartMult2').value) || 2.0
         };
 
         if (mode === 'dynamicDCA') {
           investConfig.monthlyKrw = investConfig.smartMonthlyKrw;
         }
 
-        if (this.selectedTickers.length === 0) {
+        // 활성화된 믹스 전략 수집
+        const activeMixes = this.customMixes.filter(m => m.enabled);
+
+        if (this.selectedTickers.length === 0 && activeMixes.length === 0) {
           document.getElementById('summaryCards').innerHTML = '';
-          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="15" class="px-4 py-6 text-center text-rose-400">분석 대상 자산을 지정하십시오.</td></tr>`;
+          document.getElementById('summaryTableBody').innerHTML = `<tr><td colspan="15" class="px-4 py-6 text-center text-rose-400">분석할 개별 자산이나 활성화된 커스텀 믹스 전략을 선택하십시오.</td></tr>`;
           if (this.chartInstance) {
             this.chartInstance.destroy();
             this.chartInstance = null;
@@ -1717,15 +1799,24 @@
         this.setEngineStatus('loading', '데이터 검증 및 시세 수신 중...');
         this.setProgress(10, '데이터베이스 수신 중...');
 
+        // 필요 티커 통합 수집 (개별 선택 자산 + 활성화 믹스 전략 내부 자산 + 팩터 벤치마크)
         const requiredSet = new Set(this.selectedTickers);
         requiredSet.add('SPY');
         requiredSet.add('IWM');
         requiredSet.add('SCHD');
         requiredSet.add('SPMO');
-        this.selectedTickers.forEach(t => {
+
+        activeMixes.forEach(mix => {
+          if (mix.allocations) {
+            Object.keys(mix.allocations).forEach(t => requiredSet.add(t));
+          }
+        });
+
+        Array.from(requiredSet).forEach(t => {
           const cfg = TICKER_UNIVERSE[t];
           if (cfg?.base) requiredSet.add(cfg.base);
         });
+
         const fullTickers = Array.from(requiredSet);
 
         const fetchPromises = fullTickers.map(t => YahooFinanceFetcher.fetchChartData(t, startYear, endYear));
@@ -1764,6 +1855,7 @@
         const results = await QuantBacktestEngine.runAsync(
           sortedDates,
           this.selectedTickers,
+          activeMixes,
           processedData,
           fxData,
           investConfig,
@@ -1777,7 +1869,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Enterprise Engine v12.5 완료');
+        this.setEngineStatus('success', 'Enterprise Engine v12.6 완료');
       }
 
       static switchChartTab(tab) {
@@ -1819,7 +1911,7 @@
 
         desc.innerHTML = `
           <span class="mr-1 text-slate-400">미래 시뮬레이션 분석 대상:</span>
-          <select id="mcTickerSelect" onchange="UIController.changeMcTicker(this.value)" class="bg-slate-950 text-emerald-400 font-bold text-xs rounded border border-slate-700 px-2 py-0.5">
+          <select id="mcTickerSelect" onchange="UIController.changeMcTicker(this.value)" class="bg-slate-950 text-emerald-400 font-bold text-xs rounded border border-slate-700 px-2 py-0.5 max-w-full truncate">
             ${tickers.map(t => `<option value="${t}" ${t === this.selectedMcTicker ? 'selected' : ''}>${t}</option>`).join('')}
           </select>
         `;
@@ -1839,7 +1931,7 @@
 
         const cardsContainer = document.getElementById('summaryCards');
         cardsContainer.innerHTML = '';
-        const palette = ['#34d399', '#60a5fa', '#f59e0b', '#f87171', '#c084fc', '#fb923c'];
+        const palette = ['#34d399', '#60a5fa', '#f87171', '#c084fc', '#fb923c', '#38bdf8'];
 
         const firstTicker = Object.keys(results)[0];
         if (!firstTicker) return;
@@ -1857,7 +1949,7 @@
         Object.entries(results).slice(0, 3).forEach(([ticker, res], idx) => {
           const card = document.createElement('div');
           card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
-          const isMix = ticker === '[MIX] 혼합 포트폴리오';
+          const isMix = ticker.startsWith('[MIX]');
           
           card.innerHTML = `
             <span class="text-xs font-bold block truncate ${isMix ? 'text-amber-400' : 'text-slate-400'}">${res.name}</span>
@@ -1875,7 +1967,7 @@
         ffBody.innerHTML = '';
         for (const [ticker, res] of Object.entries(results)) {
           const tr = document.createElement('tr');
-          const isMix = ticker === '[MIX] 혼합 포트폴리오';
+          const isMix = ticker.startsWith('[MIX]');
           tr.className = `hover:bg-slate-800/40 border-b border-slate-800/60 ${isMix ? 'bg-amber-950/20' : ''}`;
           tr.innerHTML = `
             <td class="px-3 py-2.5 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'}">${ticker}</td>
@@ -1892,14 +1984,14 @@
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
         for (const [ticker, res] of Object.entries(results)) {
-          const isMix = ticker === '[MIX] 혼합 포트폴리오';
+          const isMix = ticker.startsWith('[MIX]');
           const config = TICKER_UNIVERSE[ticker];
           const inceptYear = config?.inceptYear || 2000;
           const isBackfilled = startYear < inceptYear;
 
           let backfillBadge = '';
           if (isMix) {
-            backfillBadge = `<span class="text-[9px] bg-amber-950 text-amber-300 px-1 py-0.5 rounded border border-amber-700">커스텀 혼합 시뮬레이션</span>`;
+            backfillBadge = `<span class="text-[9px] bg-amber-950 text-amber-300 px-1 py-0.5 rounded border border-amber-700">커스텀 믹스 전략</span>`;
           } else if (!isBackfilled) {
             backfillBadge = `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50">실제 데이터 100%</span>`;
           } else if (config.allowBackfill) {
@@ -1953,7 +2045,7 @@
           this.chartInstance = null;
         }
 
-        const palette = ['#34d399', '#60a5fa', '#f87171', '#c084fc', '#fb923c', '#38bdf8'];
+        const palette = ['#34d399', '#60a5fa', '#f87171', '#c084fc', '#fb923c', '#38bdf8', '#a3e635', '#f472b6'];
         const firstTicker = Object.keys(results)[0];
 
         if (this.activeTab === 'portfolio') {
@@ -1981,16 +2073,16 @@
             for (let i = 0; i < sortedDates.length; i += step) {
               sampledData.push(Math.max(1, res.portfolioValues[i]));
             }
-            const isMix = ticker === '[MIX] 혼합 포트폴리오';
+            const isMix = ticker.startsWith('[MIX]');
             
             datasets.push({
               label: `${ticker} (XIRR: ${res.annualizedXIRR.toFixed(1)}%)`,
               data: sampledData,
-              borderColor: isMix ? '#f59e0b' : palette[colorIdx % palette.length],
-              borderWidth: isMix ? 3.0 : 1.8,
+              borderColor: palette[colorIdx % palette.length],
+              borderWidth: isMix ? 2.5 : 1.5,
               pointRadius: 0
             });
-            if (!isMix) colorIdx++;
+            colorIdx++;
           });
 
           this.chartInstance = new Chart(ctx, {
@@ -2021,16 +2113,16 @@
           Object.entries(results).forEach(([ticker, res]) => {
             if (!res.rollingSharpe || res.rollingSharpe.length === 0) return;
             const data = res.rollingSharpe.map(r => r.sharpe);
-            const isMix = ticker === '[MIX] 혼합 포트폴리오';
+            const isMix = ticker.startsWith('[MIX]');
 
             datasets.push({
               label: `${ticker} (3년 단위 위험 대비 가성비)`,
               data: data,
-              borderColor: isMix ? '#f59e0b' : palette[colorIdx % palette.length],
-              borderWidth: isMix ? 3.0 : 1.8,
+              borderColor: palette[colorIdx % palette.length],
+              borderWidth: isMix ? 2.5 : 1.5,
               pointRadius: 0
             });
-            if (!isMix) colorIdx++;
+            colorIdx++;
           });
 
           const labels = results[firstTicker]?.rollingSharpe?.map(r => r.date) || [];
