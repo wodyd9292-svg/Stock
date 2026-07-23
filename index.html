@@ -781,8 +781,9 @@
               const basePrev = basePrices[i];
 
               if (baseCurr > 0 && basePrev > 0) {
-                const logBaseReturn = Math.log(baseCurr / basePrev);
-                let synthLogReturn = 0.0;
+                // [수정사항 1 반영]: 로그 수익률 복리 오차를 제거하고 일일 단순 수익률로 백필 연산
+                const simpleBaseReturn = (baseCurr - basePrev) / basePrev;
+                let synthSimpleReturn = 0.0;
 
                 if (config.proxyType === 'leveraged') {
                   const sofr = HistoricalInterestRates.getSOFR(year);
@@ -793,12 +794,13 @@
                   const repoCostDaily = (Math.abs(lev - 1) * (sofr + swapSpread)) / 252;
                   const expenseDaily = (config.fee + trackingErr) / 252;
 
-                  synthLogReturn = (lev * logBaseReturn) - repoCostDaily - expenseDaily;
+                  synthSimpleReturn = (lev * simpleBaseReturn) - repoCostDaily - expenseDaily;
+                  synthSimpleReturn = Math.max(-0.999, synthSimpleReturn);
                 } else {
-                  synthLogReturn = logBaseReturn - (config.fee / 252);
+                  synthSimpleReturn = simpleBaseReturn - (config.fee / 252);
                 }
 
-                const prevPrice = priceArr[i + 1] * Math.exp(-synthLogReturn);
+                const prevPrice = priceArr[i + 1] / (1.0 + synthSimpleReturn);
                 priceArr[i] = Math.max(0.001, prevPrice);
               } else {
                 priceArr[i] = Math.max(0.001, priceArr[i + 1] || 1.0);
