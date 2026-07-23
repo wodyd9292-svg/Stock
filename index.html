@@ -73,7 +73,7 @@
           <select id="investMode" onchange="UIController.onInvestModeChange()" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-amber-400 font-bold">
             <option value="dca">월 적립식 (DCA)</option>
             <option value="lumpSum">초기 목돈 거치식 (Lump-Sum)</option>
-            <option value="dynamicDCA">스마트 적립식 (커스텀 딥바Buying)</option>
+            <option value="dynamicDCA">스마트 적립식 (커스텀 딥바잉)</option>
           </select>
         </div>
         <div>
@@ -213,7 +213,7 @@
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
             <tr>
               <th class="px-3 py-2.5">순위</th>
-              <th class="px-3 py-2.5">전략명 / 작성자</th>
+              <th class="px-3 py-2.5">전략명 (리밸런싱) / 작성자</th>
               <th class="px-3 py-2.5 text-amber-400">Quant Score 🏆</th>
               <th class="px-3 py-2.5">검증 기간 (리그)</th>
               <th class="px-3 py-2.5 text-cyan-400">XIRR</th>
@@ -1933,6 +1933,12 @@
           return;
         }
 
+        const rebBadgeMap = {
+          'none': '<span class="text-[9px] bg-slate-800 text-slate-400 border border-slate-700 px-1.5 py-0.5 rounded font-normal whitespace-nowrap">🛑 노 리밸런싱</span>',
+          'monthly': '<span class="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded font-normal whitespace-nowrap">🔄 매월 정기</span>',
+          'yearly': '<span class="text-[9px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-1.5 py-0.5 rounded font-normal whitespace-nowrap">📅 매년 정기</span>'
+        };
+
         tbody.innerHTML = '';
         list.forEach((item, idx) => {
           const tr = document.createElement('tr');
@@ -1940,12 +1946,16 @@
 
           const rankBadge = idx === 0 ? '🥇 1위' : idx === 1 ? '🥈 2위' : idx === 2 ? '🥉 3위' : `${idx + 1}위`;
           const allocDesc = Object.entries(item.allocations).map(([t, w]) => `${t}:${w}%`).join(' ');
+          const rebBadge = rebBadgeMap[item.rebalanceFreq] || rebBadgeMap['monthly'];
 
           tr.innerHTML = `
             <td class="px-3 py-2.5 font-bold text-amber-400">${rankBadge}</td>
             <td class="px-3 py-2.5">
-              <div class="font-bold text-slate-200">${item.name}</div>
-              <div class="text-[10px] text-slate-500">by ${item.author} · ${item.createdAt}</div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-bold text-slate-200">${item.name}</span>
+                ${rebBadge}
+              </div>
+              <div class="text-[10px] text-slate-500 mt-0.5">by ${item.author} · ${item.createdAt}</div>
             </td>
             <td class="px-3 py-2.5 text-amber-300 font-bold text-sm">${item.score}점</td>
             <td class="px-3 py-2.5">
