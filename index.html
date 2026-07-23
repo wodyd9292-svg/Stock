@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v12.7 Custom Multi-Mix Pro</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v12.8 Leaderboard Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -17,13 +17,14 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono select-none">
 
   <div class="max-w-7xl mx-auto space-y-5">
+    <!-- 헤더 -->
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.7 Full Metrics</span>
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.8 Leaderboard Pro</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Restored Risk & Pain Metrics · Independent Custom Portfolio Comparison · Auto Save · 22% Tax Engine
+          Period-Filtered Global Leaderboard · 5-Metric Quant Score · Auto Save · 22% Tax Engine
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -32,7 +33,7 @@
       </div>
     </header>
 
-    <!-- 복원된 핵심 투자 지표 3초 가이드 -->
+    <!-- 가성비 & 고통 지수 가이드 -->
     <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 sm:p-4 space-y-2 text-xs">
       <div class="flex justify-between items-center cursor-pointer" onclick="UIController.toggleBeginnerGuide()">
         <span class="font-bold text-emerald-400 flex items-center gap-1.5">
@@ -42,21 +43,21 @@
       </div>
       <div id="beginnerGuideContent" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-slate-300 border-t border-slate-800">
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-amber-400 block mb-1">⚖️ 위험 대비 가성비 (샤프 지수)</span>
-          주가 변동성 위험 1단위 대비 초과 수익 성능입니다. <span class="text-emerald-300 font-semibold">(1.0 이상 우수, 2.0 이상 최우수)</span>
+          <span class="font-bold text-amber-400 block mb-1">⚖️ 하락위험 가성비 (소티노 지수)</span>
+          상승 출렁임은 포상하고 <span class="text-emerald-300 font-semibold">순수 하락 폭락 위험</span>만 평가하는 실전 적립식 성과 지수입니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-rose-400 block mb-1">📉 멘탈 고통 대비 성과 (페인 Ratio)</span>
-          계좌가 전고점 대비 하락해 고통받은 깊이와 기간 대비 올려준 <span class="text-rose-300 font-semibold">실질 가성비</span>입니다.
+          <span class="font-bold text-cyan-400 block mb-1">📈 실질 연복리 수익률 (XIRR)</span>
+          월별 실제 입출금 날짜의 현금흐름을 반영한 <span class="text-cyan-300 font-semibold">진짜 적립식 연복리 수익률</span>입니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-cyan-400 block mb-1">🛡️ 역대 최대 하락 폭 (MDD) & 마음 고통 (궤양)</span>
-          백테스트 전체 기간 중 발생한 <span class="text-cyan-300 font-semibold">최대 손실 비율</span>과 하락 지속 고통 지수(Ulcer)입니다.
+          <span class="font-bold text-rose-400 block mb-1">🛡️ MDD & 마음 고통 (궤양 지수)</span>
+          최대 하락 폭(MDD)과 계좌가 전고점에 물려있는 <span class="text-rose-300 font-semibold">깊이 및 고통 기간(Ulcer)</span>을 측정합니다.
         </div>
       </div>
     </div>
 
-    <!-- 조건 설정 영역 -->
+    <!-- 백테스트 조건 설정 영역 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-4">
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <div>
@@ -72,7 +73,7 @@
           <select id="investMode" onchange="UIController.onInvestModeChange()" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-amber-400 font-bold">
             <option value="dca">월 적립식 (DCA)</option>
             <option value="lumpSum">초기 목돈 거치식 (Lump-Sum)</option>
-            <option value="dynamicDCA">스마트 적립식 (커스텀 딥바잉)</option>
+            <option value="dynamicDCA">스마트 적립식 (커스텀 딥바Buying)</option>
           </select>
         </div>
         <div>
@@ -93,33 +94,29 @@
         </div>
       </div>
 
-      <!-- 전략별 가변 패널 (반응형 완전 적용) -->
+      <!-- 가변 입력 패널 -->
       <div id="dynamicStrategyPanel" class="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800 w-full overflow-hidden">
-        <!-- 1. 월 적립식 패널 -->
         <div id="panelDCA" class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs w-full">
           <div class="flex items-center gap-2 w-full sm:w-auto">
             <label for="monthlyKrw" class="font-bold text-emerald-400 whitespace-nowrap min-w-max">월 적립금 (원):</label>
             <input type="number" id="monthlyKrw" value="500000" step="50000" class="bg-slate-900 border border-slate-700 rounded px-3 py-1.5 w-full sm:w-48 text-emerald-300 font-bold focus:border-emerald-500 min-w-0">
           </div>
-          <span class="text-slate-400 text-[11px]">💡 매월 정해진 금액을 변동 없이 고정으로 분할 매수합니다.</span>
+          <span class="text-slate-400 text-[11px]">💡 매월 정해진 금액을 고정으로 적립 매수합니다.</span>
         </div>
 
-        <!-- 2. 목돈 거치식 패널 -->
         <div id="panelLumpSum" class="hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs w-full">
           <div class="flex items-center gap-2 w-full sm:w-auto">
-            <label for="lumpSumKrw" class="font-bold text-amber-400 whitespace-nowrap min-w-max">초기 거치 목돈 원금 (원):</label>
+            <label for="lumpSumKrw" class="font-bold text-amber-400 whitespace-nowrap min-w-max">초기 거치 원금 (원):</label>
             <input type="number" id="lumpSumKrw" value="50000000" step="1000000" class="bg-slate-900 border border-slate-700 rounded px-3 py-1.5 w-full sm:w-52 text-amber-300 font-bold focus:border-amber-500 min-w-0">
           </div>
-          <span class="text-slate-400 text-[11px]">💡 시작 월에 해당 목돈을 전액 투입하고, 이후 추가 적립 없이 자산 추이를 추적합니다.</span>
+          <span class="text-slate-400 text-[11px]">💡 시작 월에 전액 투입 후 추이를 추적합니다.</span>
         </div>
 
-        <!-- 3. 스마트 적립식 커스텀 패널 -->
         <div id="panelDynamicDCA" class="hidden space-y-2.5 text-xs w-full">
           <div class="flex items-center justify-between border-b border-slate-800 pb-1.5 flex-wrap gap-1">
             <span class="font-bold text-emerald-400 flex items-center gap-1.5">
               ⚙️ 스마트 딥바잉 (Smart DCA) 커스텀 매수 가중치 설정
             </span>
-            <span class="text-[11px] text-slate-400">전고점(Peak) 대비 하락률에 따라 월 적립금을 자동으로 늘려 매수합니다.</span>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1">
             <div>
@@ -160,26 +157,78 @@
 
       <div class="flex justify-end pt-1">
         <button onclick="UIController.runBacktest()" id="runBtn" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold py-2.5 px-8 rounded-lg text-xs transition shadow-md flex items-center justify-center gap-2">
-          🚀 v12.7 시뮬레이션 실행
+          🚀 v12.8 시뮬레이션 실행
         </button>
       </div>
     </div>
 
-    <!-- 나만의 커스텀 믹스 전략 관리 및 비교 패널 -->
+    <!-- 나만의 커스텀 믹스 전략 관리 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-4">
       <div class="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h3 class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-            ⚖️ 나만의 커스텀 믹스 전략 관리 & 비교 (독립 종목 조합 및 원클릭 저장)
+            ⚖️ 나만의 커스텀 믹스 전략 관리 & 백업
           </h3>
-          <p class="text-[11px] text-slate-400 mt-0.5">개별 ETF 선택 없이도 종목을 자유롭게 조합하여 여러 믹스 전략 간 성과를 직접 비교할 수 있습니다.</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">원하는 종목 비율을 조합하고 파일(JSON)로 저장하거나 글로벌 리더보드에 공유해보세요.</p>
         </div>
-        <button onclick="UIController.addNewMixStrategy()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded transition flex items-center gap-1">
-          ➕ 새 믹스 전략 추가
-        </button>
+        <div class="flex gap-1.5 flex-wrap">
+          <button onclick="UIController.exportStrategies()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded border border-slate-700 transition">
+            📥 파일 저장
+          </button>
+          <label class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded border border-slate-700 cursor-pointer transition">
+            📤 불러오기
+            <input type="file" accept=".json" onchange="UIController.importStrategies(event)" class="hidden">
+          </label>
+          <button onclick="UIController.addNewMixStrategy()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs px-3 py-1.5 rounded transition flex items-center gap-1">
+            ➕ 새 믹스 추가
+          </button>
+        </div>
       </div>
 
       <div id="customMixList" class="space-y-3"></div>
+    </div>
+
+    <!-- 기간별 글로벌 명예의 전당 리더보드 -->
+    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-4">
+      <div class="flex justify-between items-center flex-wrap gap-2">
+        <div>
+          <h3 class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+            🌐 전 세계 퀀트 DCA 명예의 전당 (기간별 글로벌 리더보드)
+          </h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">
+            백테스트 기간에 따른 3대 리그별 통합 랭킹입니다. 5개 핵심 지표(XIRR, Sortino, Omega, MDD, Ulcer)를 산출하여 100점 만점으로 평가합니다.
+          </p>
+        </div>
+
+        <div class="flex gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs flex-wrap">
+          <button onclick="UIController.filterLeaderboard('all')" id="filterTabAll" class="px-2.5 py-1 rounded font-bold bg-amber-500 text-slate-950">전체 리그</button>
+          <button onclick="UIController.filterLeaderboard('long')" id="filterTabLong" class="px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-400 hover:text-slate-200">🏆 장기 (15년~)</button>
+          <button onclick="UIController.filterLeaderboard('mid')" id="filterTabMid" class="px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-400 hover:text-slate-200">🥇 중기 (5~15년)</button>
+          <button onclick="UIController.filterLeaderboard('short')" id="filterTabShort" class="px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-400 hover:text-slate-200">⚡ 단기 (&lt;5년)</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left text-slate-300 min-w-[950px]">
+          <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
+            <tr>
+              <th class="px-3 py-2.5">순위</th>
+              <th class="px-3 py-2.5">전략명 / 작성자</th>
+              <th class="px-3 py-2.5 text-amber-400">Quant Score 🏆</th>
+              <th class="px-3 py-2.5">검증 기간 (리그)</th>
+              <th class="px-3 py-2.5 text-cyan-400">XIRR</th>
+              <th class="px-3 py-2.5 text-amber-300">Sortino</th>
+              <th class="px-3 py-2.5 text-rose-400">MDD</th>
+              <th class="px-3 py-2.5 text-rose-300">Ulcer</th>
+              <th class="px-3 py-2.5">구성 비중</th>
+              <th class="px-3 py-2.5 text-right">가져오기</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardTableBody" class="divide-y divide-slate-800/60">
+            <tr><td colspan="10" class="px-4 py-6 text-center text-slate-500">글로벌 리더보드 동기화 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- 개별 자산 선택 칩 -->
@@ -210,7 +259,7 @@
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-          <h3 class="font-bold text-sm text-emerald-400">20개 주요 미국 ETF 목록 (백필 정책 안내 포함)</h3>
+          <h3 class="font-bold text-sm text-emerald-400">20개 주요 미국 ETF 목록</h3>
           <button onclick="UIController.toggleModal()" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
         </div>
         <div class="p-4 overflow-y-auto space-y-4 text-xs">
@@ -229,7 +278,7 @@
       </div>
     </div>
 
-    <!-- 요약 카드 영역 (가성비 & MDD 수치 시각화 포함) -->
+    <!-- 요약 카드 영역 -->
     <div id="summaryCards" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
     <!-- 차트 영역 -->
@@ -250,20 +299,19 @@
     <!-- 요인 분석 영역 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
-        <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Proxy Matrix)</h3>
-        <span class="text-[10px] text-slate-500">* 항목을 터치하면 상세 설명 팝업이 나타납니다.</span>
+        <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Matrix)</h3>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
             <tr>
               <th class="px-3 py-2.5">종목코드 / 믹스명</th>
-              <th onclick="UIController.showMetricInfo('자산 자체 수익력 (알파)', '시장과 상관없이 고유 역량으로 낸 연간 추가 초과 수익률입니다.')" class="px-3 py-2.5 text-purple-400 cursor-pointer hover:bg-slate-800 transition">자산 자체 수익력 (알파) ℹ️</th>
-              <th onclick="UIController.showMetricInfo('시장 민감도 (베타)', 'S&P 500 시장 지수가 1% 변동할 때 얼마나 민감하게 반응하는지 나타냅니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">시장 민감도 (베타) ℹ️</th>
-              <th onclick="UIController.showMetricInfo('소형주 성향 (SMB)', '대형주 대비 소형주 특성(Small Minus Big)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-emerald-400 cursor-pointer hover:bg-slate-800 transition">소형주 성향 (SMB) ℹ️</th>
-              <th onclick="UIController.showMetricInfo('가치주 성향 (HML)', '성장주 대비 가치주/저평가 특성(High Minus Low)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-amber-400 cursor-pointer hover:bg-slate-800 transition">가치주 성향 (HML) ℹ️</th>
-              <th onclick="UIController.showMetricInfo('상승세 추종 (MOM)', '최근 상승 모멘텀 추세(Momentum)를 얼마나 강하게 추종하는지 보여줍니다.')" class="px-3 py-2.5 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">상승세 추종 (MOM) ℹ️</th>
-              <th onclick="UIController.showMetricInfo('모델 설명력 (R²)', '이 요인 모델이 주가 변동을 얼마나 정확히 설명하는지 비율입니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">모델 설명력 (R²) ℹ️</th>
+              <th class="px-3 py-2.5 text-purple-400">자산 자체 수익력 (알파)</th>
+              <th class="px-3 py-2.5">시장 민감도 (베타)</th>
+              <th class="px-3 py-2.5 text-emerald-400">소형주 성향 (SMB)</th>
+              <th class="px-3 py-2.5 text-amber-400">가치주 성향 (HML)</th>
+              <th class="px-3 py-2.5 text-cyan-400">상승세 추종 (MOM)</th>
+              <th class="px-3 py-2.5">모델 설명력 (R²)</th>
             </tr>
           </thead>
           <tbody id="ffTableBody" class="divide-y divide-slate-800/60">
@@ -273,11 +321,11 @@
       </div>
     </div>
 
-    <!-- 백테스트 메인 성과 표 (15개 전문 지표 통합) -->
+    <!-- 통합 성과 표 -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
       <div class="p-3 bg-slate-950 border-b border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
-        <span>📋 기관급 통합 성과 및 고통/위험 분석 표</span>
-        <span class="text-emerald-400 font-bold">👉 가로로 스크롤하여 15개 전체 전문 수치를 확인하세요.</span>
+        <span>📋 기관급 통합 성과 및 위험 분석 표</span>
+        <span class="text-emerald-400 font-bold">👉 가로 스크롤을 통해 15개 전문 수치를 확인하세요.</span>
       </div>
       <table class="w-full text-xs text-left text-slate-300 min-w-[1600px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
@@ -285,18 +333,18 @@
             <th class="px-3 py-3">종목코드 / 전략 구분</th>
             <th class="px-3 py-3">총 원금</th>
             <th class="px-3 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
-            <th onclick="UIController.showMetricInfo('실질 연수익률 (XIRR)', '실제 적립금 입출금 날짜 기준의 진짜 연 복리 수익률입니다.')" class="px-3 py-3 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">실질 연수익률 (XIRR) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('자산 순수 연성장률 (CAGR)', '추가 적립금 효과를 제외하고 순수하게 복리로 성장한 연평균 성장률입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">자산 순수 연성장률 (CAGR) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('위험 대비 가성비 (샤프 지수)', '주가 변동 위험을 견딘 대가로 얻은 초과 수익성 지수입니다. (1.0 이상 우수)')" class="px-3 py-3 text-amber-400 cursor-pointer hover:bg-slate-800 transition">위험 대비 가성비 (샤프) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('하락위험 가성비 (소티노 지수)', '상승 출렁임은 제외하고 순수 하락 폭락 위험만 따져 계산한 수익 가성비입니다.')" class="px-3 py-3 text-amber-300 cursor-pointer hover:bg-slate-800 transition">하락위험 가성비 (소티노) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('시장위험 대비 수익 (트레이너 지수)', '시장 베타 위험 1단위당 올린 초과 수익 성과입니다.')" class="px-3 py-3 text-cyan-300 cursor-pointer hover:bg-slate-800 transition">시장위험 대비 수익 (트레이너) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('손익 확률 비율 (오메가 비율)', '전체 투자 기간 중 손실 가능성 대비 수익 가능성의 통합 비율입니다.')" class="px-3 py-3 text-emerald-300 cursor-pointer hover:bg-slate-800 transition">손익 확률 비율 (오메가) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('멘탈 고통 대비 성과 (페인 Ratio)', '계좌가 깎이고 회복을 못해 겪은 고통의 누적 크기 대비 올린 성과 비율입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">멘탈 고통 대비 성과 (페인) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('지수 추종 오차율 (Tracking Error)', '원본 지수나 목표 포트폴리오 변동성과의 추종 오차율 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">지수 추종 오차율 ℹ️</th>
-            <th onclick="UIController.showMetricInfo('초과수익 가성비 (정보비율)', '벤치마크 지수 대비 얼마나 안정적이고 효율적으로 초과 수익을 만들어냈는지 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">초과수익 가성비 (정보비율) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('마음 고통 지수 (Ulcer Index)', '주가 하락의 깊이와 하락 기간의 길이를 종합하여 투자자가 느낀 고통을 수치화한 지수입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">마음 고통 지수 (궤양) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('최악의 날 폭락 위험 (CVaR 95%)', '하위 5% 최악의 시장 위기 상황이 닥쳤을 때 단 하루 만에 발생할 수 있는 평균 예상 손실률입니다.')" class="px-3 py-3 text-rose-400 cursor-pointer hover:bg-slate-800 transition">최악의 날 폭락 위험 (CVaR) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('역대 최대 계좌 하락 폭 (MDD)', '전체 투자 기간 동안 전고점 대비 계좌 평가금이 가장 깊게 박살 났을 때의 최대 손실 비율입니다.')" class="px-3 py-3 text-rose-500 cursor-pointer hover:bg-slate-800 transition">역대 최대 계좌 하락 폭 (MDD) ℹ️</th>
+            <th class="px-3 py-3 text-cyan-400">실질 연수익률 (XIRR)</th>
+            <th class="px-3 py-3">순수 연성장률 (CAGR)</th>
+            <th class="px-3 py-3 text-amber-400">샤프 지수</th>
+            <th class="px-3 py-3 text-amber-300">소티노 지수</th>
+            <th class="px-3 py-3 text-cyan-300">트레이너 지수</th>
+            <th class="px-3 py-3 text-emerald-300">오메가 비율</th>
+            <th class="px-3 py-3 text-rose-300">페인 Ratio</th>
+            <th class="px-3 py-3">추종 오차율</th>
+            <th class="px-3 py-3">정보비율</th>
+            <th class="px-3 py-3 text-rose-300">마음 고통 (Ulcer)</th>
+            <th class="px-3 py-3 text-rose-400">CVaR (95%)</th>
+            <th class="px-3 py-3 text-rose-500">최대 하락 폭 (MDD)</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
@@ -340,13 +388,13 @@
       'UPRO': { name: 'ProShares UltraPro S&P500 (3x)', base: 'SPY', leverage: 3, fee: 0.0091, inceptYear: 2009, allowBackfill: true, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
       'SMH':  { name: 'VanEck Semiconductor ETF', base: '^SOX', leverage: 1, fee: 0.0035, inceptYear: 2011, allowBackfill: true, proxyType: 'index_tracking' },
       'SOXL': { name: 'Direxion Semi Bull 3X', base: 'SMH', leverage: 3, fee: 0.0094, inceptYear: 2010, allowBackfill: true, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
-      'SCHD': { name: 'Schwab U.S. Dividend Equity', base: null, leverage: 1, fee: 0.0006, inceptYear: 2011, allowBackfill: false, warningReason: '고유 배당성장 스크리닝 전략으로 2011년 이전 백필 불가', proxyType: 'unsupported' },
+      'SCHD': { name: 'Schwab U.S. Dividend Equity', base: null, leverage: 1, fee: 0.0006, inceptYear: 2011, allowBackfill: false, warningReason: '2011년 이전 백필 불가', proxyType: 'unsupported' },
       'SPMO': { name: 'Invesco S&P 500 Momentum', base: '^SPXXMO', leverage: 1, fee: 0.0013, inceptYear: 2017, allowBackfill: true, proxyType: 'index_tracking' },
-      'JEPI': { name: 'JPMorgan Equity Premium', base: null, leverage: 1, fee: 0.0035, inceptYear: 2020, allowBackfill: false, warningReason: '액티브 옵션 커버드콜 구조로 2020년 이전 백필 불가', proxyType: 'unsupported' },
+      'JEPI': { name: 'JPMorgan Equity Premium', base: null, leverage: 1, fee: 0.0035, inceptYear: 2020, allowBackfill: false, warningReason: '2020년 이전 백필 불가', proxyType: 'unsupported' },
       'TLT':  { name: 'iShares 20+ Year Treasury', base: '^TYX', leverage: 1, fee: 0.0015, inceptYear: 2002, allowBackfill: true, proxyType: 'index_tracking' },
       'TMF':  { name: 'Direxion 20+ Yr Bull 3x', base: 'TLT', leverage: 3, fee: 0.0101, inceptYear: 2009, allowBackfill: true, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
       'GLD':  { name: 'SPDR Gold Shares', base: 'GC=F', leverage: 1, fee: 0.0040, inceptYear: 2004, allowBackfill: true, proxyType: 'index_tracking' },
-      'ARKK': { name: 'ARK Innovation ETF', base: null, leverage: 1, fee: 0.0075, inceptYear: 2014, allowBackfill: false, warningReason: '액티브 파괴적 혁신 종목 선별 전략으로 2014년 이전 백필 불가', proxyType: 'unsupported' },
+      'ARKK': { name: 'ARK Innovation ETF', base: null, leverage: 1, fee: 0.0075, inceptYear: 2014, allowBackfill: false, warningReason: '2014년 이전 백필 불가', proxyType: 'unsupported' },
       'IWM':  { name: 'iShares Russell 2000 ETF', base: '^RUT', leverage: 1, fee: 0.0019, inceptYear: 2000, allowBackfill: true, proxyType: 'index_tracking' },
       'XLK':  { name: 'Technology Select SPDR', base: null, leverage: 1, fee: 0.0010, inceptYear: 1998, allowBackfill: true, proxyType: 'direct' },
       'XLE':  { name: 'Energy Select SPDR', base: null, leverage: 1, fee: 0.0010, inceptYear: 1998, allowBackfill: true, proxyType: 'direct' },
@@ -354,7 +402,7 @@
     };
 
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v12_7";
+      static dbName = "QuantBacktestCacheDB_v12_8";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -518,16 +566,38 @@
     `;
 
     class WorkerManager {
-      static runMonteCarloAsync(dailyReturns, monthlyCashFlows, iterations = 10000, onProgress = null) {
+      static async runMonteCarloBatchAsync(tasks, onProgress = null) {
+        const results = {};
+        const total = tasks.length;
+        if (total === 0) return results;
+
+        let completed = 0;
+        const concurrency = 2; // 동시 실행 세션 제한 (스레드 폭주 방지)
+        let queueIndex = 0;
+
+        const runNext = async () => {
+          while (queueIndex < tasks.length) {
+            const task = tasks[queueIndex++];
+            const mcRes = await WorkerManager.runMonteCarloAsync(task.dailyReturns, task.monthlyCashFlows, 10000);
+            results[task.key] = mcRes;
+            completed++;
+            if (onProgress) onProgress(80 + (completed / total) * 20);
+          }
+        };
+
+        const workers = Array.from({ length: Math.min(concurrency, total) }, () => runNext());
+        await Promise.all(workers);
+        return results;
+      }
+
+      static runMonteCarloAsync(dailyReturns, monthlyCashFlows, iterations = 10000) {
         return new Promise((resolve) => {
           const blob = new Blob([workerCode], { type: 'application/javascript' });
           const blobUrl = URL.createObjectURL(blob);
           const worker = new Worker(blobUrl);
 
           worker.onmessage = (e) => {
-            if (e.data.type === 'PROGRESS') {
-              if (onProgress) onProgress(e.data.progress);
-            } else if (e.data.type === 'COMPLETE') {
+            if (e.data.type === 'COMPLETE') {
               worker.terminate();
               URL.revokeObjectURL(blobUrl);
               resolve(e.data.result);
@@ -566,8 +636,7 @@
       }
 
       harvestTax(targetGainKrw, currentPriceUsd, currentFxRate, friction) {
-        const netSellPriceUsd = currentPriceUsd * (1 - friction);
-        const netSellFx = currentFxRate * (1 - friction);
+        const netSellFxPrice = currentPriceUsd * currentFxRate * (1 - friction);
 
         let accumulatedGain = 0.0;
         let totalSharesSold = 0.0;
@@ -575,12 +644,13 @@
 
         for (let i = 0; i < this.lots.length && accumulatedGain < targetGainKrw; i++) {
           const lot = this.lots[i];
-          const lotGainPerShareKrw = (netSellPriceUsd * netSellFx) - (lot.priceUsd * lot.fxRate);
+          const lotCostPerShareKrw = lot.priceUsd * lot.fxRate;
+          const lotGainPerShareKrw = netSellFxPrice - lotCostPerShareKrw;
 
           if (lotGainPerShareKrw <= 0) continue;
 
           const taxSavedPerShare = lotGainPerShareKrw * 0.22;
-          const transactionCostPerShare = (lot.priceUsd * lot.fxRate) * (friction * 2);
+          const transactionCostPerShare = lotCostPerShareKrw * friction * 2;
           if (taxSavedPerShare <= transactionCostPerShare) continue;
 
           const neededGain = targetGainKrw - accumulatedGain;
@@ -590,20 +660,19 @@
           accumulatedGain += realizedGain;
           totalSharesSold += sharesToSellFromLot;
 
-          const sellProceeds = sharesToSellFromLot * netSellPriceUsd * netSellFx;
+          const sellProceeds = sharesToSellFromLot * netSellFxPrice;
           totalReinvestKrw += sellProceeds;
 
           lot.shares -= sharesToSellFromLot;
-          lot.costBasisKrw -= (sharesToSellFromLot * lot.priceUsd * lot.fxRate);
+          lot.costBasisKrw -= (sharesToSellFromLot * lotCostPerShareKrw);
         }
 
         this.lots = this.lots.filter(l => l.shares > 1e-7);
 
         if (totalSharesSold > 0) {
-          const netBuyPriceUsd = currentPriceUsd * (1 + friction);
-          const netBuyFx = currentFxRate * (1 + friction);
-          const reboughtShares = totalReinvestKrw / (netBuyPriceUsd * netBuyFx);
-          this.buy(reboughtShares, netBuyPriceUsd, netBuyFx);
+          const netBuyFxPrice = currentPriceUsd * currentFxRate * (1 + friction);
+          const reboughtShares = totalReinvestKrw / netBuyFxPrice;
+          this.buy(reboughtShares, currentPriceUsd * (1 + friction), currentFxRate);
         }
 
         return { accumulatedGain, totalSharesSold };
@@ -620,7 +689,7 @@
 
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_7`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_8`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -727,13 +796,7 @@
         }
 
         let low = -0.99, high = 50.0;
-        let fLow = f(low), fHigh = f(high);
-
-        if (fLow * fHigh > 0) {
-          for (let h = 50.0; h <= 200.0; h *= 2) {
-            if (f(h) * fLow < 0) { high = h; break; }
-          }
-        }
+        let fLow = f(low);
 
         for (let iter = 0; iter < 100; iter++) {
           let mid = (low + high) / 2;
@@ -756,32 +819,62 @@
         const processedPrices = {};
         const processedDivs = {};
         const N = sortedDates.length;
+        const allSymbols = Object.keys(rawDatasets);
 
-        Object.keys(TICKER_UNIVERSE).forEach(ticker => {
-          const config = TICKER_UNIVERSE[ticker];
-          const raw = rawDatasets[ticker];
+        // Step 1: 모든 수신된 심볼(기초 지수 심볼 포함)에 대한 1차 가격 매핑
+        allSymbols.forEach(symbol => {
+          const raw = rawDatasets[symbol];
           const priceArr = new Float64Array(N);
           const divMap = raw?.divMap || new Map();
 
-          let firstInceptIdx = -1;
+          let lastPrice = 0;
           for (let i = 0; i < N; i++) {
             const d = sortedDates[i];
             if (raw?.priceMap?.has(d)) {
-              priceArr[i] = raw.priceMap.get(d);
-              if (firstInceptIdx === -1) firstInceptIdx = i;
+              const p = raw.priceMap.get(d);
+              if (p > 0) lastPrice = p;
+            }
+            priceArr[i] = lastPrice;
+          }
+
+          if (priceArr[0] === 0) {
+            let firstValid = 1.0;
+            for (let i = 0; i < N; i++) {
+              if (priceArr[i] > 0) { firstValid = priceArr[i]; break; }
+            }
+            for (let i = 0; i < N && priceArr[i] === 0; i++) priceArr[i] = firstValid;
+          }
+
+          processedPrices[symbol] = priceArr;
+          processedDivs[symbol] = divMap;
+        });
+
+        // Step 2: 기초 지수를 참조하는 파생/레버리지 ETF 백필 정밀 수행
+        Object.keys(TICKER_UNIVERSE).forEach(ticker => {
+          const config = TICKER_UNIVERSE[ticker];
+          if (!config.allowBackfill || !config.base) return;
+
+          const basePrices = processedPrices[config.base];
+          if (!basePrices) return;
+
+          const priceArr = processedPrices[ticker];
+          const raw = rawDatasets[ticker];
+
+          let firstInceptIdx = -1;
+          for (let i = 0; i < N; i++) {
+            if (raw?.priceMap?.has(sortedDates[i])) {
+              firstInceptIdx = i;
+              break;
             }
           }
 
-          if (config.allowBackfill && firstInceptIdx > 0 && config.base && processedPrices[config.base]) {
-            const basePrices = processedPrices[config.base];
-
+          if (firstInceptIdx > 0) {
             for (let i = firstInceptIdx - 1; i >= 0; i--) {
               const year = parseInt(sortedDates[i].split('-')[0], 10);
               const baseCurr = basePrices[i + 1];
               const basePrev = basePrices[i];
 
               if (baseCurr > 0 && basePrev > 0) {
-                // [수정사항 1 반영]: 로그 수익률 복리 오차를 제거하고 일일 단순 수익률로 백필 연산
                 const simpleBaseReturn = (baseCurr - basePrev) / basePrev;
                 let synthSimpleReturn = 0.0;
 
@@ -807,16 +900,6 @@
               }
             }
           }
-
-          let lastP = 0;
-          const startIdx = config.allowBackfill ? 0 : (firstInceptIdx >= 0 ? firstInceptIdx : 0);
-          for (let i = startIdx; i < N; i++) {
-            if (priceArr[i] > 0) lastP = priceArr[i];
-            else if (lastP > 0) priceArr[i] = lastP;
-          }
-
-          processedPrices[ticker] = priceArr;
-          processedDivs[ticker] = divMap;
         });
 
         return { processedPrices, processedDivs };
@@ -1003,6 +1086,82 @@
       }
     }
 
+    class QuantScoreEngine {
+      static calculatePeriodMonths(startMonth, endMonth) {
+        const [sY, sM] = startMonth.split('-').map(Number);
+        const [eY, eM] = endMonth.split('-').map(Number);
+        return (eY - sY) * 12 + (eM - sM) + 1;
+      }
+
+      static getPeriodCategory(months) {
+        if (months >= 180) return { key: 'long', label: '🏆 장기 (15년 이상)' };
+        if (months >= 60) return { key: 'mid', label: '🥇 중기 (5년~15년)' };
+        return { key: 'short', label: '⚡ 단기 (5년 미만)' };
+      }
+
+      static calculateScore(res) {
+        if (!res) return 0;
+
+        const xirr = res.annualizedXIRR || 0;
+        const sortino = res.sortino || 0;
+        const omega = res.omega || 0;
+        const mdd = Math.abs(res.twrMdd || 0);
+        const ulcer = res.ulcerIndex || 0;
+
+        const xirrScore = Math.min(30.0, Math.max(0, xirr * 1.2));
+        const sortinoScore = Math.min(25.0, Math.max(0, sortino * 10.0));
+        const omegaScore = Math.min(15.0, Math.max(0, (omega - 1.0) * 15.0));
+        const mddPenalty = Math.min(15.0, mdd * 0.3);
+        const ulcerPenalty = Math.min(15.0, ulcer * 0.75);
+
+        let finalScore = xirrScore + sortinoScore + omegaScore - mddPenalty - ulcerPenalty;
+        return Math.round(Math.max(0, Math.min(100, finalScore)) * 10) / 10;
+      }
+    }
+
+    class GlobalLeaderboardService {
+      static API_ENDPOINT = "https://api.npoint.io/e94d2f8319f5a01d6745";
+
+      static async fetchLeaderboard() {
+        try {
+          const res = await fetch(this.API_ENDPOINT);
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('quant_global_leaderboard_cache', JSON.stringify(data));
+            return data;
+          }
+        } catch (e) {
+          console.warn("[Leaderboard] 서버 수신 실패, 로컬 캐시를 사용합니다.", e);
+        }
+        return JSON.parse(localStorage.getItem('quant_global_leaderboard_cache') || '[]');
+      }
+
+      static async publishMix(newItem) {
+        let currentList = await this.fetchLeaderboard();
+        if (!Array.isArray(currentList)) currentList = [];
+
+        const existIdx = currentList.findIndex(item => item.id === newItem.id);
+        if (existIdx > -1) {
+          currentList[existIdx] = newItem;
+        } else {
+          currentList.push(newItem);
+        }
+
+        localStorage.setItem('quant_global_leaderboard_cache', JSON.stringify(currentList));
+
+        try {
+          await fetch(this.API_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(currentList)
+          });
+        } catch (e) {
+          console.warn("[Leaderboard] 서버 업로드 실패:", e);
+        }
+        return currentList;
+      }
+    }
+
     class QuantBacktestEngine {
       static async runAsync(sortedDates, tickers, customMixes, processedData, fxData, investConfig, fxSpreadRate, taxEnabled, onProgress = null) {
         const N = sortedDates.length;
@@ -1048,10 +1207,9 @@
           }
         }
 
-        const tickerDailyReturnsMap = {};
-        const tickerMonthlyCashFlowsMap = {};
+        const tasksForMonteCarlo = [];
 
-        // 1. 단일 개별 자산 백테스트 연산
+        // 1. 단일 개별 자산 백테스트
         for (let tIdx = 0; tIdx < tickers.length; tIdx++) {
           const ticker = tickers[tIdx];
           const prices = processedPrices[ticker];
@@ -1222,10 +1380,8 @@
           const ff = FamaFrenchEngine.solve(portDailyReturns, processedData, sortedDates);
           const analytics = InstitutionalAnalyticsEngine.analyze(portDailyReturns, spyDailyReturns, sortedDates);
           const { ulcerIndex, painRatio } = InstitutionalAnalyticsEngine.computeUlcerAndPainRatio(portTwrSeries, twrCagr, avgRfAnnPercent);
-          const rollingSharpe = InstitutionalAnalyticsEngine.compute36MRollingSharpe(portDailyReturns, sortedDates);
 
-          tickerDailyReturnsMap[ticker] = portDailyReturns;
-          tickerMonthlyCashFlowsMap[ticker] = monthlyCashFlows;
+          tasksForMonteCarlo.push({ key: ticker, dailyReturns: portDailyReturns, monthlyCashFlows });
 
           results[ticker] = {
             name: TICKER_UNIVERSE[ticker]?.name || ticker,
@@ -1244,14 +1400,14 @@
             trackingError: analytics.trackingError,
             informationRatio: analytics.informationRatio,
             ff,
-            rollingSharpe,
+            rollingSharpe: InstitutionalAnalyticsEngine.compute36MRollingSharpe(portDailyReturns, sortedDates),
             twrMdd: twrMdd * 100.0,
             portfolioValues,
             investedSeries
           };
         }
 
-        // 2. 활성화된 커스텀 믹스 전략들 각각의 백테스트 시뮬레이션
+        // 2. 활성화된 커스텀 믹스 전략 시뮬레이션
         customMixes.forEach((mix) => {
           if (!mix.enabled) return;
 
@@ -1269,6 +1425,7 @@
           mixTickers.forEach(t => mixShares[t] = 0.0);
 
           let mixInvested = 0.0;
+          let mixPeakVal = 0.0;
           const mixPortfolioValues = new Float64Array(N);
           const mixInvestedSeries = new Float64Array(N);
           const mixCashFlows = [];
@@ -1279,6 +1436,13 @@
             const dateStr = sortedDates[i];
             const fx = fxPrices[i];
 
+            let todayTotalValBeforeDeposit = 0;
+            mixTickers.forEach(t => {
+              const pUsd = processedPrices[t] ? processedPrices[t][i] : 1.0;
+              todayTotalValBeforeDeposit += mixShares[t] * pUsd * fx;
+            });
+            if (todayTotalValBeforeDeposit > mixPeakVal) mixPeakVal = todayTotalValBeforeDeposit;
+
             if (isNewMonth[i]) {
               mixMonthCounter++;
               let depositKrw = 0;
@@ -1288,7 +1452,14 @@
               } else if (investConfig.mode === 'lumpSum') {
                 depositKrw = (mixMonthCounter === 1) ? investConfig.lumpSumKrw : 0;
               } else if (investConfig.mode === 'dynamicDCA') {
-                depositKrw = investConfig.monthlyKrw;
+                const mixDrawdown = mixPeakVal > 0 ? (todayTotalValBeforeDeposit - mixPeakVal) / mixPeakVal : 0;
+                if (mixDrawdown <= -investConfig.smartDrop2) {
+                  depositKrw = investConfig.monthlyKrw * investConfig.smartMult2;
+                } else if (mixDrawdown <= -investConfig.smartDrop1) {
+                  depositKrw = investConfig.monthlyKrw * investConfig.smartMult1;
+                } else {
+                  depositKrw = investConfig.monthlyKrw;
+                }
               }
 
               mixInvested += depositKrw;
@@ -1296,11 +1467,7 @@
               mixCashDates.push(dateStr);
 
               if (mix.rebalanceFreq === 'monthly' || (mix.rebalanceFreq === 'yearly' && isYearEnd[i])) {
-                let currentVal = depositKrw;
-                mixTickers.forEach(t => {
-                  const pUsd = processedPrices[t] ? processedPrices[t][i] : 1.0;
-                  currentVal += mixShares[t] * pUsd * fx;
-                });
+                let currentVal = depositKrw + todayTotalValBeforeDeposit;
 
                 mixTickers.forEach(t => {
                   const targetKrw = currentVal * normWeights[t];
@@ -1317,11 +1484,7 @@
                 });
               }
             } else if (mix.rebalanceFreq === 'yearly' && isYearEnd[i]) {
-              let currentVal = 0;
-              mixTickers.forEach(t => {
-                const pUsd = processedPrices[t] ? processedPrices[t][i] : 1.0;
-                currentVal += mixShares[t] * pUsd * fx;
-              });
+              let currentVal = todayTotalValBeforeDeposit;
 
               mixTickers.forEach(t => {
                 const targetKrw = currentVal * normWeights[t];
@@ -1370,8 +1533,7 @@
           const { ulcerIndex, painRatio } = InstitutionalAnalyticsEngine.computeUlcerAndPainRatio(mixPortfolioValues, mixCagr, avgRfAnnPercent);
 
           const mixKey = `[MIX] ${mix.name}`;
-          tickerDailyReturnsMap[mixKey] = mixDailyReturns;
-          tickerMonthlyCashFlowsMap[mixKey] = mixCashFlows;
+          tasksForMonteCarlo.push({ key: mixKey, dailyReturns: mixDailyReturns, monthlyCashFlows: mixCashFlows });
 
           const wDescStr = mixTickers.map(t => `${t}:${Math.round(normWeights[t]*100)}%`).join(' ');
 
@@ -1401,21 +1563,10 @@
 
         if (onProgress) onProgress(80);
         
-        const allResultKeys = Object.keys(results);
-        const mcPromises = allResultKeys.map(key => {
-          if (!tickerDailyReturnsMap[key]) return Promise.resolve(null);
-          return WorkerManager.runMonteCarloAsync(
-            tickerDailyReturnsMap[key],
-            tickerMonthlyCashFlowsMap[key],
-            10000
-          ).then(mcRes => ({ key, mcRes }));
-        });
-
-        const mcResults = await Promise.all(mcPromises);
-        mcResults.forEach(item => {
-          if (item && item.key && results[item.key]) {
-            results[item.key].monteCarlo = item.mcRes;
-          }
+        // Batch Worker 기반의 안정적 몬테카를로 시뮬레이션
+        const mcBatchResults = await WorkerManager.runMonteCarloBatchAsync(tasksForMonteCarlo, onProgress);
+        Object.keys(mcBatchResults).forEach(key => {
+          if (results[key]) results[key].monteCarlo = mcBatchResults[key];
         });
 
         if (onProgress) onProgress(100);
@@ -1433,12 +1584,15 @@
       static currentSortedDates = [];
       static selectedMcTicker = null;
       static isGuideOpen = true;
+      static currentLeaderboardFilter = 'all';
+      static cachedLeaderboard = [];
 
       static init() {
         this.loadMixesFromStorage();
         this.onInvestModeChange();
         this.renderMixStrategiesUI();
         this.updateActiveChips();
+        this.syncAndRenderLeaderboard();
         this.runBacktest();
       }
 
@@ -1458,7 +1612,7 @@
 
       static loadMixesFromStorage() {
         try {
-          const stored = localStorage.getItem('quant_custom_mixes_v12_7');
+          const stored = localStorage.getItem('quant_custom_mixes_v12_8');
           if (stored) {
             this.customMixes = JSON.parse(stored);
           } else {
@@ -1487,10 +1641,45 @@
 
       static saveMixesToStorage() {
         try {
-          localStorage.setItem('quant_custom_mixes_v12_7', JSON.stringify(this.customMixes));
+          localStorage.setItem('quant_custom_mixes_v12_8', JSON.stringify(this.customMixes));
         } catch (e) {
           console.warn('LocalStorage save error:', e);
         }
+      }
+
+      static exportStrategies() {
+        const dataStr = JSON.stringify(this.customMixes, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `quant_strategy_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      static importStrategies(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const importedMixes = JSON.parse(e.target.result);
+            if (Array.isArray(importedMixes)) {
+              this.customMixes = importedMixes;
+              this.saveMixesToStorage();
+              this.renderMixStrategiesUI();
+              alert('전략을 성공적으로 불러왔습니다!');
+              this.runBacktest();
+            } else {
+              alert('유효하지 않은 전략 파일 형식입니다.');
+            }
+          } catch (err) {
+            alert('파일을 읽는 중 오류가 발생했습니다.');
+          }
+        };
+        reader.readAsText(file);
       }
 
       static addNewMixStrategy() {
@@ -1585,7 +1774,7 @@
         container.innerHTML = '';
 
         if (this.customMixes.length === 0) {
-          container.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs">생성된 커스텀 믹스 전략이 없습니다. '새 믹스 전략 추가' 버튼을 눌러보세요.</div>`;
+          container.innerHTML = `<div class="text-center py-4 text-slate-500 text-xs">생성된 커스텀 믹스 전략이 없습니다. '새 믹스 추가' 버튼을 눌러보세요.</div>`;
           return;
         }
 
@@ -1607,13 +1796,16 @@
                   <input type="text" value="${mix.name}" onchange="UIController.updateMixName('${mix.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-amber-300 focus:border-amber-500 min-w-[160px]">
                 </div>
                 
-                <div class="flex items-center gap-2 max-w-full">
+                <div class="flex items-center gap-2 max-w-full flex-wrap">
                   <span class="text-slate-400 text-xs font-semibold whitespace-nowrap min-w-max">리밸런싱:</span>
                   <select onchange="UIController.updateMixRebalanceFreq('${mix.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-emerald-400 font-bold max-w-full truncate">
-                    <option value="none" ${mix.rebalanceFreq === 'none' ? 'selected' : ''}>노 리밸런싱 (매수시 비중 유지)</option>
-                    <option value="monthly" ${mix.rebalanceFreq === 'monthly' ? 'selected' : ''}>매월 정기 리밸런싱</option>
-                    <option value="yearly" ${mix.rebalanceFreq === 'yearly' ? 'selected' : ''}>매년 정기 리밸런싱</option>
+                    <option value="none" ${mix.rebalanceFreq === 'none' ? 'selected' : ''}>노 리밸런싱</option>
+                    <option value="monthly" ${mix.rebalanceFreq === 'monthly' ? 'selected' : ''}>매월 정기</option>
+                    <option value="yearly" ${mix.rebalanceFreq === 'yearly' ? 'selected' : ''}>매년 정기</option>
                   </select>
+                  <button onclick="UIController.publishMixToLeaderboard('${mix.id}')" class="text-emerald-400 hover:text-emerald-300 text-xs font-bold px-2 py-1 bg-slate-900 rounded border border-slate-800 hover:border-emerald-700 transition">
+                    🏆 리더보드 공유
+                  </button>
                   <button onclick="UIController.deleteMixStrategy('${mix.id}')" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-2 py-1 bg-slate-900 rounded border border-slate-800 hover:border-rose-950 transition">&times; 삭제</button>
                 </div>
               </div>
@@ -1640,13 +1832,159 @@
                   <button onclick="UIController.equalizeMixWeights('${mix.id}')" class="text-[11px] bg-slate-900 hover:bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">⚖️ 균등 분배 (1/N)</button>
                 </div>
                 <span class="${sumW === 100 ? 'text-emerald-400' : 'text-amber-400'} font-bold text-[11px]">
-                  비중 합계: ${sumW}% ${sumW !== 100 ? '⚠️ (연산 시 정규화됨)' : '✅'}
+                  비중 합계: ${sumW}% ${sumW !== 100 ? '⚠️ (자동 정규화됨)' : '✅'}
                 </span>
               </div>
             </div>
           `;
           container.appendChild(card);
         });
+      }
+
+      static filterLeaderboard(category) {
+        this.currentLeaderboardFilter = category;
+        const tabs = {
+          all: document.getElementById('filterTabAll'),
+          long: document.getElementById('filterTabLong'),
+          mid: document.getElementById('filterTabMid'),
+          short: document.getElementById('filterTabShort')
+        };
+
+        Object.values(tabs).forEach(t => {
+          if (t) t.className = "px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-400 hover:text-slate-200";
+        });
+
+        if (tabs[category]) {
+          tabs[category].className = "px-2.5 py-1 rounded font-bold bg-amber-500 text-slate-950";
+        }
+
+        this.renderLeaderboard();
+      }
+
+      static async publishMixToLeaderboard(mixId) {
+        const mix = this.customMixes.find(m => m.id === mixId);
+        if (!mix || !this.currentResults) {
+          alert("먼저 시뮬레이션을 실행하여 성과를 연산해주세요!");
+          return;
+        }
+
+        const mixKey = `[MIX] ${mix.name}`;
+        const res = this.currentResults[mixKey];
+        if (!res) {
+          alert("해당 믹스의 백테스트 연산 결과가 없습니다.");
+          return;
+        }
+
+        const startMonth = document.getElementById('startMonth').value;
+        const endMonth = document.getElementById('endMonth').value;
+        const months = QuantScoreEngine.calculatePeriodMonths(startMonth, endMonth);
+        const periodCat = QuantScoreEngine.getPeriodCategory(months);
+
+        const author = prompt("리더보드에 보여줄 닉네임을 입력하세요:", "익명 퀀트") || "익명 퀀트";
+        const quantScore = QuantScoreEngine.calculateScore(res);
+
+        const newItem = {
+          id: mix.id,
+          name: mix.name,
+          author: author,
+          score: quantScore,
+          xirr: res.annualizedXIRR,
+          sortino: res.sortino,
+          mdd: res.twrMdd,
+          ulcer: res.ulcerIndex,
+          startMonth,
+          endMonth,
+          months,
+          categoryKey: periodCat.key,
+          categoryLabel: periodCat.label,
+          allocations: mix.allocations,
+          rebalanceFreq: mix.rebalanceFreq,
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+
+        this.setEngineStatus('loading', '글로벌 리더보드 업로드 중...');
+        await GlobalLeaderboardService.publishMix(newItem);
+        this.setEngineStatus('success', '글로벌 공유 완료');
+
+        alert(`'${mix.name}' 전략이 [${periodCat.label}] 리그에 Quant Score ${quantScore}점으로 공유되었습니다!`);
+        await this.syncAndRenderLeaderboard();
+      }
+
+      static async syncAndRenderLeaderboard() {
+        const leaderboard = await GlobalLeaderboardService.fetchLeaderboard();
+        this.cachedLeaderboard = leaderboard || [];
+        this.renderLeaderboard();
+      }
+
+      static renderLeaderboard() {
+        const tbody = document.getElementById('leaderboardTableBody');
+        if (!tbody) return;
+
+        let list = this.cachedLeaderboard || [];
+
+        if (this.currentLeaderboardFilter !== 'all') {
+          list = list.filter(item => item.categoryKey === this.currentLeaderboardFilter);
+        }
+
+        list.sort((a, b) => b.score - a.score);
+
+        if (list.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="10" class="px-4 py-6 text-center text-slate-500">등록된 믹스 전략이 없습니다. 첫 번째 주인공이 되어보세요!</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = '';
+        list.forEach((item, idx) => {
+          const tr = document.createElement('tr');
+          tr.className = "hover:bg-slate-800/40 border-b border-slate-800/60";
+
+          const rankBadge = idx === 0 ? '🥇 1위' : idx === 1 ? '🥈 2위' : idx === 2 ? '🥉 3위' : `${idx + 1}위`;
+          const allocDesc = Object.entries(item.allocations).map(([t, w]) => `${t}:${w}%`).join(' ');
+
+          tr.innerHTML = `
+            <td class="px-3 py-2.5 font-bold text-amber-400">${rankBadge}</td>
+            <td class="px-3 py-2.5">
+              <div class="font-bold text-slate-200">${item.name}</div>
+              <div class="text-[10px] text-slate-500">by ${item.author} · ${item.createdAt}</div>
+            </td>
+            <td class="px-3 py-2.5 text-amber-300 font-bold text-sm">${item.score}점</td>
+            <td class="px-3 py-2.5">
+              <span class="text-[10px] bg-slate-950 px-1.5 py-0.5 rounded border border-slate-700 text-slate-300 font-semibold block w-max">
+                ${item.startMonth} ~ ${item.endMonth} (${Math.round(item.months/12*10)/10}년)
+              </span>
+            </td>
+            <td class="px-3 py-2.5 text-cyan-400 font-bold">+${(item.xirr || 0).toFixed(1)}%</td>
+            <td class="px-3 py-2.5 text-amber-400 font-semibold">${(item.sortino || 0).toFixed(2)}</td>
+            <td class="px-3 py-2.5 text-rose-400 font-semibold">${(item.mdd || 0).toFixed(1)}%</td>
+            <td class="px-3 py-2.5 text-rose-300 font-semibold">${(item.ulcer || 0).toFixed(1)}</td>
+            <td class="px-3 py-2.5 text-slate-400 text-[11px]">${allocDesc}</td>
+            <td class="px-3 py-2.5 text-right">
+              <button onclick="UIController.copyLeaderboardMix('${item.id}')" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 text-[11px] px-2.5 py-1 rounded border border-slate-700 transition">
+                📥 가져오기
+              </button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      static copyLeaderboardMix(itemId) {
+        const item = (this.cachedLeaderboard || []).find(i => i.id === itemId);
+        if (!item) return;
+
+        const newMix = {
+          id: 'mix_' + Date.now(),
+          name: `[가져옴] ${item.name}`,
+          enabled: true,
+          rebalanceFreq: item.rebalanceFreq || 'monthly',
+          allocations: { ...item.allocations }
+        };
+
+        this.customMixes.push(newMix);
+        this.saveMixesToStorage();
+        this.renderMixStrategiesUI();
+        alert(`'${item.name}' 전략을 내 커스텀 믹스로 가져왔습니다.`);
+        this.runBacktest();
       }
 
       static onInvestModeChange() {
@@ -1666,10 +2004,6 @@
         } else if (mode === 'dynamicDCA') {
           panelDynamicDCA.classList.remove('hidden');
         }
-      }
-
-      static showMetricInfo(title, description) {
-        alert(`[${title}]\n\n${description}`);
       }
 
       static toggleModal() {
@@ -1885,7 +2219,7 @@
           return;
         }
 
-        this.setProgress(70, 'Daily Swap/Repo NAV 알고리즘 실행 중...');
+        this.setProgress(70, 'Daily NAV 알고리즘 실행 중...');
         const processedData = MultiFactorSynthesisEngine.process(rawDatasets, sortedDates);
 
         this.setEngineStatus('loading', '미래 시뮬레이션 멀티스레드 연산 중...');
@@ -1906,7 +2240,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Enterprise Engine v12.7 완료');
+        this.setEngineStatus('success', 'Enterprise Engine v12.8 완료');
       }
 
       static switchChartTab(tab) {
@@ -1947,7 +2281,7 @@
         }
 
         desc.innerHTML = `
-          <span class="mr-1 text-slate-400">미래 시뮬레이션 분석 대상:</span>
+          <span class="mr-1 text-slate-400">시뮬레이션 대상:</span>
           <select id="mcTickerSelect" onchange="UIController.changeMcTicker(this.value)" class="bg-slate-950 text-emerald-400 font-bold text-xs rounded border border-slate-700 px-2 py-0.5 max-w-full truncate">
             ${tickers.map(t => `<option value="${t}" ${t === this.selectedMcTicker ? 'selected' : ''}>${t}</option>`).join('')}
           </select>
@@ -1987,20 +2321,24 @@
         `;
         cardsContainer.appendChild(invCard);
 
-        // 핵심 자산 및 믹스 전략 요약 카드 (가성비 Sharpe 및 MDD 정보 포함)
+        // 상위 자산 요약 카드
         Object.entries(results).slice(0, 3).forEach(([ticker, res], idx) => {
           const card = document.createElement('div');
           card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
           const isMix = ticker.startsWith('[MIX]');
-          
+          const score = QuantScoreEngine.calculateScore(res);
+
           card.innerHTML = `
-            <span class="text-xs font-bold block truncate ${isMix ? 'text-amber-400' : 'text-slate-400'}">${res.name}</span>
+            <div class="flex justify-between items-center">
+              <span class="text-xs font-bold truncate ${isMix ? 'text-amber-400' : 'text-slate-400'}">${res.name}</span>
+              <span class="text-[10px] bg-amber-950 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-700/50">${score}점</span>
+            </div>
             <div class="text-sm font-bold mt-1 truncate" style="color: ${isMix ? '#f59e0b' : palette[idx % palette.length]}">
               ${QuantUtils.formatKRW(res.finalVal)} (${res.cumulativeReturn >= 0 ? '+' : ''}${res.cumulativeReturn.toFixed(1)}%)
             </div>
             <div class="grid grid-cols-2 gap-1 text-[11px] mt-2 pt-2 border-t border-slate-800/80">
               <span class="text-cyan-400 font-semibold">XIRR: ${res.annualizedXIRR >= 0 ? '+' : ''}${res.annualizedXIRR.toFixed(1)}%</span>
-              <span class="text-amber-400 font-semibold">샤프: ${res.sharpe.toFixed(2)}</span>
+              <span class="text-amber-400 font-semibold">소티노: ${res.sortino.toFixed(2)}</span>
               <span class="text-rose-400 font-semibold">MDD: ${res.twrMdd.toFixed(1)}%</span>
               <span class="text-rose-300 font-semibold">Ulcer: ${res.ulcerIndex.toFixed(1)}</span>
             </div>
@@ -2027,7 +2365,7 @@
           ffBody.appendChild(tr);
         }
 
-        // 전체 전문 성과 분석 표 (15개 지표 전체 복원)
+        // 전체 전문 성과 분석 표
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
         for (const [ticker, res] of Object.entries(results)) {
@@ -2038,13 +2376,13 @@
 
           let backfillBadge = '';
           if (isMix) {
-            backfillBadge = `<span class="text-[9px] bg-amber-950 text-amber-300 px-1 py-0.5 rounded border border-amber-700">커스텀 믹스 전략</span>`;
+            backfillBadge = `<span class="text-[9px] bg-amber-950 text-amber-300 px-1 py-0.5 rounded border border-amber-700">커스텀 믹스</span>`;
           } else if (!isBackfilled) {
             backfillBadge = `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50">실제 데이터 100%</span>`;
           } else if (config.allowBackfill) {
-            backfillBadge = `<span class="text-[9px] bg-cyan-950/80 text-cyan-300 px-1 py-0.5 rounded border border-cyan-800/50" title="공식 전략 지수 기반 정밀 백필 완료">전략지수 백필 (${inceptYear}년전)</span>`;
+            backfillBadge = `<span class="text-[9px] bg-cyan-950/80 text-cyan-300 px-1 py-0.5 rounded border border-cyan-800/50">전략지수 백필 (${inceptYear}년전)</span>`;
           } else {
-            backfillBadge = `<span class="text-[9px] bg-rose-950/80 text-rose-300 px-1 py-0.5 rounded border border-rose-800/50" title="${config.warningReason}">⚠️ 백필 제한 (${inceptYear}년전 현금보유)</span>`;
+            backfillBadge = `<span class="text-[9px] bg-rose-950/80 text-rose-300 px-1 py-0.5 rounded border border-rose-800/50">⚠️ 백필 제한 (${inceptYear}년전 현금보유)</span>`;
           }
 
           const tr = document.createElement('tr');
@@ -2163,7 +2501,7 @@
             const isMix = ticker.startsWith('[MIX]');
 
             datasets.push({
-              label: `${ticker} (3년 단위 위험 대비 가성비)`,
+              label: `${ticker} (3년 샤프 비율)`,
               data: data,
               borderColor: palette[colorIdx % palette.length],
               borderWidth: isMix ? 2.5 : 1.5,
@@ -2198,7 +2536,7 @@
           if (!res || !res.monteCarlo) return;
 
           const mc = res.monteCarlo;
-          const labels = ['투입 원금', '하위 5% 최악의 경우', '중간 기대치 (평균)', '상위 5% 최선의 경우'];
+          const labels = ['투입 원금', '하위 5% 최악', '중간 기대치 (평균)', '상위 5% 최선'];
 
           this.chartInstance = new Chart(ctx, {
             type: 'bar',
