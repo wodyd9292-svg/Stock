@@ -296,7 +296,7 @@
       </div>
     </div>
 
-    <!-- 요인 분석 영역 -->
+    <!-- 요인 분석 영역 (툴팁 복원) -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Matrix)</h3>
@@ -306,12 +306,12 @@
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
             <tr>
               <th class="px-3 py-2.5">종목코드 / 믹스명</th>
-              <th class="px-3 py-2.5 text-purple-400">자산 자체 수익력 (알파)</th>
-              <th class="px-3 py-2.5">시장 민감도 (베타)</th>
-              <th class="px-3 py-2.5 text-emerald-400">소형주 성향 (SMB)</th>
-              <th class="px-3 py-2.5 text-amber-400">가치주 성향 (HML)</th>
-              <th class="px-3 py-2.5 text-cyan-400">상승세 추종 (MOM)</th>
-              <th class="px-3 py-2.5">모델 설명력 (R²)</th>
+              <th onclick="UIController.showMetricInfo('자산 자체 수익력 (알파)', '시장과 상관없이 고유 역량으로 낸 연간 추가 초과 수익률입니다.')" class="px-3 py-2.5 text-purple-400 cursor-pointer hover:bg-slate-800 transition">자산 자체 수익 (알파) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('시장 민감도 (베타)', 'S&P 500 시장 지수가 1% 변동할 때 얼마나 민감하게 반응하는지 나타냅니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">시장 민감도 (베타) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('소형주 성향 (SMB)', '대형주 대비 소형주 특성(Small Minus Big)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-emerald-400 cursor-pointer hover:bg-slate-800 transition">소형주 성향 (SMB) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('가치주 성향 (HML)', '성장주 대비 가치주/저평가 특성(High Minus Low)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-amber-400 cursor-pointer hover:bg-slate-800 transition">가치주 성향 (HML) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('상승세 추종 (MOM)', '최근 상승 모멘텀 추세(Momentum)를 얼마나 강하게 추종하는지 보여줍니다.')" class="px-3 py-2.5 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">상승세 추종 (MOM) ℹ️</th>
+              <th onclick="UIController.showMetricInfo('모델 설명력 (R²)', '이 요인 모델이 주가 변동을 얼마나 정확히 설명하는지 비율입니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition">모델 설명력 (R²) ℹ️</th>
             </tr>
           </thead>
           <tbody id="ffTableBody" class="divide-y divide-slate-800/60">
@@ -321,7 +321,7 @@
       </div>
     </div>
 
-    <!-- 통합 성과 표 -->
+    <!-- 통합 성과 표 (툴팁 복원) -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
       <div class="p-3 bg-slate-950 border-b border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
         <span>📋 기관급 통합 성과 및 위험 분석 표</span>
@@ -333,18 +333,18 @@
             <th class="px-3 py-3">종목코드 / 전략 구분</th>
             <th class="px-3 py-3">총 원금</th>
             <th class="px-3 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
-            <th class="px-3 py-3 text-cyan-400">실질 연수익률 (XIRR)</th>
-            <th class="px-3 py-3">순수 연성장률 (CAGR)</th>
-            <th class="px-3 py-3 text-amber-400">샤프 지수</th>
-            <th class="px-3 py-3 text-amber-300">소티노 지수</th>
-            <th class="px-3 py-3 text-cyan-300">트레이너 지수</th>
-            <th class="px-3 py-3 text-emerald-300">오메가 비율</th>
-            <th class="px-3 py-3 text-rose-300">페인 Ratio</th>
-            <th class="px-3 py-3">추종 오차율</th>
-            <th class="px-3 py-3">정보비율</th>
-            <th class="px-3 py-3 text-rose-300">마음 고통 (Ulcer)</th>
-            <th class="px-3 py-3 text-rose-400">CVaR (95%)</th>
-            <th class="px-3 py-3 text-rose-500">최대 하락 폭 (MDD)</th>
+            <th onclick="UIController.showMetricInfo('실질 연수익률 (XIRR)', '실제 적립금 입출금 날짜 기준의 진짜 연 복리 수익률입니다.')" class="px-3 py-3 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">실질 연수익률 (XIRR) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('자산 순수 연성장률 (CAGR)', '추가 적립금 효과를 제외하고 순수하게 복리로 성장한 연평균 성장률입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">순수 연성장률 (CAGR) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('위험 대비 가성비 (샤프 지수)', '주가 변동 위험을 견딘 대가로 얻은 초과 수익성 지수입니다. (1.0 이상 우수)')" class="px-3 py-3 text-amber-400 cursor-pointer hover:bg-slate-800 transition">샤프 지수 ℹ️</th>
+            <th onclick="UIController.showMetricInfo('하락위험 가성비 (소티노 지수)', '상승 출렁임은 제외하고 순수 하락 폭락 위험만 따져 계산한 수익 가성비입니다.')" class="px-3 py-3 text-amber-300 cursor-pointer hover:bg-slate-800 transition">소티노 지수 ℹ️</th>
+            <th onclick="UIController.showMetricInfo('시장위험 대비 수익 (트레이너 지수)', '시장 베타 위험 1단위당 올린 초과 수익 성과입니다.')" class="px-3 py-3 text-cyan-300 cursor-pointer hover:bg-slate-800 transition">트레이너 지수 ℹ️</th>
+            <th onclick="UIController.showMetricInfo('손익 확률 비율 (오메가 비율)', '전체 투자 기간 중 손실 가능성 대비 수익 가능성의 통합 비율입니다.')" class="px-3 py-3 text-emerald-300 cursor-pointer hover:bg-slate-800 transition">오메가 비율 ℹ️</th>
+            <th onclick="UIController.showMetricInfo('멘탈 고통 대비 성과 (페인 Ratio)', '계좌가 깎이고 회복을 못해 겪은 고통의 누적 크기 대비 올린 성과 비율입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">페인 Ratio ℹ️</th>
+            <th onclick="UIController.showMetricInfo('지수 추종 오차율 (Tracking Error)', '원본 지수나 목표 포트폴리오 변동성과의 추종 오차율 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">추종 오차율 ℹ️</th>
+            <th onclick="UIController.showMetricInfo('초과수익 가성비 (정보비율)', '벤치마크 지수 대비 얼마나 안정적이고 효율적으로 초과 수익을 만들어냈는지 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">정보비율 ℹ️</th>
+            <th onclick="UIController.showMetricInfo('마음 고통 지수 (Ulcer Index)', '주가 하락의 깊이와 하락 기간의 길이를 종합하여 투자자가 느낀 고통을 수치화한 지수입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">마음 고통 (Ulcer) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('최악의 날 폭락 위험 (CVaR 95%)', '하위 5% 최악의 시장 위기 상황이 닥쳤을 때 단 하루 만에 발생할 수 있는 평균 예상 손실률입니다.')" class="px-3 py-3 text-rose-400 cursor-pointer hover:bg-slate-800 transition">CVaR (95%) ℹ️</th>
+            <th onclick="UIController.showMetricInfo('역대 최대 계좌 하락 폭 (MDD)', '전체 투자 기간 동안 전고점 대비 계좌 평가금이 가장 깊게 박살 났을 때의 최대 손실 비율입니다.')" class="px-3 py-3 text-rose-500 cursor-pointer hover:bg-slate-800 transition">최대 하락 폭 (MDD) ℹ️</th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
@@ -572,7 +572,7 @@
         if (total === 0) return results;
 
         let completed = 0;
-        const concurrency = 2; // 동시 실행 세션 제한 (스레드 폭주 방지)
+        const concurrency = 2; 
         let queueIndex = 0;
 
         const runNext = async () => {
@@ -821,7 +821,6 @@
         const N = sortedDates.length;
         const allSymbols = Object.keys(rawDatasets);
 
-        // Step 1: 모든 수신된 심볼(기초 지수 심볼 포함)에 대한 1차 가격 매핑
         allSymbols.forEach(symbol => {
           const raw = rawDatasets[symbol];
           const priceArr = new Float64Array(N);
@@ -849,7 +848,6 @@
           processedDivs[symbol] = divMap;
         });
 
-        // Step 2: 기초 지수를 참조하는 파생/레버리지 ETF 백필 정밀 수행
         Object.keys(TICKER_UNIVERSE).forEach(ticker => {
           const config = TICKER_UNIVERSE[ticker];
           if (!config.allowBackfill || !config.base) return;
@@ -1209,7 +1207,6 @@
 
         const tasksForMonteCarlo = [];
 
-        // 1. 단일 개별 자산 백테스트
         for (let tIdx = 0; tIdx < tickers.length; tIdx++) {
           const ticker = tickers[tIdx];
           const prices = processedPrices[ticker];
@@ -1407,7 +1404,6 @@
           };
         }
 
-        // 2. 활성화된 커스텀 믹스 전략 시뮬레이션
         customMixes.forEach((mix) => {
           if (!mix.enabled) return;
 
@@ -1563,7 +1559,6 @@
 
         if (onProgress) onProgress(80);
         
-        // Batch Worker 기반의 안정적 몬테카를로 시뮬레이션
         const mcBatchResults = await WorkerManager.runMonteCarloBatchAsync(tasksForMonteCarlo, onProgress);
         Object.keys(mcBatchResults).forEach(key => {
           if (results[key]) results[key].monteCarlo = mcBatchResults[key];
@@ -1608,6 +1603,11 @@
           content.classList.add('hidden');
           icon.innerText = '▼ 펼치기';
         }
+      }
+
+      // 일반 투자자를 위한 용어 설명 툴팁 함수 (복원)
+      static showMetricInfo(title, description) {
+        alert(`[${title}]\n\n${description}`);
       }
 
       static loadMixesFromStorage() {
