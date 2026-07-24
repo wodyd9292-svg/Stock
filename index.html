@@ -1396,44 +1396,46 @@
        * @param {number} periodMonths 검증 기간(월)
        * @param {number} avgRfAnnPercent 기간 내 연평균 무위험 수익률 (SOFR %)
        */
-      static calculateScore(res, periodMonths = 180, avgRfAnnPercent = 3.5) {
-        if (!res) return 0;
+static calculateScore(res, periodMonths = 180, avgRfAnnPercent = 3.5) {
+  if (!res) return 0;
 
-        const xirr = res.annualizedXIRR || 0;
-        const sortino = Math.max(0, res.sortino || 0);
-        const mdd = Math.abs(res.twrMdd || 0);
-        const calmar = mdd > 0 ? Math.min(10, xirr / mdd) : 0; // 극단값 캡(10)
-        const ulcer = Math.max(0, res.ulcerIndex || 0);
-        const cvar95 = Math.max(0, res.cvar95 || 0);
+  const xirr = res.annualizedXIRR || 0;
+  const sortino = Math.max(0, res.sortino || 0);
+  const mdd = Math.abs(res.twrMdd || 0);
+  const calmar = mdd > 0 ? Math.min(10, xirr / mdd) : 0; // 극단값 캡(10)
+  const ulcer = Math.max(0, res.ulcerIndex || 0);
+  const cvar95 = Math.max(0, res.cvar95 || 0);
 
-        // 1. 가변 무위험 수익률(Rf) + 주식 위험 프리미엄(ERP 7%) 연동 기준점
-        const erp = 7.0;
-        const x0 = Math.max(5.0, avgRfAnnPercent + erp);
+  // 1. 가변 무위험 수익률(Rf) + 주식 위험 프리미엄(ERP 7%) 연동 기준점
+  const erp = 7.0;
+  const x0 = Math.max(5.0, avgRfAnnPercent + erp);
 
-        // 2. 수익성 가점 (최대 45점, 가변 기준점 x0 적용)
-        const sReturn = 45.0 / (1.0 + Math.exp(-0.12 * (xirr - x0)));
+  // 2. 수익성 가점 (최대 45점, 가변 기준점 x0 적용)
+  const sReturn = 45.0 / (1.0 + Math.exp(-0.12 * (xirr - x0)));
 
-        // 3. 위험조정 수익률 가점 (최대 55점: 소티노 30점 + 칼마 25점)
-        const sSortino = Math.min(30.0, 30.0 / (1.0 + Math.exp(-1.0 * (sortino - 1.5))));
-        const sCalmar = Math.min(25.0, 25.0 / (1.0 + Math.exp(-1.5 * (calmar - 0.5))));
-        const sRiskAdj = sSortino + sCalmar; // 가점 합계 = 100점 만점 구조
+  // 3. 위험조정 수익률 가점 (최대 55점: 소티노 30점 + 칼마 25점)
+  const sSortino = Math.min(30.0, 30.0 / (1.0 + Math.exp(-1.0 * (sortino - 1.5))));
+  const sCalmar = Math.min(25.0, 25.0 / (1.0 + Math.exp(-1.5 * (calmar - 0.5))));
+  const sRiskAdj = sSortino + sCalmar; 
 
-        // 4. 리스크 감점 (최대 25점: Ulcer 15점 + CVaR 10점)
-        const pUlcer = 15.0 * (1.0 - Math.exp(-0.12 * ulcer));
-        const pCvar = cvar95 > 2.0 ? 10.0 * (1.0 - Math.exp(-0.06 * (cvar95 - 2.0))) : 0;
-        const pTotal = pUlcer + pCvar;
+  // 4. 리스크 감점 (최대 27점: Ulcer 15점 + CVaR 12점 강화)
+  const pUlcer = 15.0 * (1.0 - Math.exp(-0.12 * ulcer));
+  // 📌 [조정안] CVaR 감점 강화 (계수 0.10, 최대 12점)
+  const pCvar = cvar95 > 2.0 ? 12.0 * (1.0 - Math.exp(-0.10 * (cvar95 - 2.0))) : 0;
+  const pTotal = pUlcer + pCvar;
 
-        // 5. 강화된 단기 검증 기간 패널티 (지수 0.20 적용)
-        const fTime = Math.pow(Math.max(12, periodMonths) / 180.0, 0.20);
+  // 5. 강화된 단기 검증 기간 패널티 (지수 0.20 적용)
+  const fTime = Math.pow(Math.max(12, periodMonths) / 180.0, 0.20);
 
-        // 6. 최종 점수 산출 (가점 100점 - 감점 범위 내에서 fTime 적용)
-        const rawScore = sReturn + sRiskAdj - pTotal;
-        const finalScore = Math.max(0, Math.min(100, rawScore * fTime));
+  // 6. 📌 [조정안] 음수 수익률일 때 위험조정 점수 70% 삭감 페널티 (0.3)
+  const returnFactor = xirr >= 0 ? 1.0 : 0.3;
 
-        return Math.round(finalScore * 10) / 10;
-      }
-    }
+  // 7. 최종 점수 산출
+  const rawScore = (sReturn + sRiskAdj * returnFactor) - pTotal;
+  const finalScore = Math.max(0, Math.min(100, rawScore * fTime));
 
+  return Math.round(finalScore * 10) / 10;
+}
     class GlobalLeaderboardService {
       static async fetchLeaderboard() {
         try {
