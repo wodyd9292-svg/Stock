@@ -14,6 +14,8 @@
     input[type="month"]::-webkit-calendar-picker-indicator { filter: invert(0.8); }
     .toast-animate { animation: slideIn 0.3s ease-out forwards; }
     @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .sortable-th { cursor: pointer; user-select: none; }
+    .sortable-th:hover { background-color: #1e293b; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono select-none">
@@ -327,31 +329,31 @@
       </div>
     </div>
 
-    <!-- 통합 성과 표 -->
+    <!-- 통합 성과 표 (오름차순/내림차순 정렬 지원) -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
       <div class="p-3 bg-slate-950 border-b border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
         <span>📋 기관급 통합 성과 및 위험 분석 표</span>
-        <span class="text-emerald-400 font-bold">👉 가로 스크롤을 통해 Quant Score와 15개 전문 수치를 확인하세요.</span>
+        <span class="text-emerald-400 font-bold">👉 각 컬럼 헤더를 클릭하면 오름차순/내림차순으로 정렬됩니다.</span>
       </div>
       <table class="w-full text-xs text-left text-slate-300 min-w-[1700px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
           <tr>
-            <th class="px-3 py-3">종목코드 / 전략 구분</th>
-            <th onclick="UIController.showMetricInfo('Quant Score (100점 만점)', '수익성(XIRR), 하락 가성비(Sortino, Omega), 계좌 고통(MDD, Ulcer)을 종합한 퀀트 점수입니다.')" class="px-3 py-3 text-amber-400 cursor-pointer hover:bg-slate-800 transition">Quant Score 🏆 ℹ️</th>
-            <th class="px-3 py-3">총 원금</th>
-            <th class="px-3 py-3 text-emerald-400" id="thFinalVal">최종 평가금</th>
-            <th onclick="UIController.showMetricInfo('실질 연수익률 (XIRR)', '실제 적립금 입출금 날짜 기준의 진짜 연 복리 수익률입니다.')" class="px-3 py-3 text-cyan-400 cursor-pointer hover:bg-slate-800 transition">실질 연수익률 (XIRR) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('자산 순수 연성장률 (CAGR)', '추가 적립금 효과를 제외하고 순수하게 복리로 성장한 연평균 성장률입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">순수 연성장률 (CAGR) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('위험 대비 가성비 (샤프 지수)', '주가 변동 위험을 견딘 대가로 얻은 초과 수익성 지수입니다. (1.0 이상 우수)')" class="px-3 py-3 text-amber-400 cursor-pointer hover:bg-slate-800 transition">샤프 지수 ℹ️</th>
-            <th onclick="UIController.showMetricInfo('하락위험 가성비 (소티노 지수)', '상승 출렁임은 제외하고 순수 하락 폭락 위험만 따져 계산한 수익 가성비입니다.')" class="px-3 py-3 text-amber-300 cursor-pointer hover:bg-slate-800 transition">소티노 지수 ℹ️</th>
-            <th onclick="UIController.showMetricInfo('시장위험 대비 수익 (트레이너 지수)', '시장 베타 위험 1단위당 올린 초과 수익 성과입니다.')" class="px-3 py-3 text-cyan-300 cursor-pointer hover:bg-slate-800 transition">트레이너 지수 ℹ️</th>
-            <th onclick="UIController.showMetricInfo('손익 확률 비율 (오메가 비율)', '전체 투자 기간 중 손실 가능성 대비 수익 가능성의 통합 비율입니다.')" class="px-3 py-3 text-emerald-300 cursor-pointer hover:bg-slate-800 transition">오메가 비율 ℹ️</th>
-            <th onclick="UIController.showMetricInfo('멘탈 고통 대비 성과 (페인 Ratio)', '계좌가 깎이고 회복을 못해 겪은 고통의 누적 크기 대비 올린 성과 비율입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">페인 Ratio ℹ️</th>
-            <th onclick="UIController.showMetricInfo('지수 추종 오차율 (Tracking Error)', '원본 지수나 목표 포트폴리오 변동성과의 추종 오차율 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">추종 오차율 ℹ️</th>
-            <th onclick="UIController.showMetricInfo('초과수익 가성비 (정보비율)', '벤치마크 지수 대비 얼마나 안정적이고 효율적으로 초과 수익을 만들어냈는지 비율입니다.')" class="px-3 py-3 cursor-pointer hover:bg-slate-800 transition">정보비율 ℹ️</th>
-            <th onclick="UIController.showMetricInfo('마음 고통 지수 (Ulcer Index)', '주가 하락의 깊이와 하락 기간의 길이를 종합하여 투자자가 느낀 고통을 수치화한 지수입니다.')" class="px-3 py-3 text-rose-300 cursor-pointer hover:bg-slate-800 transition">마음 고통 (Ulcer) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('최악의 날 폭락 위험 (CVaR 95%)', '하위 5% 최악의 시장 위기 상황이 닥쳤을 때 단 하루 만에 발생할 수 있는 평균 예상 손실률입니다.')" class="px-3 py-3 text-rose-400 cursor-pointer hover:bg-slate-800 transition">CVaR (95%) ℹ️</th>
-            <th onclick="UIController.showMetricInfo('역대 최대 계좌 하락 폭 (MDD)', '전체 투자 기간 동안 전고점 대비 계좌 평가금이 가장 깊게 박살 났을 때의 최대 손실 비율입니다.')" class="px-3 py-3 text-rose-500 cursor-pointer hover:bg-slate-800 transition">최대 하락 폭 (MDD) ℹ️</th>
+            <th onclick="UIController.handleSort('ticker')" class="px-3 py-3 sortable-th">종목코드 / 전략 구분 <span id="sort-ticker"></span></th>
+            <th onclick="UIController.handleSort('score')" class="px-3 py-3 text-amber-400 sortable-th">Quant Score 🏆 <span id="sort-score">▼</span></th>
+            <th onclick="UIController.handleSort('investedKrw')" class="px-3 py-3 sortable-th">총 원금 <span id="sort-investedKrw"></span></th>
+            <th onclick="UIController.handleSort('finalVal')" class="px-3 py-3 text-emerald-400 sortable-th" id="thFinalVal">최종 평가금 <span id="sort-finalVal"></span></th>
+            <th onclick="UIController.handleSort('annualizedXIRR')" class="px-3 py-3 text-cyan-400 sortable-th">실질 연수익률 (XIRR) <span id="sort-annualizedXIRR"></span></th>
+            <th onclick="UIController.handleSort('twrCagr')" class="px-3 py-3 sortable-th">순수 연성장률 (CAGR) <span id="sort-twrCagr"></span></th>
+            <th onclick="UIController.handleSort('sharpe')" class="px-3 py-3 text-amber-400 sortable-th">샤프 지수 <span id="sort-sharpe"></span></th>
+            <th onclick="UIController.handleSort('sortino')" class="px-3 py-3 text-amber-300 sortable-th">소티노 지수 <span id="sort-sortino"></span></th>
+            <th onclick="UIController.handleSort('treynor')" class="px-3 py-3 text-cyan-300 sortable-th">트레이너 지수 <span id="sort-treynor"></span></th>
+            <th onclick="UIController.handleSort('omega')" class="px-3 py-3 text-emerald-300 sortable-th">오메가 비율 <span id="sort-omega"></span></th>
+            <th onclick="UIController.handleSort('painRatio')" class="px-3 py-3 text-rose-300 sortable-th">페인 Ratio <span id="sort-painRatio"></span></th>
+            <th onclick="UIController.handleSort('trackingError')" class="px-3 py-3 sortable-th">추종 오차율 <span id="sort-trackingError"></span></th>
+            <th onclick="UIController.handleSort('informationRatio')" class="px-3 py-3 sortable-th">정보비율 <span id="sort-informationRatio"></span></th>
+            <th onclick="UIController.handleSort('ulcerIndex')" class="px-3 py-3 text-rose-300 sortable-th">마음 고통 (Ulcer) <span id="sort-ulcerIndex"></span></th>
+            <th onclick="UIController.handleSort('cvar95')" class="px-3 py-3 text-rose-400 sortable-th">CVaR (95%) <span id="sort-cvar95"></span></th>
+            <th onclick="UIController.handleSort('twrMdd')" class="px-3 py-3 text-rose-500 sortable-th">최대 하락 폭 (MDD) <span id="sort-twrMdd"></span></th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
@@ -434,6 +436,7 @@
       }
     }
 
+    // Option A 적용: SPMO의 base 지수를 Yahoo Finance 유효 심볼인 ^SP500MUP로 지정
     const TICKER_UNIVERSE = {
       'QQQ':  { name: 'Invesco QQQ Trust', base: '^NDX', leverage: 1, fee: 0.0020, inceptYear: 1999, allowBackfill: true, proxyType: 'index_tracking' },
       'QLD':  { name: 'ProShares Ultra QQQ (2x)', base: 'QQQ', leverage: 2, fee: 0.0095, inceptYear: 2006, allowBackfill: true, trackingError: 0.002, swapSpread: 0.0045, proxyType: 'leveraged' },
@@ -445,7 +448,7 @@
       'SMH':  { name: 'VanEck Semiconductor ETF', base: '^SOX', leverage: 1, fee: 0.0035, inceptYear: 2011, allowBackfill: true, proxyType: 'index_tracking' },
       'SOXL': { name: 'Direxion Semi Bull 3X', base: 'SMH', leverage: 3, fee: 0.0094, inceptYear: 2010, allowBackfill: true, trackingError: 0.004, swapSpread: 0.0060, proxyType: 'leveraged' },
       'SCHD': { name: 'Schwab U.S. Dividend Equity', base: null, leverage: 1, fee: 0.0006, inceptYear: 2011, allowBackfill: false, warningReason: '2011년 이전 백필 불가', proxyType: 'unsupported' },
-      'SPMO': { name: 'Invesco S&P 500 Momentum', base: '^SPXXMO', leverage: 1, fee: 0.0013, inceptYear: 2017, allowBackfill: true, proxyType: 'index_tracking' },
+      'SPMO': { name: 'Invesco S&P 500 Momentum', base: '^SP500MUP', leverage: 1, fee: 0.0013, inceptYear: 2017, allowBackfill: true, proxyType: 'index_tracking' },
       'JEPI': { name: 'JPMorgan Equity Premium', base: null, leverage: 1, fee: 0.0035, inceptYear: 2020, allowBackfill: false, warningReason: '2020년 이전 백필 불가', proxyType: 'unsupported' },
       'TLT':  { name: 'iShares 20+ Year Treasury', base: '^TYX', leverage: 1, fee: 0.0015, inceptYear: 2002, allowBackfill: true, proxyType: 'index_tracking' },
       'TMF':  { name: 'Direxion 20+ Yr Bull 3x', base: 'TLT', leverage: 3, fee: 0.0101, inceptYear: 2009, allowBackfill: true, trackingError: 0.003, swapSpread: 0.0050, proxyType: 'leveraged' },
@@ -505,7 +508,6 @@
       }
     }
 
-    // 2. Kenneth French 교수 데이터 파서 모듈 (공식 일별 팩터 지원)
     class KennethFrenchFetcher {
       static async fetchOfficialFactors(startYear, endYear) {
         const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_0`;
@@ -521,7 +523,7 @@
           const rawData = await res.json();
 
           rawData.forEach(row => {
-            const dateStr = row.date; // YYYYMMDD or YYYY-MM-DD
+            const dateStr = row.date;
             const formattedDate = dateStr.includes('-') 
               ? dateStr 
               : `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
@@ -983,8 +985,15 @@
           const config = TICKER_UNIVERSE[ticker];
           if (!config.allowBackfill || !config.base) return;
 
-          const basePrices = processedPrices[config.base];
-          const baseDivs = processedDivs[config.base];
+          let basePrices = processedPrices[config.base];
+          let baseDivs = processedDivs[config.base];
+          
+          // Fallback: 기초 지수 데이터 부재 시 SPY로 대체 연동
+          if (!basePrices || basePrices.every(p => p === 0)) {
+            basePrices = processedPrices['SPY'];
+            baseDivs = processedDivs['SPY'];
+          }
+
           if (!basePrices) return;
 
           const priceArr = processedPrices[ticker];
@@ -1043,7 +1052,6 @@
       }
     }
 
-    // 3. Fama-French Engine (공식 Kenneth French 팩터 연동 + ETF 대리 폴백)
     class FamaFrenchEngine {
       static solve(portDailyReturns, processedData, dates, ffOfficialMap) {
         const N = portDailyReturns.length;
@@ -1255,7 +1263,6 @@
         return { key: 'short', label: '⚡ 단기 (5년 미만)' };
       }
 
-      // 100점 만점 구조 정밀 산출 공식
       static calculateScore(res) {
         if (!res) return 0;
 
@@ -1277,7 +1284,6 @@
       }
     }
 
-    // 4. Zero-Trust 리더보드 서비스 (서버리스 검증 연동 스키마)
     class GlobalLeaderboardService {
       static API_ENDPOINT = "https://api.npoint.io/e94d2f8319f5a01d6745";
 
@@ -1322,7 +1328,6 @@
     }
 
     class QuantBacktestEngine {
-
       static processDividends(divPayQueue, i, priceUsd, fx, taxLotMgr, divMap, dateStr, fxSpreadRate) {
         const totalShares = taxLotMgr.getTotalShares();
 
@@ -1563,6 +1568,7 @@
           tasksForMonteCarlo.push({ key: ticker, dailyReturns: portDailyReturns, monthlyCashFlows });
 
           results[ticker] = {
+            ticker,
             name: TICKER_UNIVERSE[ticker]?.name || ticker,
             investedKrw,
             finalVal,
@@ -1584,6 +1590,7 @@
             portfolioValues,
             investedSeries
           };
+          results[ticker].score = QuantScoreEngine.calculateScore(results[ticker]);
         }
 
         customMixes.forEach((mix) => {
@@ -1716,6 +1723,7 @@
           const wDescStr = mixTickers.map(t => `${t}:${Math.round(normWeights[t]*100)}%`).join(' ');
 
           results[mixKey] = {
+            ticker: mixKey,
             name: `${mix.name} (${wDescStr} / ${mix.rebalanceFreq === 'none' ? '노리밸런싱' : mix.rebalanceFreq})`,
             investedKrw: mixInvested,
             finalVal: mixFinalVal,
@@ -1737,6 +1745,7 @@
             portfolioValues: mixPortfolioValues,
             investedSeries: mixInvestedSeries
           };
+          results[mixKey].score = QuantScoreEngine.calculateScore(results[mixKey]);
         });
 
         if (onProgress) onProgress(80);
@@ -1752,7 +1761,6 @@
       }
     }
 
-    // Proxy 기반 반응형 스토어
     class ReactiveStore {
       constructor(initialData, onChange) {
         this.onChange = onChange;
@@ -1787,6 +1795,10 @@
       static isGuideOpen = true;
       static currentLeaderboardFilter = 'all';
       static cachedLeaderboard = [];
+      
+      // 테이블 정렬 상태
+      static sortField = 'score';
+      static sortOrder = 'desc';
 
       static init() {
         this.initReactiveMixes();
@@ -1840,6 +1852,34 @@
 
       static showMetricInfo(title, description) {
         alert(`[${title}]\n\n${description}`);
+      }
+
+      // 오름차순/내림차순 토글 및 정렬
+      static handleSort(field) {
+        if (this.sortField === field) {
+          this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+          this.sortField = field;
+          this.sortOrder = 'desc';
+        }
+        this.updateSortIcons();
+        if (this.currentResults) {
+          this.renderSummaryTableBody(this.currentResults, document.getElementById('taxMode').value === 'fifo');
+        }
+      }
+
+      static updateSortIcons() {
+        const fields = ['ticker', 'score', 'investedKrw', 'finalVal', 'annualizedXIRR', 'twrCagr', 'sharpe', 'sortino', 'treynor', 'omega', 'painRatio', 'trackingError', 'informationRatio', 'ulcerIndex', 'cvar95', 'twrMdd'];
+        fields.forEach(f => {
+          const el = document.getElementById(`sort-${f}`);
+          if (el) {
+            if (f === this.sortField) {
+              el.innerText = this.sortOrder === 'asc' ? '▲' : '▼';
+            } else {
+              el.innerText = '';
+            }
+          }
+        });
       }
 
       static exportStrategies() {
@@ -2383,7 +2423,6 @@
 
         const fullTickers = Array.from(requiredSet);
 
-        // 공식 Kenneth French Daily Factors 및 Yahoo Finance 동시 페칭
         const ffPromise = KennethFrenchFetcher.fetchOfficialFactors(startYear, endYear);
         const fetchPromises = fullTickers.map(t => YahooFinanceFetcher.fetchChartData(t, startYear, endYear));
         const fxPromise = YahooFinanceFetcher.fetchChartData('KRW=X', startYear, endYear);
@@ -2498,7 +2537,7 @@
       static renderDashboard(results, sortedDates, taxEnabled) {
         const startMonth = document.getElementById('startMonth').value;
         const startYear = parseInt(startMonth.split('-')[0], 10);
-        document.getElementById('thFinalVal').innerText = taxEnabled ? '실제 세후 평가금' : '세전 최종 평가금';
+        document.getElementById('thFinalVal').innerHTML = `${taxEnabled ? '실제 세후 평가금' : '세전 최종 평가금'} <span id="sort-finalVal"></span>`;
 
         const cardsContainer = document.getElementById('summaryCards');
         cardsContainer.innerHTML = '';
@@ -2526,7 +2565,7 @@
           const card = document.createElement('div');
           card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
           const isMix = ticker.startsWith('[MIX]');
-          const score = QuantScoreEngine.calculateScore(res);
+          const score = res.score;
           const safeName = QuantUtils.escapeHTML(res.name);
 
           card.innerHTML = `
@@ -2570,11 +2609,42 @@
         }
         ffBody.appendChild(ffFragment);
 
+        this.renderSummaryTableBody(results, taxEnabled);
+
+        if (this.activeTab === 'montecarlo') {
+          this.updateMcDescription();
+        }
+
+        this.renderChart(results, sortedDates);
+      }
+
+      // 동적 정렬을 지원하는 통합 성과 표 렌더링 함수
+      static renderSummaryTableBody(results, taxEnabled) {
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
         const summaryFragment = document.createDocumentFragment();
 
-        for (const [ticker, res] of Object.entries(results)) {
+        const startMonth = document.getElementById('startMonth').value;
+        const startYear = parseInt(startMonth.split('-')[0], 10);
+
+        const resArray = Object.values(results);
+
+        // 동적 정렬 수행
+        resArray.sort((a, b) => {
+          let valA = a[this.sortField];
+          let valB = b[this.sortField];
+
+          if (typeof valA === 'string') {
+            return this.sortOrder === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+          } else {
+            return this.sortOrder === 'asc' ? valA - valB : valB - valA;
+          }
+        });
+
+        this.updateSortIcons();
+
+        resArray.forEach(res => {
+          const ticker = res.ticker;
           const isMix = ticker.startsWith('[MIX]');
           const config = TICKER_UNIVERSE[ticker];
           const inceptYear = config?.inceptYear || 2000;
@@ -2591,7 +2661,7 @@
             backfillBadge = `<span class="text-[9px] bg-rose-950/80 text-rose-300 px-1 py-0.5 rounded border border-rose-800/50">⚠️ 백필 제한 (${inceptYear}년전 현금보유)</span>`;
           }
 
-          const score = QuantScoreEngine.calculateScore(res);
+          const score = res.score;
 
           const tr = document.createElement('tr');
           tr.className = `hover:bg-slate-800/40 border-b border-slate-800/60 ${isMix ? 'bg-amber-950/30 border-amber-600/50 font-semibold' : ''}`;
@@ -2625,14 +2695,9 @@
             <td class="px-3 py-3 text-rose-500 font-bold">${res.twrMdd.toFixed(1)}%</td>
           `;
           summaryFragment.appendChild(tr);
-        }
+        });
+
         tbody.appendChild(summaryFragment);
-
-        if (this.activeTab === 'montecarlo') {
-          this.updateMcDescription();
-        }
-
-        this.renderChart(results, sortedDates);
       }
 
       static renderChart(results, sortedDates) {
