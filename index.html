@@ -436,7 +436,6 @@
       }
     }
 
-    // Option A 적용: SPMO의 base 지수를 Yahoo Finance 유효 심볼인 ^SP500MUP로 지정
     const TICKER_UNIVERSE = {
       'QQQ':  { name: 'Invesco QQQ Trust', base: '^NDX', leverage: 1, fee: 0.0020, inceptYear: 1999, allowBackfill: true, proxyType: 'index_tracking' },
       'QLD':  { name: 'ProShares Ultra QQQ (2x)', base: 'QQQ', leverage: 2, fee: 0.0095, inceptYear: 2006, allowBackfill: true, trackingError: 0.002, swapSpread: 0.0045, proxyType: 'leveraged' },
@@ -508,6 +507,7 @@
       }
     }
 
+    // CORS 우회 및 유연한 파싱 로직이 강화된 Kenneth French 팩터 수신기
     class KennethFrenchFetcher {
       static async fetchOfficialFactors(startYear, endYear) {
         const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_0`;
@@ -517,37 +517,54 @@
         }
 
         const factorMap = new Map();
-        try {
-          const res = await fetch(GLOBAL_QUANT_CONFIG.KENNETH_FRENCH_FACTOR_URL);
-          if (!res.ok) throw new Error("FF Data fetch failed");
-          const rawData = await res.json();
+        const rawUrl = GLOBAL_QUANT_CONFIG.KENNETH_FRENCH_FACTOR_URL;
 
-          rawData.forEach(row => {
-            const dateStr = row.date;
-            const formattedDate = dateStr.includes('-') 
-              ? dateStr 
-              : `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
+        const proxies = [
+          rawUrl,
+          `${GLOBAL_QUANT_CONFIG.CORS_WORKER_PROXY}${encodeURIComponent(rawUrl)}`,
+          `https://corsproxy.io/?${encodeURIComponent(rawUrl)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`
+        ];
 
-            const yr = parseInt(formattedDate.substring(0,4), 10);
-            if (yr >= startYear && yr <= endYear) {
-              factorMap.set(formattedDate, {
-                mktRf: row['Mkt-RF'] / 100.0,
-                smb: row.SMB / 100.0,
-                hml: row.HML / 100.0,
-                mom: (row.MOM || row.Mom || 0) / 100.0,
-                rf: row.RF / 100.0
-              });
+        for (const proxyUrl of proxies) {
+          try {
+            const res = await fetch(proxyUrl);
+            if (!res.ok) continue;
+
+            const rawData = await res.json();
+            if (!Array.isArray(rawData) || rawData.length === 0) continue;
+
+            rawData.forEach(row => {
+              const dateStr = String(row.date || row.Date || '');
+              if (!dateStr) return;
+
+              const formattedDate = dateStr.includes('-') 
+                ? dateStr 
+                : `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
+
+              const yr = parseInt(formattedDate.substring(0,4), 10);
+              if (yr >= startYear && yr <= endYear) {
+                const mktRf = (row['Mkt-RF'] ?? row['Mkt_RF'] ?? row.mkt_rf ?? 0) / 100.0;
+                const smb = (row.SMB ?? row.smb ?? 0) / 100.0;
+                const hml = (row.HML ?? row.hml ?? 0) / 100.0;
+                const mom = (row.MOM ?? row.Mom ?? row.mom ?? 0) / 100.0;
+                const rf = (row.RF ?? row.rf ?? 0) / 100.0;
+
+                factorMap.set(formattedDate, { mktRf, smb, hml, mom, rf });
+              }
+            });
+
+            if (factorMap.size > 0) {
+              await QuantDataCache.set(cacheKey, { entries: Array.from(factorMap.entries()) });
+              return factorMap;
             }
-          });
-
-          if (factorMap.size > 0) {
-            await QuantDataCache.set(cacheKey, { entries: Array.from(factorMap.entries()) });
+          } catch (err) {
+            console.warn(`[KennethFrenchFetcher] 프록시 시도 실패 (${proxyUrl}):`, err);
           }
-        } catch (err) {
-          console.warn("[KennethFrenchFetcher] 공식 팩터 로딩 중 오류, ETF 대리 모델로 자동 전환합니다.");
-          return null;
         }
-        return factorMap;
+
+        console.warn("[KennethFrenchFetcher] 모든 출처 수신 실패. ETF 대리 모델로 자동 전환합니다.");
+        return null;
       }
     }
 
@@ -988,7 +1005,6 @@
           let basePrices = processedPrices[config.base];
           let baseDivs = processedDivs[config.base];
           
-          // Fallback: 기초 지수 데이터 부재 시 SPY로 대체 연동
           if (!basePrices || basePrices.every(p => p === 0)) {
             basePrices = processedPrices['SPY'];
             baseDivs = processedDivs['SPY'];
@@ -1854,7 +1870,6 @@
         alert(`[${title}]\n\n${description}`);
       }
 
-      // 오름차순/내림차순 토글 및 정렬
       static handleSort(field) {
         if (this.sortField === field) {
           this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
@@ -2618,7 +2633,6 @@
         this.renderChart(results, sortedDates);
       }
 
-      // 동적 정렬을 지원하는 통합 성과 표 렌더링 함수
       static renderSummaryTableBody(results, taxEnabled) {
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
@@ -2629,7 +2643,6 @@
 
         const resArray = Object.values(results);
 
-        // 동적 정렬 수행
         resArray.sort((a, b) => {
           let valA = a[this.sortField];
           let valB = b[this.sortField];
