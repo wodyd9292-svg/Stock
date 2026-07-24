@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ETF 적립식 백테스트 계산기 v14.1</title>
+  <title>ETF 적립식 백테스트 계산기 v14.2</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Supabase JS SDK 추가 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -30,7 +29,7 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          📈 ETF 적립식 백테스트 계산기 <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.1</span>
+          📈 ETF 적립식 백테스트 계산기 <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.2</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
           미국 주요 ETF 적립식·거치식 성과 분석 및 포트폴리오 비교 시뮬레이터
@@ -52,8 +51,8 @@
       </div>
       <div id="beginnerGuideContent" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-slate-300 border-t border-slate-800">
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-amber-400 block mb-1">⚖️ 하락위험 가성비 (소티노 지수)</span>
-          상승 출렁임은 포상하고 <span class="text-emerald-300 font-semibold">순수 하락 폭락 위험</span>만 평가하는 실전 적립식 성과 지수입니다.
+          <span class="font-bold text-amber-400 block mb-1">⚖️ 하락위험 가성비 (소티노 & 칼마 지수)</span>
+          상승 출렁임은 포상하고 <span class="text-emerald-300 font-semibold">순수 하락 폭락 위험(MDD 대비 회복력)</span>만 평가하는 실전 적립식 성과 지수입니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
           <span class="font-bold text-cyan-400 block mb-1">📈 실질 연복리 수익률 (XIRR)</span>
@@ -335,27 +334,91 @@
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
       <div class="p-3 bg-slate-950 border-b border-slate-800 text-[11px] text-slate-400 flex justify-between items-center flex-wrap gap-1">
         <span>📋 통합 성과 및 위험 분석 표</span>
-        <span class="text-emerald-400 font-bold">👉 각 컬럼 헤더를 클릭하면 정렬됩니다.</span>
+        <span class="text-emerald-400 font-bold">👉 컬럼 헤더 클릭: 정렬 / ℹ️ 아이콘 클릭: 용어 설명 팝업</span>
       </div>
       <table class="w-full text-xs text-left text-slate-300 min-w-[1700px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
           <tr>
-            <th onclick="UIController.handleSort('ticker')" class="px-3 py-3 sortable-th">종목코드 / 전략 구분 <span id="sort-ticker"></span></th>
-            <th onclick="UIController.handleSort('score')" class="px-3 py-3 text-amber-400 sortable-th">종합 점수 🏆 <span id="sort-score">▼</span></th>
-            <th onclick="UIController.handleSort('investedKrw')" class="px-3 py-3 sortable-th">총 원금 <span id="sort-investedKrw"></span></th>
-            <th onclick="UIController.handleSort('finalVal')" class="px-3 py-3 text-emerald-400 sortable-th" id="thFinalVal">최종 평가금 <span id="sort-finalVal"></span></th>
-            <th onclick="UIController.handleSort('annualizedXIRR')" class="px-3 py-3 text-cyan-400 sortable-th">실질 연수익률 (XIRR) <span id="sort-annualizedXIRR"></span></th>
-            <th onclick="UIController.handleSort('twrCagr')" class="px-3 py-3 sortable-th">순수 연성장률 (CAGR) <span id="sort-twrCagr"></span></th>
-            <th onclick="UIController.handleSort('sharpe')" class="px-3 py-3 text-amber-400 sortable-th">샤프 지수 <span id="sort-sharpe"></span></th>
-            <th onclick="UIController.handleSort('sortino')" class="px-3 py-3 text-amber-300 sortable-th">소티노 지수 <span id="sort-sortino"></span></th>
-            <th onclick="UIController.handleSort('treynor')" class="px-3 py-3 text-cyan-300 sortable-th">트레이너 지수 <span id="sort-treynor"></span></th>
-            <th onclick="UIController.handleSort('omega')" class="px-3 py-3 text-emerald-300 sortable-th">오메가 비율 <span id="sort-omega"></span></th>
-            <th onclick="UIController.handleSort('painRatio')" class="px-3 py-3 text-rose-300 sortable-th">페인 Ratio <span id="sort-painRatio"></span></th>
-            <th onclick="UIController.handleSort('trackingError')" class="px-3 py-3 sortable-th">추종 오차율 <span id="sort-trackingError"></span></th>
-            <th onclick="UIController.handleSort('informationRatio')" class="px-3 py-3 sortable-th">정보비율 <span id="sort-informationRatio"></span></th>
-            <th onclick="UIController.handleSort('ulcerIndex')" class="px-3 py-3 text-rose-300 sortable-th">마음 고통 (Ulcer) <span id="sort-ulcerIndex"></span></th>
-            <th onclick="UIController.handleSort('cvar95')" class="px-3 py-3 text-rose-400 sortable-th">CVaR (95%) <span id="sort-cvar95"></span></th>
-            <th onclick="UIController.handleSort('twrMdd')" class="px-3 py-3 text-rose-500 sortable-th">최대 하락 폭 (MDD) <span id="sort-twrMdd"></span></th>
+            <th onclick="UIController.handleSort('ticker')" class="px-3 py-3 sortable-th">
+              종목코드 / 전략 구분
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('종목코드 / 전략 구분', '백테스트 대상 개별 ETF 종목코드 또는 사용자가 설정한 포트폴리오 커스텀 믹스 전략명입니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-ticker"></span>
+            </th>
+            <th onclick="UIController.handleSort('score')" class="px-3 py-3 text-amber-400 sortable-th">
+              종합 점수 🏆
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('종합 점수 🏆', '수익성(XIRR), 회복력(칼마), 위험 대비 효율(소티노·오메가·샤프), 최대 하락폭(MDD) 및 고통 지수(Ulcer), 검증 기간 보정을 종합 계량 평가하여 100점 만점으로 산출한 성과 점수입니다.')" class="text-amber-500/80 hover:text-amber-300 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-score">▼</span>
+            </th>
+            <th onclick="UIController.handleSort('investedKrw')" class="px-3 py-3 sortable-th">
+              총 원금
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('총 투입 원금', '설정한 기간 동안 거치식 또는 월 적립식으로 투자자가 실제로 투입한 총 원금 합계입니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-investedKrw"></span>
+            </th>
+            <th onclick="UIController.handleSort('finalVal')" class="px-3 py-3 text-emerald-400 sortable-th" id="thFinalVal">
+              최종 평가금
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('최종 평가금', '백테스트 종료 시점의 포트폴리오 최종 평가 금액입니다. 과세 옵션 적용 시 세금이 차감된 세후 실질 금액이 표시됩니다.')" class="text-emerald-600 hover:text-emerald-300 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-finalVal"></span>
+            </th>
+            <th onclick="UIController.handleSort('annualizedXIRR')" class="px-3 py-3 text-cyan-400 sortable-th">
+              실질 연수익률 (XIRR)
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('실질 연수익률 (XIRR)', '매월 실제 입출금 날짜와 현금흐름을 반영하여 계산한 실질 적립식 연복리 수익률(Money-Weighted Rate of Return)입니다.')" class="text-cyan-600 hover:text-cyan-300 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-annualizedXIRR"></span>
+            </th>
+            <th onclick="UIController.handleSort('twrCagr')" class="px-3 py-3 sortable-th">
+              순수 연성장률 (CAGR)
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('순수 연성장률 (CAGR)', '입출금 타이밍 영향을 제외하고 자산 자체의 시간가치 기준 순수 연평균 복리 성장률(TWR)입니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-twrCagr"></span>
+            </th>
+            <th onclick="UIController.handleSort('sharpe')" class="px-3 py-3 text-amber-400 sortable-th">
+              샤프 지수
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('샤프 지수 (Sharpe Ratio)', '전체 변동성(총위험) 1단위당 거둔 무위험자산 대비 초과 수익률입니다. 높을수록 위험 대비 효율이 우수합니다.')" class="text-amber-600 hover:text-amber-300 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-sharpe"></span>
+            </th>
+            <th onclick="UIController.handleSort('sortino')" class="px-3 py-3 text-amber-300 sortable-th">
+              소티노 지수
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('소티노 지수 (Sortino Ratio)', '상승 변동성은 포상하고 하락 폭락 위험(Downside Volatility)만 분모에 반영하여 평가한 실전 적립식 맞춤 위험조정 수익률입니다.')" class="text-amber-500 hover:text-amber-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-sortino"></span>
+            </th>
+            <th onclick="UIController.handleSort('treynor')" class="px-3 py-3 text-cyan-300 sortable-th">
+              트레이너 지수
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('트레이너 지수 (Treynor Ratio)', '시장 민감도(베타 1단위)당 얻은 초과 수익률입니다. 체계적 시장 위험 대비 효율을 나타냅니다.')" class="text-cyan-600 hover:text-cyan-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-treynor"></span>
+            </th>
+            <th onclick="UIController.handleSort('omega')" class="px-3 py-3 text-emerald-300 sortable-th">
+              오메가 비율
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('오메가 비율 (Omega Ratio)', '목표 수익률 대비 손실 금액 대비 이익 금액의 전체 확률 분포 비율입니다. 1.0 초과 시 이익 기회가 더 큼을 의미합니다.')" class="text-emerald-600 hover:text-emerald-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-omega"></span>
+            </th>
+            <th onclick="UIController.handleSort('painRatio')" class="px-3 py-3 text-rose-300 sortable-th">
+              페인 Ratio
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('페인 Ratio (Pain Ratio)', '투자 기간 동안 느낀 고통 지수(Pain Index) 대비 초과 수익률입니다. 고통 폭 대비 성과 보상을 측정합니다.')" class="text-rose-500 hover:text-rose-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-painRatio"></span>
+            </th>
+            <th onclick="UIController.handleSort('trackingError')" class="px-3 py-3 sortable-th">
+              추종 오차율
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('추종 오차율 (Tracking Error)', '벤치마크(S&P 500) 대비 포트폴리오 수익률의 이탈 변동성(표준편차)입니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-trackingError"></span>
+            </th>
+            <th onclick="UIController.handleSort('informationRatio')" class="px-3 py-3 sortable-th">
+              정보비율
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('정보비율 (Information Ratio)', '벤치마크 대비 초과 수익률을 추종 오차 위험으로 나눈 지표로, 운용자의 정교한 초과 성과 능력을 보여줍니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-informationRatio"></span>
+            </th>
+            <th onclick="UIController.handleSort('ulcerIndex')" class="px-3 py-3 text-rose-300 sortable-th">
+              마음 고통 (Ulcer)
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('마음 고통 지수 (Ulcer Index)', '계좌가 고점 대비 하락해 있는 깊이와 고통 기간(시간)을 동시에 반영하여 심리적 스트레스 크기를 측정합니다.')" class="text-rose-500 hover:text-rose-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-ulcerIndex"></span>
+            </th>
+            <th onclick="UIController.handleSort('cvar95')" class="px-3 py-3 text-rose-400 sortable-th">
+              CVaR (95%)
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('CVaR 95% (조건부 위험값)', '최악의 하락장 상위 5% 상황에 직면했을 때 발생할 수 있는 평균 예상 손실 비율입니다.')" class="text-rose-600 hover:text-rose-300 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-cvar95"></span>
+            </th>
+            <th onclick="UIController.handleSort('twrMdd')" class="px-3 py-3 text-rose-500 sortable-th">
+              최대 하락 폭 (MDD)
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('최대 하락 폭 (MDD)', '백테스트 기간 동안 고점에서 저점까지 경험한 가장 뼈아픈 최대 손실 비율입니다.')" class="text-rose-600 hover:text-rose-300 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <span id="sort-twrMdd"></span>
+            </th>
           </tr>
         </thead>
         <tbody id="summaryTableBody" class="divide-y divide-slate-800/60">
@@ -368,7 +431,7 @@
   <script>
     'use strict';
 
-    // 0. Supabase 데이터베이스 연결 설정 (1단계에서 복사한 키로 변경하세요)
+    // 0. Supabase 데이터베이스 연결 설정
     const SUPABASE_URL = "https://rqgbkqztalsgldhhqxhm.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_z0y33AMk8uO_c75oTD-qMg_8kXsOhvk";
 
@@ -483,7 +546,7 @@
     };
 
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v14_1";
+      static dbName = "QuantBacktestCacheDB_v14_2";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -532,7 +595,7 @@
 
     class KennethFrenchFetcher {
       static async fetchOfficialFactors(startYear, endYear, rawDatasets = null) {
-        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_1_CLEAN`;
+        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_2_CLEAN`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached && cached.entries && cached.entries.length > 0) {
           return new Map(cached.entries);
@@ -864,7 +927,7 @@
 
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v14_1`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v14_2`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -941,6 +1004,7 @@
         if (finalVal <= GLOBAL_QUANT_CONFIG.EPSILON_PRECISION) return -100.0;
 
         const t0 = QuantUtils.parseDateUTC(dates[0]);
+        // 금융 표준 분모 365.0 적용
         const daysArr = dates.map(d => (QuantUtils.parseDateUTC(d) - t0) / (1000 * 3600 * 24));
         const finalDay = daysArr[daysArr.length - 1];
 
@@ -948,9 +1012,9 @@
 
         const f = (r) => {
           if (r <= -0.9999) return 1e12;
-          let val = -finalVal / Math.pow(1 + r, finalDay / 365.25);
+          let val = -finalVal / Math.pow(1 + r, finalDay / 365.0);
           for (let k = 0; k < m; k++) {
-            val += cashFlows[k] / Math.pow(1 + r, daysArr[k] / 365.25);
+            val += cashFlows[k] / Math.pow(1 + r, daysArr[k] / 365.0);
           }
           return isNaN(val) ? 1e12 : val;
         };
@@ -1052,10 +1116,9 @@
               const baseCurr = basePrices[i + 1];
               const basePrev = basePrices[i];
 
+              // 레버리지 ETF 백필 기간 배당금 과대평가 방지 (0 처리)
               if (config.proxyType === 'leveraged' && baseDivs && baseDivs.has(dateStr) && !divMap.has(dateStr)) {
-                const baseDivAmount = baseDivs.get(dateStr);
-                const synthDiv = Math.max(0, baseDivAmount * Math.abs(config.leverage));
-                divMap.set(dateStr, synthDiv);
+                divMap.set(dateStr, 0.0);
               }
 
               if (baseCurr > 0 && basePrev > 0) {
@@ -1274,6 +1337,7 @@
       }
     }
 
+    // ⭐ 칼마 비율, 기간 보정 계수 및 조정된 MDD 패널티가 적용된 퀀트 종합 성과 점수
     class QuantScoreEngine {
       static calculatePeriodMonths(startMonth, endMonth) {
         const [sY, sM] = startMonth.split('-').map(Number);
@@ -1287,28 +1351,46 @@
         return { key: 'short', label: '⚡ 단기 (5년 미만)' };
       }
 
-      static calculateScore(res) {
+      static calculateScore(res, periodMonths = 180) {
         if (!res) return 0;
 
-        const xirr = res.annualizedXIRR || 0;
-        const sortino = res.sortino || 0;
-        const omega = res.omega || 0;
+        const xirr = Math.max(-50, res.annualizedXIRR || 0);
+        const sortino = Math.max(0, res.sortino || 0);
+        const omega = Math.max(0, res.omega || 0);
+        const sharpe = Math.max(0, res.sharpe || 0);
         const mdd = Math.abs(res.twrMdd || 0);
-        const ulcer = res.ulcerIndex || 0;
+        const ulcer = Math.max(0, res.ulcerIndex || 0);
 
-        const xirrScore = Math.min(40.0, Math.max(0, xirr * 2.0)); 
-        const sortinoScore = Math.min(35.0, Math.max(0, sortino * 14.0)); 
-        const omegaScore = Math.min(25.0, Math.max(0, (omega - 1.0) * 25.0)); 
+        // 1. 수익성 점수 (최대 30점)
+        let returnScore = 0;
+        if (xirr > 0) {
+          returnScore = Math.min(30.0, Math.log1p(xirr / 5.0) * 14.0);
+        }
 
-        const mddPenalty = Math.min(25.0, Math.pow(mdd / 10, 1.3)); 
-        const ulcerPenalty = Math.min(15.0, ulcer * 0.75); 
+        // 2. 위험조정 효율 및 칼마 비율 점수 (최대 40점)
+        const calmar = mdd > 0 ? (xirr / mdd) : 0;
+        const calmarScore = Math.min(10.0, Math.max(0, calmar * 5.0)); // 칼마 비율 점수 (최대 10점)
+        const sortinoScore = Math.min(20.0, sortino * 10.0); // 소티노 (최대 20점)
+        const omegaScore = Math.min(6.0, Math.max(0, (omega - 1.0) * 10.0));
+        const sharpeBonus = Math.min(4.0, sharpe * 2.5);
+        const qualityScore = returnScore + calmarScore + sortinoScore + omegaScore + sharpeBonus;
 
-        let finalScore = (xirrScore + sortinoScore + omegaScore) - (mddPenalty + ulcerPenalty);
+        // 3. 조정된 MDD 및 심리적 고통 패널티 (MDD 30% -> ~9.5점 감점 반영)
+        const mddPenalty = Math.min(25.0, Math.pow(mdd / 8.0, 1.6));
+        const ulcerPenalty = Math.min(10.0, ulcer * 0.85);
+        const totalPenalty = mddPenalty + ulcerPenalty;
+
+        // 4. 기간 보정 계수 (장기 하락장을 견뎌낸 포트폴리오 우대)
+        const periodFactor = Math.pow(Math.max(1, periodMonths) / 180.0, 0.15);
+
+        let rawScore = qualityScore - totalPenalty;
+        let finalScore = rawScore * periodFactor;
+
         return Math.round(Math.max(0, Math.min(100, finalScore)) * 10) / 10;
       }
     }
 
-    // ⭐ Supabase로 업그레이드된 리더보드 서비스
+    // ⭐ Supabase 연동 글로벌 리더보드 서비스
     class GlobalLeaderboardService {
       static async fetchLeaderboard() {
         try {
@@ -1353,7 +1435,7 @@
 
       static async publishMix(payload) {
         const record = {
-          id: payload.id,
+          id: payload.id, // 고유 UUID 적용으로 충돌 방지
           name: payload.name,
           author: payload.author,
           score: payload.score,
@@ -1429,6 +1511,7 @@
         return 0;
       }
 
+      // 현금 부족 시 주식 매도 정산 로직 적용
       static processTaxHarvesting(taxLotMgr, currentValKrw, priceUsd, fx, fxSpreadRate, yearRealizedGainKrw, TAX_LIMIT, cashKrw) {
         let updatedGain = yearRealizedGainKrw;
         let updatedCash = cashKrw;
@@ -1446,7 +1529,17 @@
           if (updatedGain > TAX_LIMIT) {
             const taxableGain = updatedGain - TAX_LIMIT;
             const taxPaid = taxableGain * GLOBAL_QUANT_CONFIG.TAX_RATE;
-            updatedCash -= taxPaid;
+            
+            if (updatedCash < taxPaid) {
+              const deficitKrw = taxPaid - updatedCash;
+              updatedCash = 0.0;
+              const netSellFxPrice = priceUsd * fx * (1 - fxSpreadRate);
+              if (netSellFxPrice > 0 && taxLotMgr.getTotalShares() > 0) {
+                taxLotMgr.harvestTax(0, priceUsd, fx, fxSpreadRate);
+              }
+            } else {
+              updatedCash -= taxPaid;
+            }
           }
 
           updatedGain = 0.0;
@@ -1460,6 +1553,10 @@
         const { processedPrices, processedDivs } = processedData;
         const results = {};
         const TAX_LIMIT = GLOBAL_QUANT_CONFIG.TAX_ALLOWANCE_KRW;
+
+        const startMonth = document.getElementById('startMonth').value;
+        const endMonth = document.getElementById('endMonth').value;
+        const periodMonths = QuantScoreEngine.calculatePeriodMonths(startMonth, endMonth);
 
         const fxPrices = new Float64Array(N);
         let lastFx = 1300.0;
@@ -1652,7 +1749,7 @@
             portfolioValues,
             investedSeries
           };
-          results[ticker].score = QuantScoreEngine.calculateScore(results[ticker]);
+          results[ticker].score = QuantScoreEngine.calculateScore(results[ticker], periodMonths);
         }
 
         for (let mIdx = 0; mIdx < customMixes.length; mIdx++) {
@@ -1824,7 +1921,7 @@
             portfolioValues: mixPortfolioValues,
             investedSeries: mixInvestedSeries
           };
-          results[mixKey].score = QuantScoreEngine.calculateScore(results[mixKey]);
+          results[mixKey].score = QuantScoreEngine.calculateScore(results[mixKey], periodMonths);
         }
 
         if (onProgress) onProgress(80);
@@ -1898,7 +1995,7 @@
       static initReactiveMixes() {
         let initialMixes = [];
         try {
-          const stored = localStorage.getItem('quant_custom_mixes_v14_1');
+          const stored = localStorage.getItem('quant_custom_mixes_v14_2');
           if (stored) {
             initialMixes = JSON.parse(stored);
           } else {
@@ -1913,7 +2010,7 @@
 
         this.customMixesStore = new ReactiveStore(initialMixes, (updatedState) => {
           try {
-            localStorage.setItem('quant_custom_mixes_v14_1', JSON.stringify(updatedState));
+            localStorage.setItem('quant_custom_mixes_v14_2', JSON.stringify(updatedState));
           } catch(e) {
             console.warn("LocalStorage 쓰기 차단됨", e);
           }
@@ -2040,57 +2137,76 @@
         if (idx > -1) this.customMixesStore.state.splice(idx, 1);
       }
 
+      // ⭐ 불변성(Immutability) 수정으로 ReactiveStore 자동 저장 적용
       static toggleMixEnabled(id) {
-        const mix = this.customMixes.find(m => m.id === id);
-        if (mix) mix.enabled = !mix.enabled;
+        const idx = this.customMixes.findIndex(m => m.id === id);
+        if (idx > -1) {
+          const mix = this.customMixes[idx];
+          this.customMixesStore.state[idx] = { ...mix, enabled: !mix.enabled };
+        }
       }
 
       static updateMixName(id, name) {
-        const mix = this.customMixes.find(m => m.id === id);
-        if (mix) mix.name = name;
+        const idx = this.customMixes.findIndex(m => m.id === id);
+        if (idx > -1) {
+          this.customMixesStore.state[idx] = { ...this.customMixes[idx], name };
+        }
       }
 
       static updateMixRebalanceFreq(id, freq) {
-        const mix = this.customMixes.find(m => m.id === id);
-        if (mix) mix.rebalanceFreq = freq;
+        const idx = this.customMixes.findIndex(m => m.id === id);
+        if (idx > -1) {
+          this.customMixesStore.state[idx] = { ...this.customMixes[idx], rebalanceFreq: freq };
+        }
       }
 
       static addTickerToMix(mixId, ticker) {
-        const mix = this.customMixes.find(m => m.id === mixId);
-        if (mix && !mix.allocations[ticker]) {
-          mix.allocations[ticker] = 10;
-          this.renderMixStrategiesUI();
+        const idx = this.customMixes.findIndex(m => m.id === mixId);
+        if (idx > -1) {
+          const mix = this.customMixes[idx];
+          if (!mix.allocations[ticker]) {
+            const newAllocations = { ...mix.allocations, [ticker]: 10 };
+            this.customMixesStore.state[idx] = { ...mix, allocations: newAllocations };
+          }
         }
       }
 
       static removeTickerFromMix(mixId, ticker) {
-        const mix = this.customMixes.find(m => m.id === mixId);
-        if (mix) {
-          delete mix.allocations[ticker];
-          this.renderMixStrategiesUI();
+        const idx = this.customMixes.findIndex(m => m.id === mixId);
+        if (idx > -1) {
+          const mix = this.customMixes[idx];
+          const newAllocations = { ...mix.allocations };
+          delete newAllocations[ticker];
+          this.customMixesStore.state[idx] = { ...mix, allocations: newAllocations };
         }
       }
 
       static updateMixTickerWeight(mixId, ticker, weight) {
-        const mix = this.customMixes.find(m => m.id === mixId);
-        if (mix) {
-          mix.allocations[ticker] = Math.max(0, Math.min(100, parseFloat(weight) || 0));
+        const idx = this.customMixes.findIndex(m => m.id === mixId);
+        if (idx > -1) {
+          const mix = this.customMixes[idx];
+          const w = Math.max(0, Math.min(100, parseFloat(weight) || 0));
+          const newAllocations = { ...mix.allocations, [ticker]: w };
+          this.customMixesStore.state[idx] = { ...mix, allocations: newAllocations };
         }
       }
 
       static equalizeMixWeights(mixId) {
-        const mix = this.customMixes.find(m => m.id === mixId);
-        if (!mix) return;
-        const tickers = Object.keys(mix.allocations);
-        if (tickers.length === 0) return;
+        const idx = this.customMixes.findIndex(m => m.id === mixId);
+        if (idx > -1) {
+          const mix = this.customMixes[idx];
+          const tickers = Object.keys(mix.allocations);
+          if (tickers.length === 0) return;
 
-        const eq = Math.floor(100 / tickers.length);
-        let rem = 100 - (eq * tickers.length);
-        tickers.forEach(t => {
-          mix.allocations[t] = eq + (rem > 0 ? 1 : 0);
-          if (rem > 0) rem--;
-        });
-        this.renderMixStrategiesUI();
+          const eq = Math.floor(100 / tickers.length);
+          let rem = 100 - (eq * tickers.length);
+          const newAllocations = {};
+          tickers.forEach(t => {
+            newAllocations[t] = eq + (rem > 0 ? 1 : 0);
+            if (rem > 0) rem--;
+          });
+          this.customMixesStore.state[idx] = { ...mix, allocations: newAllocations };
+        }
       }
 
       static renderMixStrategiesUI() {
@@ -2191,6 +2307,7 @@
         this.renderLeaderboard();
       }
 
+      // ⭐ 고유 UUID 생성으로 Supabase 리더보드 ID 충돌 해결
       static async publishMixToLeaderboard(mixId) {
         const mix = this.customMixes.find(m => m.id === mixId);
         if (!mix || !this.currentResults) {
@@ -2212,10 +2329,14 @@
 
         const rawAuthor = prompt("리더보드에 보여줄 닉네임을 입력하세요:", "익명") || "익명";
         const author = QuantUtils.escapeHTML(rawAuthor);
-        const quantScore = QuantScoreEngine.calculateScore(res);
+        const quantScore = QuantScoreEngine.calculateScore(res, months);
+
+        const publishId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+          ? crypto.randomUUID() 
+          : 'pub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
 
         const payload = {
-          id: mix.id,
+          id: publishId, // 고유 UUID 부여
           name: mix.name,
           author: author,
           score: quantScore,
@@ -2667,7 +2788,7 @@
       static renderDashboard(results, sortedDates, taxEnabled) {
         const startMonth = document.getElementById('startMonth').value;
         const startYear = parseInt(startMonth.split('-')[0], 10);
-        document.getElementById('thFinalVal').innerHTML = `${taxEnabled ? '실제 세후 평가금' : '세전 최종 평가금'} <span id="sort-finalVal"></span>`;
+        document.getElementById('thFinalVal').innerHTML = `${taxEnabled ? '실제 세후 평가금' : '세전 최종 평가금'} <button onclick="event.stopPropagation(); UIController.showMetricInfo('최종 평가금', '백테스트 종료 시점의 포트폴리오 최종 평가 금액입니다. 과세 옵션 적용 시 세금이 차감된 세후 실질 금액이 표시됩니다.')" class="text-emerald-600 hover:text-emerald-300 text-[11px] ml-0.5" title="도움말">ℹ️</button><span id="sort-finalVal"></span>`;
 
         const cardsContainer = document.getElementById('summaryCards');
         cardsContainer.innerHTML = '';
