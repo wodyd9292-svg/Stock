@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v12.8 Leaderboard Pro</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v12.9.1 Enterprise Edition</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -21,10 +21,10 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.8 Leaderboard Pro</span>
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v12.9.1 Enterprise</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Period-Filtered Global Leaderboard · 5-Metric Quant Score · Auto Save · 22% Tax Engine
+          Period-Filtered Global Leaderboard · 5-Metric Quant Score · Daily ^IRX SOFR · 22% Tax Engine
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -157,7 +157,7 @@
 
       <div class="flex justify-end pt-1">
         <button onclick="UIController.runBacktest()" id="runBtn" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold py-2.5 px-8 rounded-lg text-xs transition shadow-md flex items-center justify-center gap-2">
-          🚀 v12.8 시뮬레이션 실행
+          🚀 v12.9.1 시뮬레이션 실행
         </button>
       </div>
     </div>
@@ -296,7 +296,7 @@
       </div>
     </div>
 
-    <!-- 요인 분석 영역 (툴팁 복원) -->
+    <!-- 요인 분석 영역 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Matrix)</h3>
@@ -321,7 +321,7 @@
       </div>
     </div>
 
-    <!-- 통합 성과 표 (툴팁 복원) -->
+    <!-- 통합 성과 표 -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
       <div class="p-3 bg-slate-950 border-b border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
         <span>📋 기관급 통합 성과 및 위험 분석 표</span>
@@ -376,6 +376,16 @@
         const parts = dateStr.split('-');
         return Date.UTC(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
       }
+
+      static escapeHTML(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
     }
 
     const TICKER_UNIVERSE = {
@@ -402,7 +412,7 @@
     };
 
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v12_8";
+      static dbName = "QuantBacktestCacheDB_v12_9_1";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -449,9 +459,34 @@
       }
     }
 
+    // 수정된 동적 무위험 이자율(SOFR/^IRX) 클래스 (날짜 Key 기반)
     class HistoricalInterestRates {
-      static getSOFR(year) {
-        if (year >= 2025) return 0.041;
+      static dynamicRates = new Map();
+
+      // 1. setDynamicRateMap: 날짜(dateStr)를 Key로 일별 금리 저장
+      static setDynamicRateMap(priceMap) {
+        if (!priceMap) return;
+        priceMap.forEach((price, dateStr) => {
+          if (price > 0) {
+            this.dynamicRates.set(dateStr, price / 100.0);
+          }
+        });
+      }
+
+      // 2. getSOFR: dateStr(또는 year)을 받아 일별 금리 반환
+      static getSOFR(dateInput) {
+        if (typeof dateInput === 'string') {
+          if (this.dynamicRates.has(dateInput)) {
+            return this.dynamicRates.get(dateInput);
+          }
+        }
+
+        const year = typeof dateInput === 'string'
+          ? parseInt(dateInput.split('-')[0], 10)
+          : dateInput;
+
+        if (year >= 2026) return 0.041;
+        if (year === 2025) return 0.043;
         if (year === 2024) return 0.053;
         if (year === 2023) return 0.050;
         if (year === 2022) return 0.017;
@@ -566,6 +601,16 @@
     `;
 
     class WorkerManager {
+      static workerBlobUrl = null;
+
+      static getWorkerBlobUrl() {
+        if (!this.workerBlobUrl) {
+          const blob = new Blob([workerCode], { type: 'application/javascript' });
+          this.workerBlobUrl = URL.createObjectURL(blob);
+        }
+        return this.workerBlobUrl;
+      }
+
       static async runMonteCarloBatchAsync(tasks, onProgress = null) {
         const results = {};
         const total = tasks.length;
@@ -592,25 +637,21 @@
 
       static runMonteCarloAsync(dailyReturns, monthlyCashFlows, iterations = 10000) {
         return new Promise((resolve) => {
-          const blob = new Blob([workerCode], { type: 'application/javascript' });
-          const blobUrl = URL.createObjectURL(blob);
+          const blobUrl = WorkerManager.getWorkerBlobUrl();
           const worker = new Worker(blobUrl);
 
           worker.onmessage = (e) => {
             if (e.data.type === 'COMPLETE') {
               worker.terminate();
-              URL.revokeObjectURL(blobUrl);
               resolve(e.data.result);
             } else if (e.data.type === 'ERROR') {
               worker.terminate();
-              URL.revokeObjectURL(blobUrl);
               resolve(null);
             }
           };
 
           worker.onerror = () => {
             worker.terminate();
-            URL.revokeObjectURL(blobUrl);
             resolve(null);
           };
 
@@ -689,7 +730,7 @@
 
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_8`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v12_9_1`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -824,7 +865,7 @@
         allSymbols.forEach(symbol => {
           const raw = rawDatasets[symbol];
           const priceArr = new Float64Array(N);
-          const divMap = raw?.divMap || new Map();
+          const divMap = new Map(raw?.divMap || []);
 
           let lastPrice = 0;
           for (let i = 0; i < N; i++) {
@@ -853,9 +894,11 @@
           if (!config.allowBackfill || !config.base) return;
 
           const basePrices = processedPrices[config.base];
+          const baseDivs = processedDivs[config.base];
           if (!basePrices) return;
 
           const priceArr = processedPrices[ticker];
+          const divMap = processedDivs[ticker];
           const raw = rawDatasets[ticker];
 
           let firstInceptIdx = -1;
@@ -868,16 +911,23 @@
 
           if (firstInceptIdx > 0) {
             for (let i = firstInceptIdx - 1; i >= 0; i--) {
-              const year = parseInt(sortedDates[i].split('-')[0], 10);
+              const dateStr = sortedDates[i];
               const baseCurr = basePrices[i + 1];
               const basePrev = basePrices[i];
+
+              if (config.proxyType === 'leveraged' && baseDivs && baseDivs.has(dateStr) && !divMap.has(dateStr)) {
+                const baseDivAmount = baseDivs.get(dateStr);
+                const synthDiv = Math.max(0, baseDivAmount * Math.abs(config.leverage));
+                divMap.set(dateStr, synthDiv);
+              }
 
               if (baseCurr > 0 && basePrev > 0) {
                 const simpleBaseReturn = (baseCurr - basePrev) / basePrev;
                 let synthSimpleReturn = 0.0;
 
                 if (config.proxyType === 'leveraged') {
-                  const sofr = HistoricalInterestRates.getSOFR(year);
+                  // 일별 dateStr을 통한 동적 SOFR 조회 반영
+                  const sofr = HistoricalInterestRates.getSOFR(dateStr);
                   const lev = config.leverage;
                   const swapSpread = config.swapSpread || 0.0045;
                   const trackingErr = config.trackingError || 0.002;
@@ -922,8 +972,8 @@
         const Y = [];
 
         for (let i = 0; i < N; i++) {
-          const year = parseInt(dates[i + 1].split('-')[0], 10);
-          const rfDaily = HistoricalInterestRates.getSOFR(year) / 252;
+          // 일별 날짜 기반 무위험 이자율 적용
+          const rfDaily = HistoricalInterestRates.getSOFR(dates[i + 1]) / 252;
 
           const rMkt = spyPrices[i] > 0 ? (spyPrices[i + 1] - spyPrices[i]) / spyPrices[i] : 0;
           const rIwm = iwmPrices[i] > 0 ? (iwmPrices[i + 1] - iwmPrices[i]) / iwmPrices[i] : 0;
@@ -974,8 +1024,8 @@
         const excessMarketReturns = new Float64Array(len);
 
         for (let i = 0; i < len; i++) {
-          const year = parseInt(dates[i + 1].split('-')[0], 10);
-          const dailyRf = HistoricalInterestRates.getSOFR(year) / 252;
+          // 일별 날짜 기반 무위험 이자율 적용
+          const dailyRf = HistoricalInterestRates.getSOFR(dates[i + 1]) / 252;
 
           excessPortReturns[i] = portDailyReturns[i] - dailyRf;
           excessMarketReturns[i] = marketDailyReturns[i] - dailyRf;
@@ -1066,8 +1116,8 @@
         const rolling = [];
         for (let i = windowSize; i < N; i += 21) {
           const sub = portDailyReturns.subarray(i - windowSize, i);
-          const year = parseInt(dates[i].split('-')[0], 10);
-          const rfDaily = HistoricalInterestRates.getSOFR(year) / 252;
+          // 일별 날짜 기반 무위험 이자율 적용
+          const rfDaily = HistoricalInterestRates.getSOFR(dates[i]) / 252;
 
           let meanP = 0.0;
           for (let k = 0; k < windowSize; k++) meanP += (sub[k] - rfDaily);
@@ -1161,6 +1211,76 @@
     }
 
     class QuantBacktestEngine {
+
+      static processDividends(divPayQueue, i, priceUsd, fx, taxLotMgr, divMap, dateStr, fxSpreadRate) {
+        const totalShares = taxLotMgr.getTotalShares();
+
+        for (let k = divPayQueue.length - 1; k >= 0; k--) {
+          if (i >= divPayQueue[k].payIndex) {
+            const divNetUsd = divPayQueue[k].divNetUsd;
+            const buyFx = fx * (1 + fxSpreadRate);
+            const buyPriceUsd = priceUsd * (1 + fxSpreadRate);
+
+            if (buyPriceUsd > 0) {
+              const newShares = divNetUsd / buyPriceUsd;
+              taxLotMgr.buy(newShares, buyPriceUsd, buyFx);
+            }
+            divPayQueue.splice(k, 1);
+          }
+        }
+
+        if (totalShares > 0 && divMap && divMap.has(dateStr)) {
+          const divPerShare = divMap.get(dateStr);
+          const grossDivUsd = totalShares * divPerShare;
+          const netDivUsd = grossDivUsd * (1 - 0.150);
+          divPayQueue.push({ payIndex: i + 1, divNetUsd: netDivUsd });
+        }
+      }
+
+      static calculateMonthlyDeposit(investConfig, monthCounter, peakPriceUsd, priceUsd) {
+        if (investConfig.mode === 'dca') {
+          return investConfig.monthlyKrw;
+        } else if (investConfig.mode === 'lumpSum') {
+          return (monthCounter === 1) ? investConfig.lumpSumKrw : 0;
+        } else if (investConfig.mode === 'dynamicDCA') {
+          const drawDown = peakPriceUsd > 0 ? (priceUsd - peakPriceUsd) / peakPriceUsd : 0;
+          if (drawDown <= -investConfig.smartDrop2) {
+            return investConfig.monthlyKrw * investConfig.smartMult2;
+          } else if (drawDown <= -investConfig.smartDrop1) {
+            return investConfig.monthlyKrw * investConfig.smartMult1;
+          } else {
+            return investConfig.monthlyKrw;
+          }
+        }
+        return 0;
+      }
+
+      static processTaxHarvesting(taxLotMgr, currentValKrw, priceUsd, fx, fxSpreadRate, yearRealizedGainKrw, TAX_LIMIT, cashKrw) {
+        let updatedGain = yearRealizedGainKrw;
+        let updatedCash = cashKrw;
+
+        if (taxLotMgr.getTotalShares() > 0 && priceUsd > 0) {
+          const totalCostBasis = taxLotMgr.getTotalCostBasisKrw();
+          const unrealizedGain = currentValKrw - totalCostBasis;
+
+          const remainingAllowance = Math.max(0, TAX_LIMIT - updatedGain);
+          if (unrealizedGain > 0 && remainingAllowance > 0) {
+            const harvestRes = taxLotMgr.harvestTax(remainingAllowance, priceUsd, fx, fxSpreadRate);
+            updatedGain += harvestRes.accumulatedGain;
+          }
+
+          if (updatedGain > TAX_LIMIT) {
+            const taxableGain = updatedGain - TAX_LIMIT;
+            const taxPaid = taxableGain * 0.22;
+            updatedCash -= taxPaid;
+          }
+
+          updatedGain = 0.0;
+        }
+
+        return { updatedGain, updatedCash };
+      }
+
       static async runAsync(sortedDates, tickers, customMixes, processedData, fxData, investConfig, fxSpreadRate, taxEnabled, onProgress = null) {
         const N = sortedDates.length;
         const { processedPrices, processedDivs } = processedData;
@@ -1177,8 +1297,8 @@
 
         let sumSOFR = 0;
         for (let i = 0; i < N; i++) {
-          const yr = parseInt(sortedDates[i].split('-')[0], 10);
-          sumSOFR += HistoricalInterestRates.getSOFR(yr);
+          // 일별 날짜 기반 무위험 이자율 합산
+          sumSOFR += HistoricalInterestRates.getSOFR(sortedDates[i]);
         }
         const avgRfAnnPercent = (sumSOFR / N) * 100.0;
 
@@ -1234,30 +1354,10 @@
             const fx = fxPrices[i];
             const priceUsd = prices[i];
             if (priceUsd > peakPriceUsd) peakPriceUsd = priceUsd;
-            const totalShares = taxLotMgr.getTotalShares();
 
-            for (let k = divPayQueue.length - 1; k >= 0; k--) {
-              if (i >= divPayQueue[k].payIndex) {
-                const divNetUsd = divPayQueue[k].divNetUsd;
-                const buyFx = fx * (1 + fxSpreadRate);
-                const buyPriceUsd = priceUsd * (1 + fxSpreadRate);
+            this.processDividends(divPayQueue, i, priceUsd, fx, taxLotMgr, divMap, dateStr, fxSpreadRate);
 
-                if (buyPriceUsd > 0) {
-                  const newShares = divNetUsd / buyPriceUsd;
-                  taxLotMgr.buy(newShares, buyPriceUsd, buyFx);
-                }
-                divPayQueue.splice(k, 1);
-              }
-            }
-
-            if (totalShares > 0 && divMap && divMap.has(dateStr)) {
-              const divPerShare = divMap.get(dateStr);
-              const grossDivUsd = totalShares * divPerShare;
-              const netDivUsd = grossDivUsd * (1 - 0.150);
-              divPayQueue.push({ payIndex: i + 1, divNetUsd: netDivUsd });
-            }
-
-            const preCfValKrw = (totalShares * priceUsd * fx) + cashKrw;
+            const preCfValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
             if (i > 0) {
               const prevPostCfVal = portfolioValues[i - 1];
               const subPeriodRet = prevPostCfVal > 0 ? (preCfValKrw / prevPostCfVal) - 1.0 : 0.0;
@@ -1267,22 +1367,7 @@
 
             if (isNewMonth[i]) {
               monthCounter++;
-              let depositKrw = 0;
-
-              if (investConfig.mode === 'dca') {
-                depositKrw = investConfig.monthlyKrw;
-              } else if (investConfig.mode === 'lumpSum') {
-                depositKrw = (monthCounter === 1) ? investConfig.lumpSumKrw : 0;
-              } else if (investConfig.mode === 'dynamicDCA') {
-                const drawDown = peakPriceUsd > 0 ? (priceUsd - peakPriceUsd) / peakPriceUsd : 0;
-                if (drawDown <= -investConfig.smartDrop2) {
-                  depositKrw = investConfig.monthlyKrw * investConfig.smartMult2;
-                } else if (drawDown <= -investConfig.smartDrop1) {
-                  depositKrw = investConfig.monthlyKrw * investConfig.smartMult1;
-                } else {
-                  depositKrw = investConfig.monthlyKrw;
-                }
-              }
+              const depositKrw = this.calculateMonthlyDeposit(investConfig, monthCounter, peakPriceUsd, priceUsd);
 
               investedKrw += depositKrw;
               cashFlowDates.push(dateStr);
@@ -1304,23 +1389,10 @@
 
             let currentValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
 
-            if (taxEnabled && isYearEnd[i] && i < N - 1 && taxLotMgr.getTotalShares() > 0 && priceUsd > 0) {
-              const totalCostBasis = taxLotMgr.getTotalCostBasisKrw();
-              const unrealizedGain = currentValKrw - totalCostBasis;
-
-              const remainingAllowance = Math.max(0, TAX_LIMIT - yearRealizedGainKrw);
-              if (unrealizedGain > 0 && remainingAllowance > 0) {
-                const harvestRes = taxLotMgr.harvestTax(remainingAllowance, priceUsd, fx, fxSpreadRate);
-                yearRealizedGainKrw += harvestRes.accumulatedGain;
-              }
-
-              if (yearRealizedGainKrw > TAX_LIMIT) {
-                const taxableGain = yearRealizedGainKrw - TAX_LIMIT;
-                const taxPaid = taxableGain * 0.22;
-                cashKrw -= taxPaid;
-              }
-
-              yearRealizedGainKrw = 0.0;
+            if (taxEnabled && isYearEnd[i] && i < N - 1) {
+              const taxRes = this.processTaxHarvesting(taxLotMgr, currentValKrw, priceUsd, fx, fxSpreadRate, yearRealizedGainKrw, TAX_LIMIT, cashKrw);
+              yearRealizedGainKrw = taxRes.updatedGain;
+              cashKrw = taxRes.updatedCash;
               currentValKrw = (taxLotMgr.getTotalShares() * priceUsd * fx) + cashKrw;
             }
 
@@ -1605,14 +1677,13 @@
         }
       }
 
-      // 일반 투자자를 위한 용어 설명 툴팁 함수 (복원)
       static showMetricInfo(title, description) {
         alert(`[${title}]\n\n${description}`);
       }
 
       static loadMixesFromStorage() {
         try {
-          const stored = localStorage.getItem('quant_custom_mixes_v12_8');
+          const stored = localStorage.getItem('quant_custom_mixes_v12_9_1');
           if (stored) {
             this.customMixes = JSON.parse(stored);
           } else {
@@ -1641,7 +1712,7 @@
 
       static saveMixesToStorage() {
         try {
-          localStorage.setItem('quant_custom_mixes_v12_8', JSON.stringify(this.customMixes));
+          localStorage.setItem('quant_custom_mixes_v12_9_1', JSON.stringify(this.customMixes));
         } catch (e) {
           console.warn('LocalStorage save error:', e);
         }
@@ -1778,6 +1849,8 @@
           return;
         }
 
+        const fragment = document.createDocumentFragment();
+
         this.customMixes.forEach(mix => {
           const card = document.createElement('div');
           card.className = `p-3.5 rounded-xl border transition ${mix.enabled ? 'bg-slate-950/80 border-amber-500/50' : 'bg-slate-950/40 border-slate-800 opacity-60'}`;
@@ -1787,13 +1860,14 @@
           tickers.forEach(t => sumW += (mix.allocations[t] || 0));
 
           const unusedTickers = Object.keys(TICKER_UNIVERSE).filter(t => !tickers.includes(t));
+          const safeMixName = QuantUtils.escapeHTML(mix.name);
 
           card.innerHTML = `
             <div class="flex flex-col gap-3">
               <div class="flex items-center justify-between gap-2 flex-wrap">
                 <div class="flex items-center gap-2">
                   <input type="checkbox" ${mix.enabled ? 'checked' : ''} onchange="UIController.toggleMixEnabled('${mix.id}')" class="accent-amber-500 w-4 h-4 cursor-pointer">
-                  <input type="text" value="${mix.name}" onchange="UIController.updateMixName('${mix.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-amber-300 focus:border-amber-500 min-w-[160px]">
+                  <input type="text" value="${safeMixName}" onchange="UIController.updateMixName('${mix.id}', this.value)" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-amber-300 focus:border-amber-500 min-w-[160px]">
                 </div>
                 
                 <div class="flex items-center gap-2 max-w-full flex-wrap">
@@ -1827,7 +1901,7 @@
                 <div class="flex items-center gap-2">
                   <select onchange="if(this.value){ UIController.addTickerToMix('${mix.id}', this.value); this.value=''; }" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-300">
                     <option value="">+ 종목 추가...</option>
-                    ${unusedTickers.map(t => `<option value="${t}">${t} (${TICKER_UNIVERSE[t].name})</option>`).join('')}
+                    ${unusedTickers.map(t => `<option value="${t}">${t} (${QuantUtils.escapeHTML(TICKER_UNIVERSE[t].name)})</option>`).join('')}
                   </select>
                   <button onclick="UIController.equalizeMixWeights('${mix.id}')" class="text-[11px] bg-slate-900 hover:bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">⚖️ 균등 분배 (1/N)</button>
                 </div>
@@ -1837,8 +1911,10 @@
               </div>
             </div>
           `;
-          container.appendChild(card);
+          fragment.appendChild(card);
         });
+
+        container.appendChild(fragment);
       }
 
       static filterLeaderboard(category) {
@@ -1880,7 +1956,8 @@
         const months = QuantScoreEngine.calculatePeriodMonths(startMonth, endMonth);
         const periodCat = QuantScoreEngine.getPeriodCategory(months);
 
-        const author = prompt("리더보드에 보여줄 닉네임을 입력하세요:", "익명 퀀트") || "익명 퀀트";
+        const rawAuthor = prompt("리더보드에 보여줄 닉네임을 입력하세요:", "익명 퀀트") || "익명 퀀트";
+        const author = QuantUtils.escapeHTML(rawAuthor);
         const quantScore = QuantScoreEngine.calculateScore(res);
 
         const newItem = {
@@ -1940,27 +2017,32 @@
         };
 
         tbody.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+
         list.forEach((item, idx) => {
           const tr = document.createElement('tr');
           tr.className = "hover:bg-slate-800/40 border-b border-slate-800/60";
 
           const rankBadge = idx === 0 ? '🥇 1위' : idx === 1 ? '🥈 2위' : idx === 2 ? '🥉 3위' : `${idx + 1}위`;
-          const allocDesc = Object.entries(item.allocations).map(([t, w]) => `${t}:${w}%`).join(' ');
+          const allocDesc = Object.entries(item.allocations || {}).map(([t, w]) => `${QuantUtils.escapeHTML(t)}:${w}%`).join(' ');
           const rebBadge = rebBadgeMap[item.rebalanceFreq] || rebBadgeMap['monthly'];
+
+          const safeName = QuantUtils.escapeHTML(item.name);
+          const safeAuthor = QuantUtils.escapeHTML(item.author);
 
           tr.innerHTML = `
             <td class="px-3 py-2.5 font-bold text-amber-400">${rankBadge}</td>
             <td class="px-3 py-2.5">
               <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="font-bold text-slate-200">${item.name}</span>
+                <span class="font-bold text-slate-200">${safeName}</span>
                 ${rebBadge}
               </div>
-              <div class="text-[10px] text-slate-500 mt-0.5">by ${item.author} · ${item.createdAt}</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">by ${safeAuthor} · ${QuantUtils.escapeHTML(item.createdAt)}</div>
             </td>
             <td class="px-3 py-2.5 text-amber-300 font-bold text-sm">${item.score}점</td>
             <td class="px-3 py-2.5">
               <span class="text-[10px] bg-slate-950 px-1.5 py-0.5 rounded border border-slate-700 text-slate-300 font-semibold block w-max">
-                ${item.startMonth} ~ ${item.endMonth} (${Math.round(item.months/12*10)/10}년)
+                ${QuantUtils.escapeHTML(item.startMonth)} ~ ${QuantUtils.escapeHTML(item.endMonth)} (${Math.round(item.months/12*10)/10}년)
               </span>
             </td>
             <td class="px-3 py-2.5 text-cyan-400 font-bold">+${(item.xirr || 0).toFixed(1)}%</td>
@@ -1974,8 +2056,10 @@
               </button>
             </td>
           `;
-          tbody.appendChild(tr);
+          fragment.appendChild(tr);
         });
+
+        tbody.appendChild(fragment);
       }
 
       static copyLeaderboardMix(itemId) {
@@ -2047,7 +2131,7 @@
                 <span class="font-bold text-slate-200">${ticker}</span>
                 ${backfillTag}
               </div>
-              <span class="text-[10px] text-slate-500 truncate block">${item.name}</span>
+              <span class="text-[10px] text-slate-500 truncate block">${QuantUtils.escapeHTML(item.name)}</span>
             </div>
           `;
           fragment.appendChild(label);
@@ -2186,6 +2270,7 @@
         requiredSet.add('IWM');
         requiredSet.add('SCHD');
         requiredSet.add('SPMO');
+        requiredSet.add('^IRX');
 
         activeMixes.forEach(mix => {
           if (mix.allocations) {
@@ -2209,6 +2294,10 @@
         fullTickers.forEach((t, idx) => {
           if (fetchedResults[idx]) rawDatasets[t] = fetchedResults[idx];
         });
+
+        if (rawDatasets['^IRX']?.priceMap) {
+          HistoricalInterestRates.setDynamicRateMap(rawDatasets['^IRX'].priceMap);
+        }
 
         this.setProgress(50, '통합 달력 인덱싱 중...');
 
@@ -2250,7 +2339,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Enterprise Engine v12.8 완료');
+        this.setEngineStatus('success', 'Enterprise Engine v12.9.1 완료');
       }
 
       static switchChartTab(tab) {
@@ -2293,7 +2382,7 @@
         desc.innerHTML = `
           <span class="mr-1 text-slate-400">시뮬레이션 대상:</span>
           <select id="mcTickerSelect" onchange="UIController.changeMcTicker(this.value)" class="bg-slate-950 text-emerald-400 font-bold text-xs rounded border border-slate-700 px-2 py-0.5 max-w-full truncate">
-            ${tickers.map(t => `<option value="${t}" ${t === this.selectedMcTicker ? 'selected' : ''}>${t}</option>`).join('')}
+            ${tickers.map(t => `<option value="${QuantUtils.escapeHTML(t)}" ${t === this.selectedMcTicker ? 'selected' : ''}>${QuantUtils.escapeHTML(t)}</option>`).join('')}
           </select>
         `;
       }
@@ -2312,12 +2401,13 @@
 
         const cardsContainer = document.getElementById('summaryCards');
         cardsContainer.innerHTML = '';
+        const cardFragment = document.createDocumentFragment();
+
         const palette = ['#34d399', '#60a5fa', '#f87171', '#c084fc', '#fb923c', '#38bdf8'];
 
         const firstTicker = Object.keys(results)[0];
         if (!firstTicker) return;
 
-        // 원금 요약 카드
         const invCard = document.createElement('div');
         invCard.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
         invCard.innerHTML = `
@@ -2329,18 +2419,18 @@
             검증 기간: ${sortedDates[0]} ~ ${sortedDates[sortedDates.length - 1]}
           </div>
         `;
-        cardsContainer.appendChild(invCard);
+        cardFragment.appendChild(invCard);
 
-        // 상위 자산 요약 카드
         Object.entries(results).slice(0, 3).forEach(([ticker, res], idx) => {
           const card = document.createElement('div');
           card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
           const isMix = ticker.startsWith('[MIX]');
           const score = QuantScoreEngine.calculateScore(res);
+          const safeName = QuantUtils.escapeHTML(res.name);
 
           card.innerHTML = `
             <div class="flex justify-between items-center">
-              <span class="text-xs font-bold truncate ${isMix ? 'text-amber-400' : 'text-slate-400'}">${res.name}</span>
+              <span class="text-xs font-bold truncate ${isMix ? 'text-amber-400' : 'text-slate-400'}">${safeName}</span>
               <span class="text-[10px] bg-amber-950 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-700/50">${score}점</span>
             </div>
             <div class="text-sm font-bold mt-1 truncate" style="color: ${isMix ? '#f59e0b' : palette[idx % palette.length]}">
@@ -2353,18 +2443,21 @@
               <span class="text-rose-300 font-semibold">Ulcer: ${res.ulcerIndex.toFixed(1)}</span>
             </div>
           `;
-          cardsContainer.appendChild(card);
+          cardFragment.appendChild(card);
         });
 
-        // 요인 분석 표
+        cardsContainer.appendChild(cardFragment);
+
         const ffBody = document.getElementById('ffTableBody');
         ffBody.innerHTML = '';
+        const ffFragment = document.createDocumentFragment();
+
         for (const [ticker, res] of Object.entries(results)) {
           const tr = document.createElement('tr');
           const isMix = ticker.startsWith('[MIX]');
           tr.className = `hover:bg-slate-800/40 border-b border-slate-800/60 ${isMix ? 'bg-amber-950/20' : ''}`;
           tr.innerHTML = `
-            <td class="px-3 py-2.5 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'}">${ticker}</td>
+            <td class="px-3 py-2.5 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'}">${QuantUtils.escapeHTML(ticker)}</td>
             <td class="px-3 py-2.5 text-purple-400 font-bold">${res.ff.alpha >= 0 ? '+' : ''}${res.ff.alpha.toFixed(2)}%</td>
             <td class="px-3 py-2.5 font-semibold text-slate-300">${res.ff.bMkt.toFixed(2)}</td>
             <td class="px-3 py-2.5 text-emerald-400 font-semibold">${res.ff.bSmb.toFixed(2)}</td>
@@ -2372,12 +2465,14 @@
             <td class="px-3 py-2.5 text-cyan-400 font-semibold">${res.ff.bMom.toFixed(2)}</td>
             <td class="px-3 py-2.5 text-slate-400">${res.ff.rSquared.toFixed(2)}</td>
           `;
-          ffBody.appendChild(tr);
+          ffFragment.appendChild(tr);
         }
+        ffBody.appendChild(ffFragment);
 
-        // 전체 전문 성과 분석 표
         const tbody = document.getElementById('summaryTableBody');
         tbody.innerHTML = '';
+        const summaryFragment = document.createDocumentFragment();
+
         for (const [ticker, res] of Object.entries(results)) {
           const isMix = ticker.startsWith('[MIX]');
           const config = TICKER_UNIVERSE[ticker];
@@ -2402,10 +2497,10 @@
             <td class="px-3 py-3 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'}">
               <div class="flex flex-col gap-0.5">
                 <div class="flex items-center gap-1.5">
-                  <span class="text-sm">${ticker}</span>
+                  <span class="text-sm">${QuantUtils.escapeHTML(ticker)}</span>
                   ${backfillBadge}
                 </div>
-                <span class="text-[10px] ${isMix ? 'text-amber-300/80' : 'text-slate-500'} font-normal truncate">${res.name}</span>
+                <span class="text-[10px] ${isMix ? 'text-amber-300/80' : 'text-slate-500'} font-normal truncate">${QuantUtils.escapeHTML(res.name)}</span>
               </div>
             </td>
             <td class="px-3 py-3">${QuantUtils.formatKRW(res.investedKrw)}</td>
@@ -2423,8 +2518,9 @@
             <td class="px-3 py-3 text-rose-400 font-semibold">-${res.cvar95.toFixed(2)}%</td>
             <td class="px-3 py-3 text-rose-500 font-bold">${res.twrMdd.toFixed(1)}%</td>
           `;
-          tbody.appendChild(tr);
+          summaryFragment.appendChild(tr);
         }
+        tbody.appendChild(summaryFragment);
 
         if (this.activeTab === 'montecarlo') {
           this.updateMcDescription();
