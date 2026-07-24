@@ -21,7 +21,7 @@
     .sticky-col-shadow { box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.5); }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono select-none">
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 sm:p-6 font-mono">
 
   <!-- 토스트 알림 컨테이너 -->
   <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
@@ -316,7 +316,6 @@
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800 whitespace-nowrap">
             <tr>
-              <!-- 📌 3. 모바일/데스크탑 스티키 첫 번째 열 적용 -->
               <th class="px-3 py-2.5 whitespace-nowrap sticky left-0 z-20 bg-slate-950 sticky-col-shadow">종목코드 / 믹스명</th>
               <th onclick="UIController.showMetricInfo('자산 자체 수익력 (알파)', '시장과 상관없이 고유 역량으로 낸 연간 추가 초과 수익률입니다.')" class="px-3 py-2.5 text-purple-400 cursor-pointer hover:bg-slate-800 transition whitespace-nowrap">자산 자체 수익 (알파) ℹ️</th>
               <th onclick="UIController.showMetricInfo('시장 민감도 (베타)', 'S&P 500 시장 지수가 1% 변동할 때 얼마나 민감하게 반응하는지 나타냅니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition whitespace-nowrap">시장 민감도 (베타) ℹ️</th>
@@ -342,7 +341,6 @@
       <table class="w-full text-xs text-left text-slate-300 min-w-[1700px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800 whitespace-nowrap">
           <tr>
-            <!-- 📌 3. 모바일/데스크탑 스티키 첫 번째 열 적용 (틀 고정) -->
             <th onclick="UIController.handleSort('ticker')" class="px-3 py-3 sortable-th whitespace-nowrap sticky left-0 z-20 bg-slate-950 sticky-col-shadow">
               종목코드 / 전략 구분
               <button onclick="event.stopPropagation(); UIController.showMetricInfo('종목코드 / 전략 구분', '백테스트 대상 개별 ETF 종목코드 또는 사용자가 설정한 포트폴리오 커스텀 믹스 전략명입니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
@@ -405,7 +403,7 @@
             </th>
             <th onclick="UIController.handleSort('informationRatio')" class="px-3 py-3 sortable-th whitespace-nowrap">
               정보비율
-              <button onclick="event.stopPropagation(); UIController.showMetricInfo('정보비율 (Information Ratio)', '벤치마크 대비 초과 수익률을 추종 오차 위험으로 나눈 지표로, 운용자의 정교한 초과 성과 능력을 보여줍니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('정보비율 (Information Ratio)', '벤치마크 대비 초과 수익률을 추종 오차 위험으로 나둔 지표로, 운용자의 정교한 초과 성과 능력을 보여줍니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
               <span id="sort-informationRatio"></span>
             </th>
             <th onclick="UIController.handleSort('ulcerIndex')" class="px-3 py-3 text-rose-300 sortable-th whitespace-nowrap">
@@ -955,7 +953,6 @@
         
         const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${startSec}&period2=${endSec}&interval=1d&events=div`;
         
-        // 📌 1. 프록시 서버 순환 무작위화 (Traffic Load Balancing)
         const baseProxies = [
           `${GLOBAL_QUANT_CONFIG.CORS_WORKER_PROXY}${encodeURIComponent(yahooUrl)}`,
           `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
@@ -1248,7 +1245,9 @@
           ssTot += Math.pow(Y[i] - meanY, 2);
           ssRes += Math.pow(Y[i] - yPred, 2);
         }
-        const rSquared = ssTot > 0 ? Math.max(0, 1.0 - (ssRes / ssTot)) : 0.0;
+
+        // 📌 [Fix] R² 상한값 가드 적용 (1.0 초과 방지)
+        const rSquared = ssTot > 0 ? Math.min(1.0, Math.max(0, 1.0 - (ssRes / ssTot))) : 0.0;
 
         return {
           alpha: alphaAnn,
@@ -1377,6 +1376,7 @@
       }
     }
 
+    // 📌 [Fix & Upgrade] 완벽해진 기관급 퀀트 종합점수 산출 엔진
     class QuantScoreEngine {
       static calculatePeriodMonths(startMonth, endMonth) {
         const [sY, sM] = startMonth.split('-').map(Number);
@@ -1390,28 +1390,44 @@
         return { key: 'short', label: '⚡ 단기 (5년 미만)' };
       }
 
-      static calculateScore(res, periodMonths = 180) {
+      /**
+       * 기관급 시그모이드 종합점수 산출 엔진 (v14.3 Pro)
+       * @param {Object} res 백테스트 결과 객체
+       * @param {number} periodMonths 검증 기간(월)
+       * @param {number} avgRfAnnPercent 기간 내 연평균 무위험 수익률 (SOFR %)
+       */
+      static calculateScore(res, periodMonths = 180, avgRfAnnPercent = 3.5) {
         if (!res) return 0;
 
         const xirr = res.annualizedXIRR || 0;
         const sortino = Math.max(0, res.sortino || 0);
         const mdd = Math.abs(res.twrMdd || 0);
-        const calmar = mdd > 0 ? (xirr / mdd) : 0;
+        const calmar = mdd > 0 ? Math.min(10, xirr / mdd) : 0; // 극단값 캡(10)
         const ulcer = Math.max(0, res.ulcerIndex || 0);
         const cvar95 = Math.max(0, res.cvar95 || 0);
 
-        const sReturn = 30.0 / (1.0 + Math.exp(-0.15 * (xirr - 10.0)));
-        const sSortino = Math.min(20.0, 20.0 / (1.0 + Math.exp(-1.2 * (sortino - 1.5))));
-        const sCalmar = Math.min(20.0, 20.0 / (1.0 + Math.exp(-2.0 * (calmar - 0.6))));
-        const sRiskAdj = sSortino + sCalmar;
+        // 1. 가변 무위험 수익률(Rf) + 주식 위험 프리미엄(ERP 7%) 연동 기준점
+        const erp = 7.0;
+        const x0 = Math.max(5.0, avgRfAnnPercent + erp);
 
-        const pUlcer = 15.0 * (1.0 - Math.exp(-0.15 * ulcer));
-        const pCvar = cvar95 > 1.5 ? 15.0 * (1.0 - Math.exp(-0.08 * (cvar95 - 1.5))) : 0;
+        // 2. 수익성 가점 (최대 45점, 가변 기준점 x0 적용)
+        const sReturn = 45.0 / (1.0 + Math.exp(-0.12 * (xirr - x0)));
+
+        // 3. 위험조정 수익률 가점 (최대 55점: 소티노 30점 + 칼마 25점)
+        const sSortino = Math.min(30.0, 30.0 / (1.0 + Math.exp(-1.0 * (sortino - 1.5))));
+        const sCalmar = Math.min(25.0, 25.0 / (1.0 + Math.exp(-1.5 * (calmar - 0.5))));
+        const sRiskAdj = sSortino + sCalmar; // 가점 합계 = 100점 만점 구조
+
+        // 4. 리스크 감점 (최대 25점: Ulcer 15점 + CVaR 10점)
+        const pUlcer = 15.0 * (1.0 - Math.exp(-0.12 * ulcer));
+        const pCvar = cvar95 > 2.0 ? 10.0 * (1.0 - Math.exp(-0.06 * (cvar95 - 2.0))) : 0;
         const pTotal = pUlcer + pCvar;
 
-        const fTime = Math.pow(Math.max(12, periodMonths) / 180.0, 0.12);
+        // 5. 강화된 단기 검증 기간 패널티 (지수 0.20 적용)
+        const fTime = Math.pow(Math.max(12, periodMonths) / 180.0, 0.20);
 
-        const rawScore = (sReturn + sRiskAdj - pTotal);
+        // 6. 최종 점수 산출 (가점 100점 - 감점 범위 내에서 fTime 적용)
+        const rawScore = sReturn + sRiskAdj - pTotal;
         const finalScore = Math.max(0, Math.min(100, rawScore * fTime));
 
         return Math.round(finalScore * 10) / 10;
@@ -1771,7 +1787,8 @@
             portfolioValues,
             investedSeries
           };
-          results[ticker].score = QuantScoreEngine.calculateScore(results[ticker], periodMonths);
+          // 📌 [Fix] Rf 평균값을 전달하여 점수 산출
+          results[ticker].score = QuantScoreEngine.calculateScore(results[ticker], periodMonths, avgRfAnnPercent);
         }
 
         for (let mIdx = 0; mIdx < customMixes.length; mIdx++) {
@@ -1957,7 +1974,8 @@
             portfolioValues: mixPortfolioValues,
             investedSeries: mixInvestedSeries
           };
-          results[mixKey].score = QuantScoreEngine.calculateScore(results[mixKey], periodMonths);
+          // 📌 [Fix] Rf 평균값을 전달하여 점수 산출
+          results[mixKey].score = QuantScoreEngine.calculateScore(results[mixKey], periodMonths, avgRfAnnPercent);
         }
 
         if (onProgress) onProgress(80);
@@ -1973,7 +1991,6 @@
       }
     }
 
-    // 📌 2. LocalStorage & ReactiveStore 동기화 포커스 튕김 방지 개선
     class ReactiveStore {
       constructor(initialData, onChange) {
         this.onChange = onChange;
@@ -2190,7 +2207,6 @@
         }
       }
 
-      // 📌 입력 중 타게팅 업데이트 (포커스 튕김 방지)
       static updateMixName(id, name) {
         const idx = this.customMixes.findIndex(m => m.id === id);
         if (idx > -1) {
@@ -2287,12 +2303,13 @@
           const unusedTickers = Object.keys(TICKER_UNIVERSE).filter(t => !tickers.includes(t));
           const safeMixName = QuantUtils.escapeHTML(mix.name);
 
+          // 📌 [Fix] input 입력 시 한글 IME 튕김 방지를 위해 onchange 처리 적용
           card.innerHTML = `
             <div class="flex flex-col gap-3">
               <div class="flex items-center justify-between gap-2 flex-wrap">
                 <div class="flex items-center gap-2">
                   <input type="checkbox" ${mix.enabled ? 'checked' : ''} onchange="UIController.toggleMixEnabled('${mix.id}')" aria-label="전략 활성화" class="accent-amber-500 w-4 h-4 cursor-pointer">
-                  <input type="text" value="${safeMixName}" oninput="UIController.updateMixName('${mix.id}', this.value)" aria-label="전략 이름" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-amber-300 focus:border-amber-500 min-w-[160px]">
+                  <input type="text" value="${safeMixName}" onchange="UIController.updateMixName('${mix.id}', this.value)" aria-label="전략 이름" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-amber-300 focus:border-amber-500 min-w-[160px]">
                 </div>
                 
                 <div class="flex items-center gap-2 max-w-full flex-wrap">
@@ -2314,7 +2331,7 @@
                   <div class="bg-slate-900 p-1.5 rounded border border-slate-800 flex items-center justify-between gap-1">
                     <span class="font-bold text-slate-200 text-xs whitespace-nowrap">${t}</span>
                     <div class="flex items-center gap-1 w-16">
-                      <input type="number" value="${mix.allocations[t]}" oninput="UIController.updateMixTickerWeight('${mix.id}', '${t}', this.value)" aria-label="${t} 비중" class="w-full bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-center text-xs text-amber-400 font-bold min-w-0">
+                      <input type="number" value="${mix.allocations[t]}" onchange="UIController.updateMixTickerWeight('${mix.id}', '${t}', this.value)" aria-label="${t} 비중" class="w-full bg-slate-950 border border-slate-700 rounded px-1 py-0.5 text-center text-xs text-amber-400 font-bold min-w-0">
                       <span class="text-slate-500 text-[10px]">%</span>
                     </div>
                     <button onclick="UIController.removeTickerFromMix('${mix.id}', '${t}')" aria-label="${t} 종목 제거" class="text-slate-500 hover:text-rose-400 text-xs font-bold">&times;</button>
@@ -2383,7 +2400,7 @@
 
         const rawAuthor = prompt("리더보드에 보여줄 닉네임을 입력하세요:", "익명") || "익명";
         const author = QuantUtils.escapeHTML(rawAuthor);
-        const quantScore = QuantScoreEngine.calculateScore(res, months);
+        const quantScore = res.score !== undefined ? res.score : QuantScoreEngine.calculateScore(res, months);
 
         const publishId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
           ? crypto.randomUUID() 
@@ -2907,7 +2924,6 @@
           const isMix = ticker.startsWith('[MIX]');
           tr.className = `hover:bg-slate-800/40 border-b border-slate-800/60 ${isMix ? 'bg-amber-950/20' : ''}`;
           tr.innerHTML = `
-            <!-- 📌 3. 요인분석 표 스티키 고정 열 적용 -->
             <td class="px-3 py-2.5 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'} whitespace-nowrap sticky left-0 z-10 bg-slate-950 sticky-col-shadow">${QuantUtils.escapeHTML(ticker)}</td>
             <td class="px-3 py-2.5 text-purple-400 font-bold whitespace-nowrap">${res.ff.alpha >= 0 ? '+' : ''}${res.ff.alpha.toFixed(2)}%</td>
             <td class="px-3 py-2.5 font-semibold text-slate-300 whitespace-nowrap">${res.ff.bMkt.toFixed(2)}</td>
@@ -2976,7 +2992,6 @@
           tr.className = `hover:bg-slate-800/40 border-b border-slate-800/60 ${isMix ? 'bg-amber-950/30 border-amber-600/50 font-semibold' : ''}`;
           
           tr.innerHTML = `
-            <!-- 📌 3. 통합 성과 표 스티키 고정 열 적용 -->
             <td class="px-3 py-3 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'} whitespace-nowrap sticky left-0 z-10 bg-slate-950 sticky-col-shadow">
               <div class="flex flex-col gap-0.5">
                 <div class="flex items-center gap-1.5">
