@@ -6,6 +6,8 @@
   <title>ETF 적립식 백테스트 계산기 v14.1</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Supabase JS SDK 추가 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #020617; }
@@ -365,6 +367,12 @@
 
   <script>
     'use strict';
+
+    // 0. Supabase 데이터베이스 연결 설정 (1단계에서 복사한 키로 변경하세요)
+    const SUPABASE_URL = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // 1. 글로벌 설정
     const GLOBAL_QUANT_CONFIG = {
@@ -923,7 +931,6 @@
       }
     }
 
-    // 개선된 안전 Brent XIRR 계산기
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
@@ -948,7 +955,6 @@
           return isNaN(val) ? 1e12 : val;
         };
 
-        // Newton-Raphson 1차 수렴 시도
         let r = 0.10;
         for (let iter = 0; iter < 50; iter++) {
           let y = f(r);
@@ -960,7 +966,6 @@
           r = rNext;
         }
 
-        // Bisection 안전 폴백
         let low = -0.99, high = 20.0;
         let fLow = f(low);
 
@@ -1085,7 +1090,6 @@
       }
     }
 
-    // 개선된 Fama-French 엔지니어링 (XLK 2차 모멘텀 폴백 적용)
     class FamaFrenchEngine {
       static solve(portDailyReturns, processedData, dates, ffOfficialMap) {
         const N = portDailyReturns.length;
@@ -1117,7 +1121,6 @@
             const rIwm = iwmPrices && iwmPrices[i] > 0 ? (iwmPrices[i + 1] - iwmPrices[i]) / iwmPrices[i] : rMkt;
             const rSchd = schdPrices && schdPrices[i] > 0 ? (schdPrices[i + 1] - schdPrices[i]) / schdPrices[i] : rMkt;
 
-            // SPMO 미상장 구간(2017 이전)은 XLK로 2차 폴백
             let rMomAsset = rMkt;
             if (spmoPrices && spmoPrices[i] > 0 && spmoPrices[i + 1] > 0) {
               rMomAsset = (spmoPrices[i + 1] - spmoPrices[i]) / spmoPrices[i];
@@ -1305,49 +1308,80 @@
       }
     }
 
+    // ⭐ Supabase로 업그레이드된 리더보드 서비스
     class GlobalLeaderboardService {
-      static API_ENDPOINT = "https://api.npoint.io/e94d2f8319f5a01d6745";
-
       static async fetchLeaderboard() {
         try {
-          const res = await QuantUtils.fetchWithTimeout(this.API_ENDPOINT, { timeout: 5000 });
-          if (res.ok) {
-            const data = await res.json();
-            try { localStorage.setItem('quant_global_leaderboard_cache', JSON.stringify(data)); } catch(e){}
-            return data;
-          }
+          const { data, error } = await supabaseClient
+            .from('leaderboard')
+            .select('*')
+            .order('score', { ascending: false });
+
+          if (error) throw error;
+
+          const formattedData = data.map(item => ({
+            id: item.id,
+            name: item.name,
+            author: item.author,
+            score: Number(item.score),
+            xirr: Number(item.xirr),
+            sortino: Number(item.sortino),
+            mdd: Number(item.mdd),
+            ulcer: Number(item.ulcer),
+            startMonth: item.start_month,
+            endMonth: item.end_month,
+            months: item.months,
+            categoryKey: item.category_key,
+            categoryLabel: item.category_label,
+            allocations: item.allocations,
+            rebalanceFreq: item.rebalance_freq,
+            createdAt: item.created_at ? item.created_at.split('T')[0] : ''
+          }));
+
+          try { 
+            localStorage.setItem('quant_global_leaderboard_cache', JSON.stringify(formattedData)); 
+          } catch(e) {}
+
+          return formattedData;
         } catch (e) {
-          console.warn("[Leaderboard] 서버 수신 실패, 로컬 캐시 사용", e);
+          console.warn("[Leaderboard] Supabase 수신 실패, 로컬 캐시 사용", e);
+          try {
+            return JSON.parse(localStorage.getItem('quant_global_leaderboard_cache') || '[]');
+          } catch { return []; }
         }
-        try {
-          return JSON.parse(localStorage.getItem('quant_global_leaderboard_cache') || '[]');
-        } catch { return []; }
       }
 
       static async publishMix(payload) {
-        let currentList = await this.fetchLeaderboard();
-        if (!Array.isArray(currentList)) currentList = [];
-
-        const existIdx = currentList.findIndex(item => item.id === payload.id);
-        if (existIdx > -1) {
-          currentList[existIdx] = payload;
-        } else {
-          currentList.push(payload);
-        }
-
-        try { localStorage.setItem('quant_global_leaderboard_cache', JSON.stringify(currentList)); } catch(e){}
+        const record = {
+          id: payload.id,
+          name: payload.name,
+          author: payload.author,
+          score: payload.score,
+          xirr: payload.xirr,
+          sortino: payload.sortino,
+          mdd: payload.mdd,
+          ulcer: payload.ulcer,
+          start_month: payload.startMonth,
+          end_month: payload.endMonth,
+          months: payload.months,
+          category_key: payload.categoryKey,
+          category_label: payload.categoryLabel,
+          allocations: payload.allocations,
+          rebalance_freq: payload.rebalanceFreq
+        };
 
         try {
-          await QuantUtils.fetchWithTimeout(this.API_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(currentList),
-            timeout: 8000
-          });
+          const { error } = await supabaseClient
+            .from('leaderboard')
+            .upsert([record], { onConflict: 'id' });
+
+          if (error) throw error;
         } catch (e) {
+          console.error("[Leaderboard] Supabase 저장 오류:", e);
           ToastNotifier.show("리더보드 동기화 중 오류가 발생했습니다.", "error");
         }
-        return currentList;
+
+        return await this.fetchLeaderboard();
       }
     }
 
@@ -1907,7 +1941,6 @@
         }
       }
 
-      // alert()를 대체하는 커스텀 슬레이트 모달 UI
       static showMetricInfo(title, description) {
         let modal = document.getElementById('metricInfoModal');
         if (!modal) {
@@ -2486,7 +2519,7 @@
         requiredSet.add('IWM');
         requiredSet.add('SCHD');
         requiredSet.add('SPMO');
-        requiredSet.add('XLK'); // MOM 2차 폴백용
+        requiredSet.add('XLK');
 
         activeMixes.forEach(mix => {
           if (mix.allocations) {
