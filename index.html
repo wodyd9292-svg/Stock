@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ETF 적립식 백테스트 계산기 v14.0</title>
+  <title>ETF 적립식 백테스트 계산기 v14.1</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -28,7 +28,7 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          📈 ETF 적립식 백테스트 계산기 <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.0</span>
+          📈 ETF 적립식 백테스트 계산기 <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.1</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
           미국 주요 ETF 적립식·거치식 성과 분석 및 포트폴리오 비교 시뮬레이터
@@ -262,7 +262,7 @@
       </div>
     </div>
 
-    <!-- 모달 창 -->
+    <!-- 모달 창 (자산 선택) -->
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
@@ -366,7 +366,7 @@
   <script>
     'use strict';
 
-    // 1. 상수 설정 (개인 Cloudflare Worker 프록시 적용)
+    // 1. 글로벌 설정
     const GLOBAL_QUANT_CONFIG = {
       TAX_RATE: 0.22,
       TAX_ALLOWANCE_KRW: 2500000.0,
@@ -475,7 +475,7 @@
     };
 
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v14_0";
+      static dbName = "QuantBacktestCacheDB_v14_1";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -524,7 +524,7 @@
 
     class KennethFrenchFetcher {
       static async fetchOfficialFactors(startYear, endYear, rawDatasets = null) {
-        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_2_CLEAN`;
+        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_1_CLEAN`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached && cached.entries && cached.entries.length > 0) {
           return new Map(cached.entries);
@@ -533,8 +533,7 @@
         const factorMap = new Map();
         const urls = [
           "https://raw.githubusercontent.com/famafrench/daily-factors/main/ff_5_factors_mom_daily.json",
-          "https://cdn.jsdelivr.net/gh/famafrench/daily-factors@main/ff_5_factors_mom_daily.json",
-          "https://raw.githubusercontent.com/datasets/fama-french/master/data/ff_5_factors_mom_daily.json"
+          "https://cdn.jsdelivr.net/gh/famafrench/daily-factors@main/ff_5_factors_mom_daily.json"
         ];
 
         for (const url of urls) {
@@ -566,24 +565,6 @@
                   factorMap.set(formattedDate, { mktRf, smb, hml, mom, rf });
                 }
               });
-            } else if (typeof rawData === 'object') {
-              Object.keys(rawData).forEach(dateStr => {
-                const formattedDate = dateStr.includes('-') 
-                  ? dateStr 
-                  : `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
-
-                const yr = parseInt(formattedDate.substring(0,4), 10);
-                if (yr >= startYear && yr <= endYear) {
-                  const row = rawData[dateStr];
-                  const mktRf = (row['Mkt-RF'] ?? row['Mkt_RF'] ?? row.mkt_rf ?? 0) / 100.0;
-                  const smb = (row.SMB ?? row.smb ?? 0) / 100.0;
-                  const hml = (row.HML ?? row.hml ?? 0) / 100.0;
-                  const mom = (row.MOM ?? row.Mom ?? row.mom ?? 0) / 100.0;
-                  const rf = (row.RF ?? row.rf ?? 0) / 100.0;
-
-                  factorMap.set(formattedDate, { mktRf, smb, hml, mom, rf });
-                }
-              });
             }
 
             if (factorMap.size > 0) {
@@ -592,48 +573,6 @@
             }
           } catch (err) {
             console.warn(`[KennethFrenchFetcher] 연결 시도 실패 (${url}):`, err);
-          }
-        }
-
-        if (rawDatasets) {
-          const spyPrices = rawDatasets['SPY']?.priceMap;
-          const iwmPrices = rawDatasets['IWM']?.priceMap;
-          const schdPrices = rawDatasets['SCHD']?.priceMap;
-          const spmoPrices = rawDatasets['SPMO']?.priceMap;
-
-          if (spyPrices) {
-            const datesArr = Array.from(spyPrices.keys()).sort();
-            for (let i = 1; i < datesArr.length; i++) {
-              const prevD = datesArr[i-1];
-              const currD = datesArr[i];
-              const yr = parseInt(currD.substring(0,4), 10);
-              if (yr >= startYear && yr <= endYear) {
-                const rfDaily = HistoricalInterestRates.getSOFR(currD) / 252;
-                const pSpyPrev = spyPrices.get(prevD), pSpyCurr = spyPrices.get(currD);
-                const rMkt = (pSpyPrev && pSpyCurr) ? (pSpyCurr - pSpyPrev) / pSpyPrev : 0;
-                
-                const pIwmPrev = iwmPrices?.get(prevD), pIwmCurr = iwmPrices?.get(currD);
-                const rIwm = (pIwmPrev && pIwmCurr) ? (pIwmCurr - pIwmPrev) / pIwmPrev : rMkt;
-
-                const pSchdPrev = schdPrices?.get(prevD), pSchdCurr = schdPrices?.get(currD);
-                const rSchd = (pSchdPrev && pSchdCurr) ? (pSchdCurr - pSchdPrev) / pSchdPrev : rMkt;
-
-                const pSpmoPrev = spmoPrices?.get(prevD), pSpmoCurr = spmoPrices?.get(currD);
-                const rSpmo = (pSpmoPrev && pSpmoCurr) ? (pSpmoCurr - pSpmoPrev) / pSpmoPrev : rMkt;
-
-                factorMap.set(currD, {
-                  mktRf: rMkt - rfDaily,
-                  smb: rIwm - rMkt,
-                  hml: rSchd - rMkt,
-                  mom: rSpmo - rMkt,
-                  rf: rfDaily
-                });
-              }
-            }
-            if (factorMap.size > 0) {
-              await QuantDataCache.set(cacheKey, { entries: Array.from(factorMap.entries()) });
-              return factorMap;
-            }
           }
         }
 
@@ -917,7 +856,7 @@
 
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v14_0`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v14_1`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -980,15 +919,19 @@
           }
         }
 
-        ToastNotifier.show(`'${ticker}' 시세 수신 실패. 네트워크 연결을 확인하세요.`, 'error');
         return null;
       }
     }
 
+    // 개선된 안전 Brent XIRR 계산기
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
-        if (m === 0 || isNaN(finalVal) || finalVal <= 0.01) return -100.0;
+        if (m === 0 || isNaN(finalVal)) return -100.0;
+
+        const totalInflow = cashFlows.reduce((a, b) => a + b, 0);
+        if (totalInflow <= 0) return 0.0;
+        if (finalVal <= GLOBAL_QUANT_CONFIG.EPSILON_PRECISION) return -100.0;
 
         const t0 = QuantUtils.parseDateUTC(dates[0]);
         const daysArr = dates.map(d => (QuantUtils.parseDateUTC(d) - t0) / (1000 * 3600 * 24));
@@ -1005,19 +948,11 @@
           return isNaN(val) ? 1e12 : val;
         };
 
-        const df = (r) => {
-          if (r <= -0.9999) return -1e12;
-          let deriv = (finalDay / 365.25) * finalVal / Math.pow(1 + r, (finalDay / 365.25) + 1);
-          for (let k = 0; k < m; k++) {
-            deriv -= (daysArr[k] / 365.25) * cashFlows[k] / Math.pow(1 + r, (daysArr[k] / 365.25) + 1);
-          }
-          return deriv;
-        };
-
+        // Newton-Raphson 1차 수렴 시도
         let r = 0.10;
         for (let iter = 0; iter < 50; iter++) {
           let y = f(r);
-          let dy = df(r);
+          let dy = (f(r + 1e-5) - f(r - 1e-5)) / 2e-5;
           if (Math.abs(dy) < 1e-12) break;
           let rNext = r - y / dy;
           if (rNext <= -0.99) rNext = -0.50;
@@ -1025,13 +960,14 @@
           r = rNext;
         }
 
-        let low = -0.99, high = 50.0;
+        // Bisection 안전 폴백
+        let low = -0.99, high = 20.0;
         let fLow = f(low);
 
-        for (let iter = 0; iter < 100; iter++) {
+        for (let iter = 0; iter < 60; iter++) {
           let mid = (low + high) / 2;
           let fMid = f(mid);
-          if (Math.abs(fMid) < 1e-4 || (high - low) < 1e-6) return mid * 100.0;
+          if (Math.abs(fMid) < 1e-4 || (high - low) < 1e-5) return mid * 100.0;
           if (fLow * fMid < 0) {
             high = mid;
           } else {
@@ -1040,7 +976,8 @@
           }
         }
 
-        return ((low + high) / 2) * 100.0;
+        const res = ((low + high) / 2) * 100.0;
+        return isNaN(res) ? 0.0 : res;
       }
     }
 
@@ -1148,6 +1085,7 @@
       }
     }
 
+    // 개선된 Fama-French 엔지니어링 (XLK 2차 모멘텀 폴백 적용)
     class FamaFrenchEngine {
       static solve(portDailyReturns, processedData, dates, ffOfficialMap) {
         const N = portDailyReturns.length;
@@ -1169,19 +1107,25 @@
           const iwmPrices = processedData.processedPrices['IWM'];
           const schdPrices = processedData.processedPrices['SCHD'];
           const spmoPrices = processedData.processedPrices['SPMO'];
-
-          if (!spyPrices || !iwmPrices || !schdPrices || !spmoPrices) {
-            return { alpha: 0, bMkt: 1, bSmb: 0, bHml: 0, bMom: 0, rSquared: 0 };
-          }
+          const xlkPrices = processedData.processedPrices['XLK'];
 
           for (let i = 0; i < N; i++) {
-            const rfDaily = HistoricalInterestRates.getSOFR(dates[i + 1]) / 252;
-            const rMkt = spyPrices[i] > 0 ? (spyPrices[i + 1] - spyPrices[i]) / spyPrices[i] : 0;
-            const rIwm = iwmPrices[i] > 0 ? (iwmPrices[i + 1] - iwmPrices[i]) / iwmPrices[i] : 0;
-            const rSchd = schdPrices[i] > 0 ? (schdPrices[i + 1] - schdPrices[i]) / schdPrices[i] : 0;
-            const rSpmo = spmoPrices[i] > 0 ? (spmoPrices[i + 1] - spmoPrices[i]) / spmoPrices[i] : 0;
+            const dateStr = dates[i + 1];
+            const rfDaily = HistoricalInterestRates.getSOFR(dateStr) / 252;
 
-            X.push([1.0, rMkt - rfDaily, rIwm - rMkt, rSchd - rMkt, rSpmo - rMkt]);
+            const rMkt = spyPrices && spyPrices[i] > 0 ? (spyPrices[i + 1] - spyPrices[i]) / spyPrices[i] : 0;
+            const rIwm = iwmPrices && iwmPrices[i] > 0 ? (iwmPrices[i + 1] - iwmPrices[i]) / iwmPrices[i] : rMkt;
+            const rSchd = schdPrices && schdPrices[i] > 0 ? (schdPrices[i + 1] - schdPrices[i]) / schdPrices[i] : rMkt;
+
+            // SPMO 미상장 구간(2017 이전)은 XLK로 2차 폴백
+            let rMomAsset = rMkt;
+            if (spmoPrices && spmoPrices[i] > 0 && spmoPrices[i + 1] > 0) {
+              rMomAsset = (spmoPrices[i + 1] - spmoPrices[i]) / spmoPrices[i];
+            } else if (xlkPrices && xlkPrices[i] > 0 && xlkPrices[i + 1] > 0) {
+              rMomAsset = (xlkPrices[i + 1] - xlkPrices[i]) / xlkPrices[i];
+            }
+
+            X.push([1.0, rMkt - rfDaily, rIwm - rMkt, rSchd - rMkt, rMomAsset - rMkt]);
             Y.push(portDailyReturns[i] - rfDaily);
           }
         }
@@ -1221,7 +1165,6 @@
 
         for (let i = 0; i < len; i++) {
           const dailyRf = HistoricalInterestRates.getSOFR(dates[i + 1]) / 252;
-
           excessPortReturns[i] = portDailyReturns[i] - dailyRf;
           excessMarketReturns[i] = marketDailyReturns[i] - dailyRf;
         }
@@ -1921,7 +1864,7 @@
       static initReactiveMixes() {
         let initialMixes = [];
         try {
-          const stored = localStorage.getItem('quant_custom_mixes_v14_0');
+          const stored = localStorage.getItem('quant_custom_mixes_v14_1');
           if (stored) {
             initialMixes = JSON.parse(stored);
           } else {
@@ -1936,7 +1879,7 @@
 
         this.customMixesStore = new ReactiveStore(initialMixes, (updatedState) => {
           try {
-            localStorage.setItem('quant_custom_mixes_v14_0', JSON.stringify(updatedState));
+            localStorage.setItem('quant_custom_mixes_v14_1', JSON.stringify(updatedState));
           } catch(e) {
             console.warn("LocalStorage 쓰기 차단됨", e);
           }
@@ -1964,8 +1907,29 @@
         }
       }
 
+      // alert()를 대체하는 커스텀 슬레이트 모달 UI
       static showMetricInfo(title, description) {
-        alert(`[${title}]\n\n${description}`);
+        let modal = document.getElementById('metricInfoModal');
+        if (!modal) {
+          modal = document.createElement('div');
+          modal.id = 'metricInfoModal';
+          modal.className = 'fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity';
+          document.body.appendChild(modal);
+        }
+
+        modal.innerHTML = `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 max-w-md w-full shadow-2xl space-y-3">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+              <h4 class="font-bold text-sm text-emerald-400 flex items-center gap-1.5">💡 ${QuantUtils.escapeHTML(title)}</h4>
+              <button onclick="document.getElementById('metricInfoModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-100 font-bold px-1">&times;</button>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">${QuantUtils.escapeHTML(description)}</p>
+            <div class="flex justify-end pt-2">
+              <button onclick="document.getElementById('metricInfoModal').classList.add('hidden')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-4 py-1.5 rounded-lg border border-slate-700 transition">확인</button>
+            </div>
+          </div>
+        `;
+        modal.classList.remove('hidden');
       }
 
       static handleSort(field) {
@@ -2158,7 +2122,7 @@
                 <div class="flex items-center gap-2">
                   <select onchange="if(this.value){ UIController.addTickerToMix('${mix.id}', this.value); this.value=''; }" aria-label="종목 추가" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-[11px] text-slate-300">
                     <option value="">+ 종목 추가...</option>
-                    ${unusedTickers.map(t => `<option value="${t}">${t} (${QuantUtils.escapeHTML(TICKER_UNIVERSE[t].name)})</option>`).join('')}
+                    ${unusedTickers.map(t => `<option value="${t}">${t} (${QuantUtils.escapeHTML(TICKER_UNIVERSE[t]?.name || t)})</option>`).join('')}
                   </select>
                   <button onclick="UIController.equalizeMixWeights('${mix.id}')" aria-label="비중 균등 분배" class="text-[11px] bg-slate-900 hover:bg-slate-800 text-slate-300 px-2 py-1 rounded border border-slate-700">⚖️ 균등 분배 (1/N)</button>
                 </div>
@@ -2522,7 +2486,7 @@
         requiredSet.add('IWM');
         requiredSet.add('SCHD');
         requiredSet.add('SPMO');
-        requiredSet.add('^IRX');
+        requiredSet.add('XLK'); // MOM 2차 폴백용
 
         activeMixes.forEach(mix => {
           if (mix.allocations) {
@@ -2543,12 +2507,21 @@
         const [fxData, ...fetchedResults] = await Promise.all([fxPromise, ...fetchPromises]);
 
         const rawDatasets = {};
+        const failedTickers = [];
+
         fullTickers.forEach((t, idx) => {
-          if (fetchedResults[idx]) rawDatasets[t] = fetchedResults[idx];
+          if (fetchedResults[idx] && fetchedResults[idx].priceMap && fetchedResults[idx].priceMap.size > 0) {
+            rawDatasets[t] = fetchedResults[idx];
+          } else {
+            failedTickers.push(t);
+          }
         });
 
-        if (rawDatasets['^IRX']?.priceMap) {
-          HistoricalInterestRates.setDynamicRateMap(rawDatasets['^IRX'].priceMap);
+        if (failedTickers.length > 0) {
+          const userFailed = failedTickers.filter(t => this.selectedTickers.includes(t));
+          if (userFailed.length > 0) {
+            ToastNotifier.show(`⚠️ 다음 선택 종목의 시세를 불러오지 못했습니다: ${userFailed.join(', ')}`, 'error');
+          }
         }
 
         const ffOfficialMap = await KennethFrenchFetcher.fetchOfficialFactors(startYear, endYear, rawDatasets);
@@ -2587,7 +2560,7 @@
         this.setEngineStatus('loading', '미래 시뮬레이션 연산 중...');
         const results = await QuantBacktestEngine.runAsync(
           sortedDates,
-          this.selectedTickers,
+          this.selectedTickers.filter(t => !failedTickers.includes(t)),
           activeMixes,
           processedData,
           fxData,
@@ -2782,7 +2755,7 @@
             backfillBadge = `<span class="text-[9px] bg-amber-950 text-amber-300 px-1 py-0.5 rounded border border-amber-700">커스텀 믹스</span>`;
           } else if (!isBackfilled) {
             backfillBadge = `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50">실제 데이터 100%</span>`;
-          } else if (config.allowBackfill) {
+          } else if (config?.allowBackfill) {
             backfillBadge = `<span class="text-[9px] bg-cyan-950/80 text-cyan-300 px-1 py-0.5 rounded border border-cyan-800/50">지수추종 백필 (${inceptYear}년전)</span>`;
           } else {
             backfillBadge = `<span class="text-[9px] bg-rose-950/80 text-rose-300 px-1 py-0.5 rounded border border-rose-800/50">⚠️ 백필 제한 (${inceptYear}년전 현금보유)</span>`;
@@ -2950,6 +2923,11 @@
         });
       }
     }
+
+    // 메모리 누수 방지 이벤트 바인딩
+    window.addEventListener('beforeunload', () => {
+      WorkerManager.cleanup();
+    });
 
     window.onload = () => UIController.init();
   </script>
