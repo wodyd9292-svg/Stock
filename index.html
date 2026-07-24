@@ -285,7 +285,7 @@
       </div>
     </div>
 
-    <!-- 요약 카드 영역 (모바일 1열 반응형 레이아웃 개선) -->
+    <!-- 요약 카드 영역 -->
     <div id="summaryCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
     <!-- 차트 영역 -->
@@ -366,13 +366,13 @@
   <script>
     'use strict';
 
-    // 1. 상수 설정
+    // 1. 상수 설정 (개인 Cloudflare Worker 프록시 적용)
     const GLOBAL_QUANT_CONFIG = {
       TAX_RATE: 0.22,
       TAX_ALLOWANCE_KRW: 2500000.0,
       US_DIV_TAX_RATE: 0.15,
       EPSILON_PRECISION: 1e-8,
-      CORS_WORKER_PROXY: "https://cors.quant-engine.workers.dev/?url=",
+      CORS_WORKER_PROXY: "https://my-yahoo-proxy.rlfhdzk.workers.dev/?url=",
       KENNETH_FRENCH_FACTOR_URL: "https://raw.githubusercontent.com/famafrench/daily-factors/main/ff_5_factors_mom_daily.json"
     };
 
@@ -534,8 +534,7 @@
         const urls = [
           "https://raw.githubusercontent.com/famafrench/daily-factors/main/ff_5_factors_mom_daily.json",
           "https://cdn.jsdelivr.net/gh/famafrench/daily-factors@main/ff_5_factors_mom_daily.json",
-          "https://raw.githubusercontent.com/datasets/fama-french/master/data/ff_5_factors_mom_daily.json",
-          "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://raw.githubusercontent.com/famafrench/daily-factors/main/ff_5_factors_mom_daily.json")
+          "https://raw.githubusercontent.com/datasets/fama-french/master/data/ff_5_factors_mom_daily.json"
         ];
 
         for (const url of urls) {
@@ -592,7 +591,7 @@
               return factorMap;
             }
           } catch (err) {
-            console.warn(`[KennethFrenchFetcher] 연결 시도 실패 또는 타임아웃 (${url}):`, err);
+            console.warn(`[KennethFrenchFetcher] 연결 시도 실패 (${url}):`, err);
           }
         }
 
@@ -977,7 +976,7 @@
               return { priceMap, divMap };
             }
           } catch (err) {
-            console.warn(`[YahooFetcher] ${ticker} 프록시 연결 실패 또는 타임아웃`);
+            console.warn(`[YahooFetcher] ${ticker} 프록시 연결 시도 중...`);
           }
         }
 
@@ -2659,7 +2658,6 @@
         }
       }
 
-      // 모달/모바일 요약 카드 UI 렌더링 개선
       static renderDashboard(results, sortedDates, taxEnabled) {
         const startMonth = document.getElementById('startMonth').value;
         const startYear = parseInt(startMonth.split('-')[0], 10);
@@ -2674,7 +2672,6 @@
         const firstTicker = Object.keys(results)[0];
         if (!firstTicker) return;
 
-        // 투입 원금 카드
         const invCard = document.createElement('div');
         invCard.className = 'bg-slate-900 p-3.5 sm:p-4 rounded-xl border border-slate-800 flex flex-col justify-between';
         invCard.innerHTML = `
@@ -2690,7 +2687,6 @@
         `;
         cardFragment.appendChild(invCard);
 
-        // 자산 성과 카드 (모바일 요약 구조 교정)
         Object.entries(results).slice(0, 3).forEach(([ticker, res], idx) => {
           const card = document.createElement('div');
           card.className = 'bg-slate-900 p-3.5 sm:p-4 rounded-xl border border-slate-800 flex flex-col justify-between';
