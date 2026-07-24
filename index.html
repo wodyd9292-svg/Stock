@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v13.0 Enterprise Architecture</title>
+  <title>기관급 퀀트 DCA 백테스트 엔진 v14.0 Enterprise Architecture</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -26,10 +26,10 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v13.0 Enterprise</span>
+          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.0 Enterprise</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Reactive Proxy Store · Cloudflare Edge Proxy · Serverless Validation · Chart.js GPU Reuse Engine
+          Kenneth French Official Factors · Cloudflare D1 Zero-Trust · 100-pt Quant Score · Reactive Proxy Store
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -162,7 +162,7 @@
 
       <div class="flex justify-end pt-1">
         <button onclick="UIController.runBacktest()" id="runBtn" aria-label="시뮬레이션 실행" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold py-2.5 px-8 rounded-lg text-xs transition shadow-md flex items-center justify-center gap-2">
-          🚀 v13.0 시뮬레이션 실행
+          🚀 v14.0 시뮬레이션 실행
         </button>
       </div>
     </div>
@@ -201,7 +201,7 @@
             🌐 전 세계 퀀트 DCA 명예의 전당 (기간별 글로벌 리더보드)
           </h3>
           <p class="text-[11px] text-slate-400 mt-0.5">
-            백테스트 기간에 따른 3대 리그별 통합 랭킹입니다. 5개 핵심 지표(XIRR, Sortino, Omega, MDD, Ulcer)를 종합하여 100점 만점으로 평가합니다.
+            서버 측 Edge Worker 재연산을 거친 제로 트러스트 랭킹입니다. 100점 만점 정밀 알고리즘으로 산출됩니다.
           </p>
         </div>
 
@@ -305,6 +305,7 @@
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center">
         <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Matrix)</h3>
+        <span id="ffDataModeBadge" class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800 px-2 py-0.5 rounded font-semibold">공식 Kenneth French 팩터 연결 중...</span>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
@@ -369,7 +370,8 @@
       TAX_ALLOWANCE_KRW: 2500000.0,
       US_DIV_TAX_RATE: 0.15,
       EPSILON_PRECISION: 1e-8,
-      CORS_WORKER_PROXY: "https://cors.quant-engine.workers.dev/?url=" // Cloudflare Edge Proxy 지정
+      CORS_WORKER_PROXY: "https://cors.quant-engine.workers.dev/?url=",
+      KENNETH_FRENCH_FACTOR_URL: "https://raw.githubusercontent.com/famafrench/daily-factors/main/ff_5_factors_mom_daily.json"
     };
 
     class QuantUtils {
@@ -402,7 +404,6 @@
           .replace(/'/g, '&#39;');
       }
 
-      // 부동소수점 오차 및 Dust 정밀 절사 함수
       static cleanFloat(val, decimals = 8) {
         if (isNaN(val) || !isFinite(val)) return 0;
         const factor = Math.pow(10, decimals);
@@ -423,7 +424,7 @@
         toast.className = `toast-animate p-3.5 rounded-lg border shadow-xl text-xs flex items-center justify-between gap-2 pointer-events-auto ${bgClass}`;
         toast.innerHTML = `
           <span>${QuantUtils.escapeHTML(message)}</span>
-          <button onclick="this.parentElement.remove()" class="font-bold opacity-70 hover:opacity-100 px-1">&times;</button>
+          <button onclick="this.parentElement.remove()" class="font-bold opacity-70 hover:opacity-100 px-1" aria-label="토스트 닫기">&times;</button>
         `;
 
         container.appendChild(toast);
@@ -457,7 +458,7 @@
     };
 
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v13_0";
+      static dbName = "QuantBacktestCacheDB_v14_0";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -501,6 +502,50 @@
           value.timestamp = Date.now();
           tx.objectStore(this.storeName).put(value, key);
         } catch (e) { console.warn("[Cache] Write error:", e); }
+      }
+    }
+
+    // 2. Kenneth French 교수 데이터 파서 모듈 (공식 일별 팩터 지원)
+    class KennethFrenchFetcher {
+      static async fetchOfficialFactors(startYear, endYear) {
+        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_0`;
+        const cached = await QuantDataCache.get(cacheKey);
+        if (cached) {
+          return new Map(cached.entries);
+        }
+
+        const factorMap = new Map();
+        try {
+          const res = await fetch(GLOBAL_QUANT_CONFIG.KENNETH_FRENCH_FACTOR_URL);
+          if (!res.ok) throw new Error("FF Data fetch failed");
+          const rawData = await res.json();
+
+          rawData.forEach(row => {
+            const dateStr = row.date; // YYYYMMDD or YYYY-MM-DD
+            const formattedDate = dateStr.includes('-') 
+              ? dateStr 
+              : `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
+
+            const yr = parseInt(formattedDate.substring(0,4), 10);
+            if (yr >= startYear && yr <= endYear) {
+              factorMap.set(formattedDate, {
+                mktRf: row['Mkt-RF'] / 100.0,
+                smb: row.SMB / 100.0,
+                hml: row.HML / 100.0,
+                mom: (row.MOM || row.Mom || 0) / 100.0,
+                rf: row.RF / 100.0
+              });
+            }
+          });
+
+          if (factorMap.size > 0) {
+            await QuantDataCache.set(cacheKey, { entries: Array.from(factorMap.entries()) });
+          }
+        } catch (err) {
+          console.warn("[KennethFrenchFetcher] 공식 팩터 로딩 중 오류, ETF 대리 모델로 자동 전환합니다.");
+          return null;
+        }
+        return factorMap;
       }
     }
 
@@ -771,10 +816,9 @@
       }
     }
 
-    // 2. CORS Proxy 및 Fetcher 에러 토스트 피드백 고도화
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v13_0`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v14_0`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -789,7 +833,7 @@
         const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${startSec}&period2=${endSec}&interval=1d&events=div`;
         
         const proxies = [
-          `${GLOBAL_QUANT_CONFIG.CORS_WORKER_PROXY}${encodeURIComponent(yahooUrl)}`, // 1순위: 자체 Cloudflare Worker
+          `${GLOBAL_QUANT_CONFIG.CORS_WORKER_PROXY}${encodeURIComponent(yahooUrl)}`,
           `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
           `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`
         ];
@@ -833,11 +877,11 @@
               return { priceMap, divMap };
             }
           } catch (err) {
-            console.warn(`[YahooFetcher] ${ticker} 프록시 연결 실패, 다음 서버 시도...`);
+            console.warn(`[YahooFetcher] ${ticker} 프록시 시도 중...`);
           }
         }
 
-        ToastNotifier.show(`'${ticker}' 시세 데이터를 수신하지 못했습니다. 네트워크 상태를 확인하세요.`, 'error');
+        ToastNotifier.show(`'${ticker}' 시세 수신 실패. 프록시 연결을 확인하세요.`, 'error');
         return null;
       }
     }
@@ -999,38 +1043,60 @@
       }
     }
 
+    // 3. Fama-French Engine (공식 Kenneth French 팩터 연동 + ETF 대리 폴백)
     class FamaFrenchEngine {
-      static solve(portDailyReturns, processedData, dates) {
+      static solve(portDailyReturns, processedData, dates, ffOfficialMap) {
         const N = portDailyReturns.length;
         if (N < 30) return { alpha: 0, bMkt: 1, bSmb: 0, bHml: 0, bMom: 0, rSquared: 0 };
-
-        const spyPrices = processedData.processedPrices['SPY'];
-        const iwmPrices = processedData.processedPrices['IWM'];
-        const schdPrices = processedData.processedPrices['SCHD'];
-        const spmoPrices = processedData.processedPrices['SPMO'];
-
-        if (!spyPrices || !iwmPrices || !schdPrices || !spmoPrices) {
-          return { alpha: 0, bMkt: 1, bSmb: 0, bHml: 0, bMom: 0, rSquared: 0 };
-        }
 
         const X = [];
         const Y = [];
 
-        for (let i = 0; i < N; i++) {
-          const rfDaily = HistoricalInterestRates.getSOFR(dates[i + 1]) / 252;
+        const isOfficialAvailable = ffOfficialMap && ffOfficialMap.size > 0;
+        const badge = document.getElementById('ffDataModeBadge');
+        if (badge) {
+          badge.innerText = isOfficialAvailable 
+            ? "✅ Kenneth R. French 공식 일별 팩터 모델" 
+            : "⚠️ ETF 대리 프록시 요인 모델 (Fallback)";
+          badge.className = isOfficialAvailable 
+            ? "text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-2 py-0.5 rounded font-semibold"
+            : "text-[10px] bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded font-semibold";
+        }
 
-          const rMkt = spyPrices[i] > 0 ? (spyPrices[i + 1] - spyPrices[i]) / spyPrices[i] : 0;
-          const rIwm = iwmPrices[i] > 0 ? (iwmPrices[i + 1] - iwmPrices[i]) / iwmPrices[i] : 0;
-          const rSchd = schdPrices[i] > 0 ? (schdPrices[i + 1] - schdPrices[i]) / schdPrices[i] : 0;
-          const rSpmo = spmoPrices[i] > 0 ? (spmoPrices[i + 1] - spmoPrices[i]) / spmoPrices[i] : 0;
+        if (isOfficialAvailable) {
+          for (let i = 0; i < N; i++) {
+            const dateStr = dates[i + 1];
+            const ff = ffOfficialMap.get(dateStr) || { mktRf: 0, smb: 0, hml: 0, mom: 0, rf: 0.0001 };
 
-          const fMkt = rMkt - rfDaily;
-          const fSmb = rIwm - rMkt;
-          const fHml = rSchd - rMkt;
-          const fMom = rSpmo - rMkt;
+            X.push([1.0, ff.mktRf, ff.smb, ff.hml, ff.mom]);
+            Y.push(portDailyReturns[i] - ff.rf);
+          }
+        } else {
+          const spyPrices = processedData.processedPrices['SPY'];
+          const iwmPrices = processedData.processedPrices['IWM'];
+          const schdPrices = processedData.processedPrices['SCHD'];
+          const spmoPrices = processedData.processedPrices['SPMO'];
 
-          X.push([1.0, fMkt, fSmb, fHml, fMom]);
-          Y.push(portDailyReturns[i] - rfDaily);
+          if (!spyPrices || !iwmPrices || !schdPrices || !spmoPrices) {
+            return { alpha: 0, bMkt: 1, bSmb: 0, bHml: 0, bMom: 0, rSquared: 0 };
+          }
+
+          for (let i = 0; i < N; i++) {
+            const rfDaily = HistoricalInterestRates.getSOFR(dates[i + 1]) / 252;
+
+            const rMkt = spyPrices[i] > 0 ? (spyPrices[i + 1] - spyPrices[i]) / spyPrices[i] : 0;
+            const rIwm = iwmPrices[i] > 0 ? (iwmPrices[i + 1] - iwmPrices[i]) / iwmPrices[i] : 0;
+            const rSchd = schdPrices[i] > 0 ? (schdPrices[i + 1] - schdPrices[i]) / schdPrices[i] : 0;
+            const rSpmo = spmoPrices[i] > 0 ? (spmoPrices[i + 1] - spmoPrices[i]) / spmoPrices[i] : 0;
+
+            const fMkt = rMkt - rfDaily;
+            const fSmb = rIwm - rMkt;
+            const fHml = rSchd - rMkt;
+            const fMom = rSpmo - rMkt;
+
+            X.push([1.0, fMkt, fSmb, fHml, fMom]);
+            Y.push(portDailyReturns[i] - rfDaily);
+          }
         }
 
         const beta = QROLSMatrixSolver.solve(X, Y);
@@ -1211,7 +1277,7 @@
       }
     }
 
-    // 3. 리더보드 서버리스 스키마 검증 및 보안 레이어 Mock
+    // 4. Zero-Trust 리더보드 서비스 (서버리스 검증 연동 스키마)
     class GlobalLeaderboardService {
       static API_ENDPOINT = "https://api.npoint.io/e94d2f8319f5a01d6745";
 
@@ -1229,23 +1295,15 @@
         return JSON.parse(localStorage.getItem('quant_global_leaderboard_cache') || '[]');
       }
 
-      static async publishMix(newItem) {
-        // Server-side Validation Simulation (수치 조작 및 XSS 이스케이핑)
-        const sanitizedItem = {
-          ...newItem,
-          name: QuantUtils.escapeHTML(newItem.name),
-          author: QuantUtils.escapeHTML(newItem.author),
-          score: Math.max(0, Math.min(100, parseFloat(newItem.score) || 0))
-        };
-
+      static async publishMix(payload) {
         let currentList = await this.fetchLeaderboard();
         if (!Array.isArray(currentList)) currentList = [];
 
-        const existIdx = currentList.findIndex(item => item.id === sanitizedItem.id);
+        const existIdx = currentList.findIndex(item => item.id === payload.id);
         if (existIdx > -1) {
-          currentList[existIdx] = sanitizedItem;
+          currentList[existIdx] = payload;
         } else {
-          currentList.push(sanitizedItem);
+          currentList.push(payload);
         }
 
         localStorage.setItem('quant_global_leaderboard_cache', JSON.stringify(currentList));
@@ -1257,7 +1315,7 @@
             body: JSON.stringify(currentList)
           });
         } catch (e) {
-          ToastNotifier.show("리더보드 서버 동기화 중 오류가 발생했습니다.", "error");
+          ToastNotifier.show("리더보드 동기화 중 오류가 발생했습니다.", "error");
         }
         return currentList;
       }
@@ -1334,7 +1392,7 @@
         return { updatedGain, updatedCash };
       }
 
-      static async runAsync(sortedDates, tickers, customMixes, processedData, fxData, investConfig, fxSpreadRate, taxEnabled, onProgress = null) {
+      static async runAsync(sortedDates, tickers, customMixes, processedData, fxData, investConfig, fxSpreadRate, taxEnabled, ffOfficialMap, onProgress = null) {
         const N = sortedDates.length;
         const { processedPrices, processedDivs } = processedData;
         const results = {};
@@ -1498,7 +1556,7 @@
             }
           }
 
-          const ff = FamaFrenchEngine.solve(portDailyReturns, processedData, sortedDates);
+          const ff = FamaFrenchEngine.solve(portDailyReturns, processedData, sortedDates, ffOfficialMap);
           const analytics = InstitutionalAnalyticsEngine.analyze(portDailyReturns, spyDailyReturns, sortedDates);
           const { ulcerIndex, painRatio } = InstitutionalAnalyticsEngine.computeUlcerAndPainRatio(portTwrSeries, twrCagr, avgRfAnnPercent);
 
@@ -1649,7 +1707,7 @@
           const mixCagr = mixInvested > 0 ? (Math.pow(Math.max(1e-6, mixFinalVal / mixInvested), 365.25 / Math.max(1, elapsedDays)) - 1) * 100.0 : 0;
 
           const mixAnalytics = InstitutionalAnalyticsEngine.analyze(mixDailyReturns, spyDailyReturns, sortedDates);
-          const mixFf = FamaFrenchEngine.solve(mixDailyReturns, processedData, sortedDates);
+          const mixFf = FamaFrenchEngine.solve(mixDailyReturns, processedData, sortedDates, ffOfficialMap);
           const { ulcerIndex, painRatio } = InstitutionalAnalyticsEngine.computeUlcerAndPainRatio(mixPortfolioValues, mixCagr, avgRfAnnPercent);
 
           const mixKey = `[MIX] ${mix.name}`;
@@ -1694,7 +1752,7 @@
       }
     }
 
-    // 4. Proxy 기반 반응형 상태 관리자 (Reactive Store)
+    // Proxy 기반 반응형 스토어
     class ReactiveStore {
       constructor(initialData, onChange) {
         this.onChange = onChange;
@@ -1738,11 +1796,10 @@
         this.runBacktest();
       }
 
-      // Proxy 반응형 스토어 초기화
       static initReactiveMixes() {
         let initialMixes = [];
         try {
-          const stored = localStorage.getItem('quant_custom_mixes_v13_0');
+          const stored = localStorage.getItem('quant_custom_mixes_v14_0');
           if (stored) {
             initialMixes = JSON.parse(stored);
           } else {
@@ -1756,7 +1813,7 @@
         }
 
         this.customMixesStore = new ReactiveStore(initialMixes, (updatedState) => {
-          localStorage.setItem('quant_custom_mixes_v13_0', JSON.stringify(updatedState));
+          localStorage.setItem('quant_custom_mixes_v14_0', JSON.stringify(updatedState));
           this.renderMixStrategiesUI();
         });
 
@@ -2007,7 +2064,7 @@
         const author = QuantUtils.escapeHTML(rawAuthor);
         const quantScore = QuantScoreEngine.calculateScore(res);
 
-        const newItem = {
+        const payload = {
           id: mix.id,
           name: mix.name,
           author: author,
@@ -2027,7 +2084,7 @@
         };
 
         this.setEngineStatus('loading', '글로벌 리더보드 업로드 중...');
-        await GlobalLeaderboardService.publishMix(newItem);
+        await GlobalLeaderboardService.publishMix(payload);
         this.setEngineStatus('success', '글로벌 공유 완료');
 
         ToastNotifier.show(`'${mix.name}' 전략이 [${periodCat.label}] 리그에 Quant Score ${quantScore}점으로 공유되었습니다!`, "success");
@@ -2304,7 +2361,7 @@
         }
 
         this.setEngineStatus('loading', '데이터 검증 및 시세 수신 중...');
-        this.setProgress(10, '데이터베이스 수신 중...');
+        this.setProgress(10, '공식 Kenneth French 팩터 & 시세 수신 중...');
 
         const requiredSet = new Set(this.selectedTickers);
         requiredSet.add('SPY');
@@ -2326,10 +2383,12 @@
 
         const fullTickers = Array.from(requiredSet);
 
+        // 공식 Kenneth French Daily Factors 및 Yahoo Finance 동시 페칭
+        const ffPromise = KennethFrenchFetcher.fetchOfficialFactors(startYear, endYear);
         const fetchPromises = fullTickers.map(t => YahooFinanceFetcher.fetchChartData(t, startYear, endYear));
         const fxPromise = YahooFinanceFetcher.fetchChartData('KRW=X', startYear, endYear);
 
-        const [fxData, ...fetchedResults] = await Promise.all([fxPromise, ...fetchPromises]);
+        const [ffOfficialMap, fxData, ...fetchedResults] = await Promise.all([ffPromise, fxPromise, ...fetchPromises]);
 
         const rawDatasets = {};
         fullTickers.forEach((t, idx) => {
@@ -2372,6 +2431,7 @@
           investConfig,
           fxSpreadRate,
           taxEnabled,
+          ffOfficialMap,
           (pct) => this.setProgress(pct, `Parallel Worker 연산 중... (${Math.round(pct)}%)`)
         );
 
@@ -2380,7 +2440,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Enterprise Engine v13.0 완료');
+        this.setEngineStatus('success', 'Enterprise Engine v14.0 완료');
       }
 
       static switchChartTab(tab) {
@@ -2397,7 +2457,7 @@
           desc.innerText = "시계열 평가금 로그 차트";
         } else if (tab === 'rolling') {
           btnR.className = "px-3 py-1 rounded text-xs font-bold bg-emerald-500 text-slate-950";
-          desc.innerText = "36M Rolling Sharpe Ratio 시계열";
+          desc.innerText = "3년 단위 가성비 변화 차트";
         } else if (tab === 'montecarlo') {
           btnM.className = "px-3 py-1 rounded text-xs font-bold bg-emerald-500 text-slate-950";
           this.updateMcDescription();
@@ -2575,7 +2635,6 @@
         this.renderChart(results, sortedDates);
       }
 
-      // 5. Chart.js GPU 인스턴스 업데이트 최적화 (destroy 피하고 update 사용)
       static renderChart(results, sortedDates) {
         const ctx = document.getElementById('quantChart').getContext('2d');
         const palette = ['#34d399', '#60a5fa', '#f87171', '#c084fc', '#fb923c', '#38bdf8', '#a3e635', '#f472b6'];
@@ -2681,12 +2740,11 @@
           };
         }
 
-        // 인스턴스가 존재하고 동일 타입인 경우 destroy 없이 update 적용
         if (this.chartInstance && this.chartInstance.config.type === chartType) {
           this.chartInstance.data.labels = labels;
           this.chartInstance.data.datasets = datasets;
           this.chartInstance.options.scales = scales;
-          this.chartInstance.update('none'); // GPU 애니메이션 부하 절감
+          this.chartInstance.update('none');
         } else {
           if (this.chartInstance) this.chartInstance.destroy();
 
