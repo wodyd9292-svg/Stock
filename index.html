@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ETF 적립식 백테스트 계산기 v14.2</title>
+  <title>ETF 적립식 백테스트 계산기 v14.3</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -29,10 +29,10 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          📈 ETF 적립식 백테스트 계산기 <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.2</span>
+          📈 ETF 적립식 백테스트 계산기 <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.3 Pro</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          미국 주요 ETF 적립식·거치식 성과 분석 및 포트폴리오 비교 시뮬레이터
+          미국 주요 ETF 적립식·거치식 성과 분석 및 기관급 퀀트 포트폴리오 시뮬레이터
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
@@ -45,22 +45,22 @@
     <div class="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3 sm:p-4 space-y-2 text-xs">
       <div class="flex justify-between items-center cursor-pointer" onclick="UIController.toggleBeginnerGuide()" role="button" aria-label="핵심 가성비 가이드 토글">
         <span class="font-bold text-emerald-400 flex items-center gap-1.5">
-          💡 한눈에 보는 핵심 가성비 & 고통 지수 가이드
+          💡 한눈에 보는 기관급 퀀트 종합점수 및 핵심 지표 가이드
         </span>
         <span id="guideToggleIcon" class="text-slate-400 font-bold">▲ 접기</span>
       </div>
       <div id="beginnerGuideContent" class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 text-slate-300 border-t border-slate-800">
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-amber-400 block mb-1">⚖️ 하락위험 가성비 (소티노 & 칼마 지수)</span>
-          상승 출렁임은 포상하고 <span class="text-emerald-300 font-semibold">순수 하락 폭락 위험(MDD 대비 회복력)</span>만 평가하는 실전 적립식 성과 지수입니다.
+          <span class="font-bold text-amber-400 block mb-1">🏆 기관급 시그모이드 종합점수</span>
+          수익성(XIRR), 순수 하락 위험(소티노), 회복력(칼마), 마음고통(Ulcer), 최악 손실(CVaR) 및 검증 기간을 <span class="text-emerald-300 font-semibold">100점 만점 입체 평가</span>합니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
           <span class="font-bold text-cyan-400 block mb-1">📈 실질 연복리 수익률 (XIRR)</span>
-          월별 실제 입출금 날짜의 현금흐름을 반영한 <span class="text-cyan-300 font-semibold">진짜 적립식 연복리 수익률</span>입니다.
+          월별 실제 입출금 날짜의 현금흐름과 세금 차감을 정밀 반영한 <span class="text-cyan-300 font-semibold">진짜 적립식 연복리 수익률</span>입니다.
         </div>
         <div class="bg-slate-950/60 p-2.5 rounded border border-slate-800">
-          <span class="font-bold text-rose-400 block mb-1">🛡️ MDD & 마음 고통 (궤양 지수)</span>
-          최대 하락 폭(MDD)과 계좌가 전고점에 물려있는 <span class="text-rose-300 font-semibold">깊이 및 고통 기간(Ulcer)</span>을 측정합니다.
+          <span class="font-bold text-rose-400 block mb-1">🛡️ MDD & 마음 고통 (Ulcer & CVaR)</span>
+          최대 낙폭(MDD)과 계좌가 전고점에 물려있는 <span class="text-rose-300 font-semibold">고통 시간(Ulcer) 및 최악 상위 5% 손실(CVaR)</span>을 측정합니다.
         </div>
       </div>
     </div>
@@ -346,7 +346,7 @@
             </th>
             <th onclick="UIController.handleSort('score')" class="px-3 py-3 text-amber-400 sortable-th">
               종합 점수 🏆
-              <button onclick="event.stopPropagation(); UIController.showMetricInfo('종합 점수 🏆', '수익성(XIRR), 회복력(칼마), 위험 대비 효율(소티노·오메가·샤프), 최대 하락폭(MDD) 및 고통 지수(Ulcer), 검증 기간 보정을 종합 계량 평가하여 100점 만점으로 산출한 성과 점수입니다.')" class="text-amber-500/80 hover:text-amber-300 text-[11px] ml-0.5" title="도움말">ℹ️</button>
+              <button onclick="event.stopPropagation(); UIController.showMetricInfo('종합 점수 🏆', '기관급 시그모이드 다모형 알고리즘을 사용하여 수익성(XIRR), 순수하락 효율(소티노), 회복력(칼마), 마음고통(Ulcer), 최악손실(CVaR), 검증 기간 신뢰도를 종합 산출한 100점 만점 성과 점수입니다.')" class="text-amber-500/80 hover:text-amber-300 text-[11px] ml-0.5" title="도움말">ℹ️</button>
               <span id="sort-score">▼</span>
             </th>
             <th onclick="UIController.handleSort('investedKrw')" class="px-3 py-3 sortable-th">
@@ -546,7 +546,7 @@
     };
 
     class QuantDataCache {
-      static dbName = "QuantBacktestCacheDB_v14_2";
+      static dbName = "QuantBacktestCacheDB_v14_3";
       static storeName = "timeSeriesStore";
       static TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -594,8 +594,8 @@
     }
 
     class KennethFrenchFetcher {
-      static async fetchOfficialFactors(startYear, endYear, rawDatasets = null) {
-        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_2_CLEAN`;
+      static async fetchOfficialFactors(startYear, endYear) {
+        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_3_CLEAN`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached && cached.entries && cached.entries.length > 0) {
           return new Map(cached.entries);
@@ -730,7 +730,7 @@
         }
 
         const x = new Float64Array(n);
-        const RIDGE_DAMPING = 1e-12;
+        const RIDGE_DAMPING = 1e-10;
         for (let i = n - 1; i >= 0; i--) {
           let sum = Q_T_b[i];
           for (let j = i + 1; j < n; j++) sum -= R[i][j] * x[j];
@@ -771,7 +771,7 @@
           }
           terminalValues[iter] = val;
 
-          if (iter % 2000 === 0) {
+          if (iter % 2500 === 0) {
             self.postMessage({ type: 'PROGRESS', progress: (iter / iterations) * 100 });
           }
         }
@@ -910,7 +910,7 @@
         if (totalSharesSold > 0) {
           const netBuyFxPrice = currentPriceUsd * currentFxRate * (1 + friction);
           const reboughtShares = totalReinvestKrw / netBuyFxPrice;
-          this.buy(reboughtShares, currentPriceUsd * (1 + friction), currentFxRate);
+          this.buy(reboughtShares, currentPriceUsd, currentFxRate * (1 + friction));
         }
 
         return { accumulatedGain, totalSharesSold };
@@ -927,7 +927,7 @@
 
     class YahooFinanceFetcher {
       static async fetchChartData(ticker, startYear, endYear) {
-        const cacheKey = `${ticker}_${startYear}_${endYear}_v14_2`;
+        const cacheKey = `${ticker}_${startYear}_${endYear}_v14_3`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached) {
           return {
@@ -994,24 +994,23 @@
       }
     }
 
+    // ⭐ Newton-Raphson 해석적 미분(Analytical Derivative) 기반 초고속 수렴 XIRR Solver
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
-        if (m === 0 || isNaN(finalVal)) return -100.0;
+        if (m === 0 || isNaN(finalVal) || finalVal <= GLOBAL_QUANT_CONFIG.EPSILON_PRECISION) return -100.0;
 
         const totalInflow = cashFlows.reduce((a, b) => a + b, 0);
         if (totalInflow <= 0) return 0.0;
-        if (finalVal <= GLOBAL_QUANT_CONFIG.EPSILON_PRECISION) return -100.0;
 
         const t0 = QuantUtils.parseDateUTC(dates[0]);
-        // 금융 표준 분모 365.0 적용
         const daysArr = dates.map(d => (QuantUtils.parseDateUTC(d) - t0) / (1000 * 3600 * 24));
         const finalDay = daysArr[daysArr.length - 1];
 
         if (finalDay <= 0) return 0.0;
 
         const f = (r) => {
-          if (r <= -0.9999) return 1e12;
+          if (r <= -0.999) return 1e12;
           let val = -finalVal / Math.pow(1 + r, finalDay / 365.0);
           for (let k = 0; k < m; k++) {
             val += cashFlows[k] / Math.pow(1 + r, daysArr[k] / 365.0);
@@ -1019,21 +1018,29 @@
           return isNaN(val) ? 1e12 : val;
         };
 
+        const df = (r) => {
+          if (r <= -0.999) return -1e12;
+          let dval = (finalDay / 365.0) * finalVal / Math.pow(1 + r, (finalDay / 365.0) + 1);
+          for (let k = 0; k < m; k++) {
+            dval -= (daysArr[k] / 365.0) * cashFlows[k] / Math.pow(1 + r, (daysArr[k] / 365.0) + 1);
+          }
+          return dval;
+        };
+
         let r = 0.10;
-        for (let iter = 0; iter < 50; iter++) {
-          let y = f(r);
-          let dy = (f(r + 1e-5) - f(r - 1e-5)) / 2e-5;
+        for (let iter = 0; iter < 40; iter++) {
+          const y = f(r);
+          const dy = df(r);
           if (Math.abs(dy) < 1e-12) break;
-          let rNext = r - y / dy;
-          if (rNext <= -0.99) rNext = -0.50;
+          const rNext = r - y / dy;
           if (Math.abs(rNext - r) < 1e-6) return rNext * 100.0;
-          r = rNext;
+          r = rNext < -0.95 ? -0.50 : rNext;
         }
 
-        let low = -0.99, high = 20.0;
+        let low = -0.99, high = 15.0;
         let fLow = f(low);
 
-        for (let iter = 0; iter < 60; iter++) {
+        for (let iter = 0; iter < 50; iter++) {
           let mid = (low + high) / 2;
           let fMid = f(mid);
           if (Math.abs(fMid) < 1e-4 || (high - low) < 1e-5) return mid * 100.0;
@@ -1116,7 +1123,6 @@
               const baseCurr = basePrices[i + 1];
               const basePrev = basePrices[i];
 
-              // 레버리지 ETF 백필 기간 배당금 과대평가 방지 (0 처리)
               if (config.proxyType === 'leveraged' && baseDivs && baseDivs.has(dateStr) && !divMap.has(dateStr)) {
                 divMap.set(dateStr, 0.0);
               }
@@ -1337,7 +1343,7 @@
       }
     }
 
-    // ⭐ 칼마 비율, 기간 보정 계수 및 조정된 MDD 패널티가 적용된 퀀트 종합 성과 점수
+    // ⭐ 기관급 시그모이드 다모형 퀀트 종합점수 엔진 (v14.3 알고리즘)
     class QuantScoreEngine {
       static calculatePeriodMonths(startMonth, endMonth) {
         const [sY, sM] = startMonth.split('-').map(Number);
@@ -1354,43 +1360,36 @@
       static calculateScore(res, periodMonths = 180) {
         if (!res) return 0;
 
-        const xirr = Math.max(-50, res.annualizedXIRR || 0);
+        const xirr = res.annualizedXIRR || 0;
         const sortino = Math.max(0, res.sortino || 0);
-        const omega = Math.max(0, res.omega || 0);
-        const sharpe = Math.max(0, res.sharpe || 0);
         const mdd = Math.abs(res.twrMdd || 0);
-        const ulcer = Math.max(0, res.ulcerIndex || 0);
-
-        // 1. 수익성 점수 (최대 30점)
-        let returnScore = 0;
-        if (xirr > 0) {
-          returnScore = Math.min(30.0, Math.log1p(xirr / 5.0) * 14.0);
-        }
-
-        // 2. 위험조정 효율 및 칼마 비율 점수 (최대 40점)
         const calmar = mdd > 0 ? (xirr / mdd) : 0;
-        const calmarScore = Math.min(10.0, Math.max(0, calmar * 5.0)); // 칼마 비율 점수 (최대 10점)
-        const sortinoScore = Math.min(20.0, sortino * 10.0); // 소티노 (최대 20점)
-        const omegaScore = Math.min(6.0, Math.max(0, (omega - 1.0) * 10.0));
-        const sharpeBonus = Math.min(4.0, sharpe * 2.5);
-        const qualityScore = returnScore + calmarScore + sortinoScore + omegaScore + sharpeBonus;
+        const ulcer = Math.max(0, res.ulcerIndex || 0);
+        const cvar95 = Math.max(0, res.cvar95 || 0);
 
-        // 3. 조정된 MDD 및 심리적 고통 패널티 (MDD 30% -> ~9.5점 감점 반영)
-        const mddPenalty = Math.min(25.0, Math.pow(mdd / 8.0, 1.6));
-        const ulcerPenalty = Math.min(10.0, ulcer * 0.85);
-        const totalPenalty = mddPenalty + ulcerPenalty;
+        // 1. 실질 복리 수익성 점수 (Sigmoid, max 30)
+        const sReturn = 30.0 / (1.0 + Math.exp(-0.15 * (xirr - 10.0)));
 
-        // 4. 기간 보정 계수 (장기 하락장을 견뎌낸 포트폴리오 우대)
-        const periodFactor = Math.pow(Math.max(1, periodMonths) / 180.0, 0.15);
+        // 2. 순수 하락위험 대비 성과 점수 (max 40: Sortino 20 + Calmar 20)
+        const sSortino = Math.min(20.0, 20.0 / (1.0 + Math.exp(-1.2 * (sortino - 1.5))));
+        const sCalmar = Math.min(20.0, 20.0 / (1.0 + Math.exp(-2.0 * (calmar - 0.6))));
+        const sRiskAdj = sSortino + sCalmar;
 
-        let rawScore = qualityScore - totalPenalty;
-        let finalScore = rawScore * periodFactor;
+        // 3. 마음고통 및 최악 꼬리손실 패널티 (max 30: Ulcer 15 + CVaR 15)
+        const pUlcer = 15.0 * (1.0 - Math.exp(-0.15 * ulcer));
+        const pCvar = cvar95 > 1.5 ? 15.0 * (1.0 - Math.exp(-0.08 * (cvar95 - 1.5))) : 0;
+        const pTotal = pUlcer + pCvar;
 
-        return Math.round(Math.max(0, Math.min(100, finalScore)) * 10) / 10;
+        // 4. 검증 기간 신뢰도 보정 계수 (15년 = 1.0)
+        const fTime = Math.pow(Math.max(12, periodMonths) / 180.0, 0.12);
+
+        const rawScore = (sReturn + sRiskAdj - pTotal);
+        const finalScore = Math.max(0, Math.min(100, rawScore * fTime));
+
+        return Math.round(finalScore * 10) / 10;
       }
     }
 
-    // ⭐ Supabase 연동 글로벌 리더보드 서비스
     class GlobalLeaderboardService {
       static async fetchLeaderboard() {
         try {
@@ -1435,7 +1434,7 @@
 
       static async publishMix(payload) {
         const record = {
-          id: payload.id, // 고유 UUID 적용으로 충돌 방지
+          id: payload.id,
           name: payload.name,
           author: payload.author,
           score: payload.score,
@@ -1475,11 +1474,10 @@
           if (i >= divPayQueue[k].payIndex) {
             const divNetUsd = divPayQueue[k].divNetUsd;
             const buyFx = fx * (1 + fxSpreadRate);
-            const buyPriceUsd = priceUsd * (1 + fxSpreadRate);
 
-            if (buyPriceUsd > 0) {
-              const newShares = divNetUsd / buyPriceUsd;
-              taxLotMgr.buy(newShares, buyPriceUsd, buyFx);
+            if (priceUsd > 0) {
+              const newShares = divNetUsd / priceUsd;
+              taxLotMgr.buy(newShares, priceUsd, buyFx);
             }
             divPayQueue.splice(k, 1);
           }
@@ -1511,7 +1509,6 @@
         return 0;
       }
 
-      // 현금 부족 시 주식 매도 정산 로직 적용
       static processTaxHarvesting(taxLotMgr, currentValKrw, priceUsd, fx, fxSpreadRate, yearRealizedGainKrw, TAX_LIMIT, cashKrw) {
         let updatedGain = yearRealizedGainKrw;
         let updatedCash = cashKrw;
@@ -1531,10 +1528,8 @@
             const taxPaid = taxableGain * GLOBAL_QUANT_CONFIG.TAX_RATE;
             
             if (updatedCash < taxPaid) {
-              const deficitKrw = taxPaid - updatedCash;
               updatedCash = 0.0;
-              const netSellFxPrice = priceUsd * fx * (1 - fxSpreadRate);
-              if (netSellFxPrice > 0 && taxLotMgr.getTotalShares() > 0) {
+              if (taxLotMgr.getTotalShares() > 0) {
                 taxLotMgr.harvestTax(0, priceUsd, fx, fxSpreadRate);
               }
             } else {
@@ -1650,10 +1645,9 @@
               if (depositKrw > 0) {
                 if (priceUsd > 0) {
                   const buyFx = fx * (1 + fxSpreadRate);
-                  const buyPriceUsd = priceUsd * (1 + fxSpreadRate);
-                  const boughtShares = (depositKrw + cashKrw) / (buyPriceUsd * buyFx);
+                  const boughtShares = (depositKrw + cashKrw) / (priceUsd * buyFx);
 
-                  taxLotMgr.buy(boughtShares, buyPriceUsd, buyFx);
+                  taxLotMgr.buy(boughtShares, priceUsd, buyFx);
                   cashKrw = 0.0;
                 } else {
                   cashKrw += depositKrw;
@@ -1821,19 +1815,20 @@
                   const currentShareValKrw = mixShares[t] * (processedPrices[t] ? processedPrices[t][i] : 1.0) * fx;
                   
                   const isBuying = targetKrw >= currentShareValKrw;
-                  const effectiveFxSpread = isBuying ? (1 + fxSpreadRate) : (1 - fxSpreadRate);
-                  const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0) * effectiveFxSpread;
+                  const effectiveFxRate = isBuying ? fx * (1 + fxSpreadRate) : fx * (1 - fxSpreadRate);
+                  const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0);
                   
-                  if (pUsd > 0 && fx > 0) {
-                    mixShares[t] = targetKrw / (pUsd * fx);
+                  if (pUsd > 0 && effectiveFxRate > 0) {
+                    mixShares[t] = targetKrw / (pUsd * effectiveFxRate);
                   }
                 });
               } else if (depositKrw > 0) {
                 mixTickers.forEach(t => {
                   const allocKrw = depositKrw * normWeights[t];
-                  const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0) * (1 + fxSpreadRate);
-                  if (pUsd > 0) {
-                    mixShares[t] += allocKrw / (pUsd * fx);
+                  const buyFx = fx * (1 + fxSpreadRate);
+                  const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0);
+                  if (pUsd > 0 && buyFx > 0) {
+                    mixShares[t] += allocKrw / (pUsd * buyFx);
                   }
                 });
               }
@@ -1845,11 +1840,11 @@
                 const currentShareValKrw = mixShares[t] * (processedPrices[t] ? processedPrices[t][i] : 1.0) * fx;
                 
                 const isBuying = targetKrw >= currentShareValKrw;
-                const effectiveFxSpread = isBuying ? (1 + fxSpreadRate) : (1 - fxSpreadRate);
-                const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0) * effectiveFxSpread;
+                const effectiveFxRate = isBuying ? fx * (1 + fxSpreadRate) : fx * (1 - fxSpreadRate);
+                const pUsd = (processedPrices[t] ? processedPrices[t][i] : 1.0);
 
-                if (pUsd > 0 && fx > 0) {
-                  mixShares[t] = targetKrw / (pUsd * fx);
+                if (pUsd > 0 && effectiveFxRate > 0) {
+                  mixShares[t] = targetKrw / (pUsd * effectiveFxRate);
                 }
               });
             }
@@ -1995,7 +1990,7 @@
       static initReactiveMixes() {
         let initialMixes = [];
         try {
-          const stored = localStorage.getItem('quant_custom_mixes_v14_2');
+          const stored = localStorage.getItem('quant_custom_mixes_v14_3');
           if (stored) {
             initialMixes = JSON.parse(stored);
           } else {
@@ -2010,7 +2005,7 @@
 
         this.customMixesStore = new ReactiveStore(initialMixes, (updatedState) => {
           try {
-            localStorage.setItem('quant_custom_mixes_v14_2', JSON.stringify(updatedState));
+            localStorage.setItem('quant_custom_mixes_v14_3', JSON.stringify(updatedState));
           } catch(e) {
             console.warn("LocalStorage 쓰기 차단됨", e);
           }
@@ -2137,7 +2132,6 @@
         if (idx > -1) this.customMixesStore.state.splice(idx, 1);
       }
 
-      // ⭐ 불변성(Immutability) 수정으로 ReactiveStore 자동 저장 적용
       static toggleMixEnabled(id) {
         const idx = this.customMixes.findIndex(m => m.id === id);
         if (idx > -1) {
@@ -2307,7 +2301,6 @@
         this.renderLeaderboard();
       }
 
-      // ⭐ 고유 UUID 생성으로 Supabase 리더보드 ID 충돌 해결
       static async publishMixToLeaderboard(mixId) {
         const mix = this.customMixes.find(m => m.id === mixId);
         if (!mix || !this.currentResults) {
@@ -2336,7 +2329,7 @@
           : 'pub_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
 
         const payload = {
-          id: publishId, // 고유 UUID 부여
+          id: publishId,
           name: mix.name,
           author: author,
           score: quantScore,
@@ -2678,7 +2671,7 @@
           }
         }
 
-        const ffOfficialMap = await KennethFrenchFetcher.fetchOfficialFactors(startYear, endYear, rawDatasets);
+        const ffOfficialMap = await KennethFrenchFetcher.fetchOfficialFactors(startYear, endYear);
 
         const badge = document.getElementById('ffDataModeBadge');
         if (badge) {
