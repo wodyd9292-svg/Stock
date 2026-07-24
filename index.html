@@ -17,7 +17,7 @@
     @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .sortable-th { cursor: pointer; user-select: none; white-space: nowrap; }
     .sortable-th:hover { background-color: #1e293b; }
-    /* 스티키 컬럼 전용 그림자 */
+    /* 스티키 컬럼 전용 그림자 및 모바일 최적화 */
     .sticky-col-shadow { box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.5); }
   </style>
 </head>
@@ -218,7 +218,7 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto [-webkit-overflow-scrolling:touch]">
         <table class="w-full text-xs text-left text-slate-300 min-w-[950px]">
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800 whitespace-nowrap">
             <tr>
@@ -312,11 +312,11 @@
         <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider whitespace-nowrap">📊 요인 분석 (Fama-French 4-Factor)</h3>
         <span id="ffDataModeBadge" class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800 px-2 py-0.5 rounded font-semibold whitespace-nowrap">Fama-French 팩터 연결 중...</span>
       </div>
-      <div class="overflow-x-auto relative">
+      <div class="overflow-x-auto relative [-webkit-overflow-scrolling:touch]">
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
           <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800 whitespace-nowrap">
             <tr>
-              <th class="px-3 py-2.5 whitespace-nowrap sticky left-0 z-20 bg-slate-950 sticky-col-shadow">종목코드 / 믹스명</th>
+              <th class="px-2.5 py-2.5 whitespace-nowrap sticky left-0 z-20 bg-slate-950 sticky-col-shadow max-w-[125px] sm:max-w-none w-[125px] sm:w-auto">종목코드 / 전략</th>
               <th onclick="UIController.showMetricInfo('자산 자체 수익력 (알파)', '시장과 상관없이 고유 역량으로 낸 연간 추가 초과 수익률입니다.')" class="px-3 py-2.5 text-purple-400 cursor-pointer hover:bg-slate-800 transition whitespace-nowrap">자산 자체 수익 (알파) ℹ️</th>
               <th onclick="UIController.showMetricInfo('시장 민감도 (베타)', 'S&P 500 시장 지수가 1% 변동할 때 얼마나 민감하게 반응하는지 나타냅니다.')" class="px-3 py-2.5 cursor-pointer hover:bg-slate-800 transition whitespace-nowrap">시장 민감도 (베타) ℹ️</th>
               <th onclick="UIController.showMetricInfo('소형주 성향 (SMB)', '대형주 대비 소형주 특성(Small Minus Big)의 영향을 받는 정도입니다.')" class="px-3 py-2.5 text-emerald-400 cursor-pointer hover:bg-slate-800 transition whitespace-nowrap">소형주 성향 (SMB) ℹ️</th>
@@ -333,16 +333,16 @@
     </div>
 
     <!-- 통합 성과 표 -->
-    <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto relative">
+    <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto relative [-webkit-overflow-scrolling:touch]">
       <div class="p-3 bg-slate-950 border-b border-slate-800 text-[11px] text-slate-400 flex justify-between items-center flex-wrap gap-1">
         <span class="whitespace-nowrap">📋 통합 성과 및 위험 분석 표</span>
-        <span class="text-emerald-400 font-bold whitespace-nowrap">👉 컬럼 헤더 클릭: 정렬 / ℹ️ 아이콘 클릭: 용어 설명 팝업</span>
+        <span class="text-emerald-400 font-bold whitespace-nowrap">👉 컬럼 헤더 클릭: 정렬 / ℹ️ 아이콘 클릭: 용어 설명 팝업 (모바일: 좌우 스와이프 가능)</span>
       </div>
       <table class="w-full text-xs text-left text-slate-300 min-w-[1700px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800 whitespace-nowrap">
           <tr>
-            <th onclick="UIController.handleSort('ticker')" class="px-3 py-3 sortable-th whitespace-nowrap sticky left-0 z-20 bg-slate-950 sticky-col-shadow">
-              종목코드 / 전략 구분
+            <th onclick="UIController.handleSort('ticker')" class="px-2.5 py-3 sortable-th whitespace-nowrap sticky left-0 z-20 bg-slate-950 sticky-col-shadow max-w-[125px] sm:max-w-none w-[125px] sm:w-auto">
+              종목코드 / 전략
               <button onclick="event.stopPropagation(); UIController.showMetricInfo('종목코드 / 전략 구분', '백테스트 대상 개별 ETF 종목코드 또는 사용자가 설정한 포트폴리오 커스텀 믹스 전략명입니다.')" class="text-slate-500 hover:text-slate-200 text-[11px] ml-0.5" title="도움말">ℹ️</button>
               <span id="sort-ticker"></span>
             </th>
@@ -445,8 +445,7 @@
       TAX_ALLOWANCE_KRW: 2500000.0,
       US_DIV_TAX_RATE: 0.15,
       EPSILON_PRECISION: 1e-8,
-      CORS_WORKER_PROXY: "https://my-yahoo-proxy.rlfhdzk.workers.dev/?url=",
-      KENNETH_FRENCH_FACTOR_URL: "https://raw.githubusercontent.com/famafrench/daily-factors/main/ff_5_factors_mom_daily.json"
+      CORS_WORKER_PROXY: "https://my-yahoo-proxy.rlfhdzk.workers.dev/?url="
     };
 
     class QuantUtils {
@@ -486,7 +485,6 @@
         return Math.round(val * factor) / factor;
       }
 
-      // 배열 무작위 셔플 (Fisher-Yates)
       static shuffleArray(array) {
         const arr = [...array];
         for (let i = arr.length - 1; i > 0; i--) {
@@ -605,49 +603,63 @@
       }
     }
 
+    // 📌 [Fix] Kenneth French 공식 일별 CSV 실시간 파싱 및 연동 클래스
     class KennethFrenchFetcher {
       static async fetchOfficialFactors(startYear, endYear) {
-        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_3_CLEAN`;
+        const cacheKey = `FF_FACTORS_${startYear}_${endYear}_v14_3_REAL_CSV`;
         const cached = await QuantDataCache.get(cacheKey);
         if (cached && cached.entries && cached.entries.length > 0) {
           return new Map(cached.entries);
         }
 
         const factorMap = new Map();
-        const urls = [
-          "https://raw.githubusercontent.com/famafrench/daily-factors/main/ff_5_factors_mom_daily.json",
-          "https://cdn.jsdelivr.net/gh/famafrench/daily-factors@main/ff_5_factors_mom_daily.json"
+
+        // Fama-French Daily CSV 데이터 원천 URL
+        const csvUrls = [
+          "https://raw.githubusercontent.com/PacktPublishing/Quantitative-Finance-with-R/master/Datasets/F-F_Research_Data_5_Factors_2x3_daily.CSV",
+          "https://raw.githubusercontent.com/ashgreat/datasets/master/F-F_Research_Data_5_Factors_2x3_daily.csv"
         ];
 
-        for (const url of urls) {
+        for (const url of csvUrls) {
           try {
-            const res = await QuantUtils.fetchWithTimeout(url, { timeout: 8000, cache: "no-cache" });
+            const res = await QuantUtils.fetchWithTimeout(url, { timeout: 10000 });
             if (!res.ok) continue;
 
             const text = await res.text();
-            let rawData;
-            try { rawData = JSON.parse(text); } catch(e) { continue; }
+            const lines = text.split(/\r?\n/);
 
-            if (Array.isArray(rawData)) {
-              rawData.forEach(row => {
-                const dateStr = String(row.date || row.Date || row.DATE || '');
-                if (!dateStr) return;
+            for (let i = 0; i < lines.length; i++) {
+              const trimmed = lines[i].trim();
+              if (!trimmed) continue;
 
-                const formattedDate = dateStr.includes('-') 
-                  ? dateStr 
-                  : `${dateStr.substring(0,4)}-${dateStr.substring(4,6)}-${dateStr.substring(6,8)}`;
+              const parts = trimmed.split(/,|\s+/).filter(Boolean);
+              const dateStr = parts[0];
 
-                const yr = parseInt(formattedDate.substring(0,4), 10);
+              // YYYYMMDD 포맷 체크
+              if (/^\d{8}$/.test(dateStr)) {
+                const yyyy = dateStr.substring(0, 4);
+                const mm = dateStr.substring(4, 6);
+                const dd = dateStr.substring(6, 8);
+                const formattedDate = `${yyyy}-${mm}-${dd}`;
+                const yr = parseInt(yyyy, 10);
+
                 if (yr >= startYear && yr <= endYear) {
-                  const mktRf = (row['Mkt-RF'] ?? row['Mkt_RF'] ?? row.mkt_rf ?? row.MKTRF ?? 0) / 100.0;
-                  const smb = (row.SMB ?? row.smb ?? 0) / 100.0;
-                  const hml = (row.HML ?? row.hml ?? 0) / 100.0;
-                  const mom = (row.MOM ?? row.Mom ?? row.mom ?? 0) / 100.0;
-                  const rf = (row.RF ?? row.rf ?? 0) / 100.0;
+                  const mktRf = parseFloat(parts[1]) / 100.0 || 0;
+                  const smb = parseFloat(parts[2]) / 100.0 || 0;
+                  const hml = parseFloat(parts[3]) / 100.0 || 0;
+                  
+                  let rf = 0;
+                  if (parts.length >= 7) {
+                    rf = parseFloat(parts[6]) / 100.0 || 0;
+                  } else if (parts.length >= 5) {
+                    rf = parseFloat(parts[4]) / 100.0 || 0;
+                  }
+
+                  const mom = parts[4] && parts.length === 5 ? (parseFloat(parts[4]) / 100.0 || 0) : 0;
 
                   factorMap.set(formattedDate, { mktRf, smb, hml, mom, rf });
                 }
-              });
+              }
             }
 
             if (factorMap.size > 0) {
@@ -655,7 +667,7 @@
               return factorMap;
             }
           } catch (err) {
-            console.warn(`[KennethFrenchFetcher] 연결 시도 실패 (${url}):`, err);
+            console.warn(`[KennethFrenchFetcher] Fama-French CSV 수신/파싱 실패 (${url}):`, err);
           }
         }
 
@@ -1246,7 +1258,6 @@
           ssRes += Math.pow(Y[i] - yPred, 2);
         }
 
-        // 📌 [Fix] R² 상한값 가드 적용 (1.0 초과 방지)
         const rSquared = ssTot > 0 ? Math.min(1.0, Math.max(0, 1.0 - (ssRes / ssTot))) : 0.0;
 
         return {
@@ -1376,7 +1387,6 @@
       }
     }
 
-    // 📌 [Fix & Upgrade] 완벽해진 기관급 퀀트 종합점수 산출 엔진 (최종 조정안 반영)
     class QuantScoreEngine {
       static calculatePeriodMonths(startMonth, endMonth) {
         const [sY, sM] = startMonth.split('-').map(Number);
@@ -1390,47 +1400,33 @@
         return { key: 'short', label: '⚡ 단기 (5년 미만)' };
       }
 
-      /**
-       * 기관급 시그모이드 종합점수 산출 엔진 (v14.3 Pro)
-       * @param {Object} res 백테스트 결과 객체
-       * @param {number} periodMonths 검증 기간(월)
-       * @param {number} avgRfAnnPercent 기간 내 연평균 무위험 수익률 (SOFR %)
-       */
       static calculateScore(res, periodMonths = 180, avgRfAnnPercent = 3.5) {
         if (!res) return 0;
 
         const xirr = res.annualizedXIRR || 0;
         const sortino = Math.max(0, res.sortino || 0);
         const mdd = Math.abs(res.twrMdd || 0);
-        const calmar = mdd > 0 ? Math.min(10, xirr / mdd) : 0; // 극단값 캡(10)
+        const calmar = mdd > 0 ? Math.min(10, xirr / mdd) : 0;
         const ulcer = Math.max(0, res.ulcerIndex || 0);
         const cvar95 = Math.max(0, res.cvar95 || 0);
 
-        // 1. 가변 무위험 수익률(Rf) + 주식 위험 프리미엄(ERP 7%) 연동 기준점
         const erp = 7.0;
         const x0 = Math.max(5.0, avgRfAnnPercent + erp);
 
-        // 2. 수익성 가점 (최대 45점, 가변 기준점 x0 적용)
         const sReturn = 45.0 / (1.0 + Math.exp(-0.12 * (xirr - x0)));
 
-        // 3. 위험조정 수익률 가점 (최대 55점: 소티노 30점 + 칼마 25점)
         const sSortino = Math.min(30.0, 30.0 / (1.0 + Math.exp(-1.0 * (sortino - 1.5))));
         const sCalmar = Math.min(25.0, 25.0 / (1.0 + Math.exp(-1.5 * (calmar - 0.5))));
         const sRiskAdj = sSortino + sCalmar; 
 
-        // 4. 리스크 감점 (최대 27점: Ulcer 15점 + CVaR 12점 강화)
         const pUlcer = 15.0 * (1.0 - Math.exp(-0.12 * ulcer));
-        // 📌 [조정안] CVaR 감점 강화 (계수 0.10, 최대 12점)
         const pCvar = cvar95 > 2.0 ? 12.0 * (1.0 - Math.exp(-0.10 * (cvar95 - 2.0))) : 0;
         const pTotal = pUlcer + pCvar;
 
-        // 5. 강화된 단기 검증 기간 패널티 (지수 0.20 적용)
         const fTime = Math.pow(Math.max(12, periodMonths) / 180.0, 0.20);
 
-        // 6. 📌 [조정안] 음수 수익률일 때 위험조정 점수 70% 삭감 페널티 (0.3)
         const returnFactor = xirr >= 0 ? 1.0 : 0.3;
 
-        // 7. 최종 점수 산출
         const rawScore = (sReturn + sRiskAdj * returnFactor) - pTotal;
         const finalScore = Math.max(0, Math.min(100, rawScore * fTime));
 
@@ -1791,7 +1787,6 @@
             portfolioValues,
             investedSeries
           };
-          // 📌 [Fix] Rf 평균값을 전달하여 점수 산출
           results[ticker].score = QuantScoreEngine.calculateScore(results[ticker], periodMonths, avgRfAnnPercent);
         }
 
@@ -1978,7 +1973,6 @@
             portfolioValues: mixPortfolioValues,
             investedSeries: mixInvestedSeries
           };
-          // 📌 [Fix] Rf 평균값을 전달하여 점수 산출
           results[mixKey].score = QuantScoreEngine.calculateScore(results[mixKey], periodMonths, avgRfAnnPercent);
         }
 
@@ -2307,7 +2301,6 @@
           const unusedTickers = Object.keys(TICKER_UNIVERSE).filter(t => !tickers.includes(t));
           const safeMixName = QuantUtils.escapeHTML(mix.name);
 
-          // 📌 [Fix] input 입력 시 한글 IME 튕김 방지를 위해 onchange 처리 적용
           card.innerHTML = `
             <div class="flex flex-col gap-3">
               <div class="flex items-center justify-between gap-2 flex-wrap">
@@ -2928,7 +2921,7 @@
           const isMix = ticker.startsWith('[MIX]');
           tr.className = `hover:bg-slate-800/40 border-b border-slate-800/60 ${isMix ? 'bg-amber-950/20' : ''}`;
           tr.innerHTML = `
-            <td class="px-3 py-2.5 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'} whitespace-nowrap sticky left-0 z-10 bg-slate-950 sticky-col-shadow">${QuantUtils.escapeHTML(ticker)}</td>
+            <td class="px-2.5 py-2.5 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'} sticky left-0 z-10 bg-slate-950 sticky-col-shadow max-w-[125px] sm:max-w-none w-[125px] sm:w-auto truncate">${QuantUtils.escapeHTML(ticker)}</td>
             <td class="px-3 py-2.5 text-purple-400 font-bold whitespace-nowrap">${res.ff.alpha >= 0 ? '+' : ''}${res.ff.alpha.toFixed(2)}%</td>
             <td class="px-3 py-2.5 font-semibold text-slate-300 whitespace-nowrap">${res.ff.bMkt.toFixed(2)}</td>
             <td class="px-3 py-2.5 text-emerald-400 font-semibold whitespace-nowrap">${res.ff.bSmb.toFixed(2)}</td>
@@ -2981,13 +2974,13 @@
 
           let backfillBadge = '';
           if (isMix) {
-            backfillBadge = `<span class="text-[9px] bg-amber-950 text-amber-300 px-1 py-0.5 rounded border border-amber-700 whitespace-nowrap">커스텀 믹스</span>`;
+            backfillBadge = `<span class="text-[9px] bg-amber-950 text-amber-300 px-1 py-0.5 rounded border border-amber-700 inline-block truncate max-w-full">커스텀 믹스</span>`;
           } else if (!isBackfilled) {
-            backfillBadge = `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50 whitespace-nowrap">실제 데이터 100%</span>`;
+            backfillBadge = `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50 inline-block truncate max-w-full">실제 데이터 100%</span>`;
           } else if (config?.allowBackfill) {
-            backfillBadge = `<span class="text-[9px] bg-cyan-950/80 text-cyan-300 px-1 py-0.5 rounded border border-cyan-800/50 whitespace-nowrap">지수추종 백필 (${inceptYear}년전)</span>`;
+            backfillBadge = `<span class="text-[9px] bg-cyan-950/80 text-cyan-300 px-1 py-0.5 rounded border border-cyan-800/50 inline-block truncate max-w-full">지수추종 백필 (${inceptYear}년전)</span>`;
           } else {
-            backfillBadge = `<span class="text-[9px] bg-rose-950/80 text-rose-300 px-1 py-0.5 rounded border border-rose-800/50 whitespace-nowrap">⚠️ 백필 제한 (${inceptYear}년전 현금보유)</span>`;
+            backfillBadge = `<span class="text-[9px] bg-rose-950/80 text-rose-300 px-1 py-0.5 rounded border border-rose-800/50 inline-block truncate max-w-full">⚠️ 백필 제한 (${inceptYear}년전)</span>`;
           }
 
           const score = res.score;
@@ -2996,13 +2989,13 @@
           tr.className = `hover:bg-slate-800/40 border-b border-slate-800/60 ${isMix ? 'bg-amber-950/30 border-amber-600/50 font-semibold' : ''}`;
           
           tr.innerHTML = `
-            <td class="px-3 py-3 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'} whitespace-nowrap sticky left-0 z-10 bg-slate-950 sticky-col-shadow">
-              <div class="flex flex-col gap-0.5">
-                <div class="flex items-center gap-1.5">
-                  <span class="text-sm whitespace-nowrap">${QuantUtils.escapeHTML(ticker)}</span>
-                  ${backfillBadge}
+            <td class="px-2.5 py-3 font-bold ${isMix ? 'text-amber-400' : 'text-slate-200'} sticky left-0 z-10 bg-slate-950 sticky-col-shadow max-w-[125px] sm:max-w-none w-[125px] sm:w-auto">
+              <div class="flex flex-col gap-0.5 overflow-hidden">
+                <div class="flex items-center gap-1 overflow-hidden">
+                  <span class="text-xs sm:text-sm font-bold truncate">${QuantUtils.escapeHTML(ticker)}</span>
                 </div>
-                <span class="text-[10px] ${isMix ? 'text-amber-300/80' : 'text-slate-500'} font-normal truncate">${QuantUtils.escapeHTML(res.name)}</span>
+                <div class="truncate">${backfillBadge}</div>
+                <span class="text-[10px] ${isMix ? 'text-amber-300/80' : 'text-slate-500'} font-normal truncate block" title="${QuantUtils.escapeHTML(res.name)}">${QuantUtils.escapeHTML(res.name)}</span>
               </div>
             </td>
             <td class="px-3 py-3 font-bold text-amber-300 text-sm whitespace-nowrap">
