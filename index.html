@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>기관급 퀀트 DCA 백테스트 엔진 v14.0 Enterprise Architecture</title>
+  <title>ETF 적립식 백테스트 계산기 v14.0</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -28,15 +28,15 @@
     <header class="border-b border-slate-800 pb-4 flex justify-between items-center flex-wrap gap-2">
       <div>
         <h1 class="text-xl sm:text-2xl font-bold text-emerald-400 flex items-center gap-2">
-          🏛️ Institutional Quant DCA Engine <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.0 Enterprise</span>
+          📈 ETF 적립식 백테스트 계산기 <span class="text-xs font-normal text-emerald-300 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800">v14.0</span>
         </h1>
         <p class="text-slate-400 text-xs mt-1">
-          Kenneth French Official Factors · Cloudflare D1 Zero-Trust · 100-pt Quant Score · Reactive Proxy Store
+          미국 주요 ETF 적립식·거치식 성과 분석 및 포트폴리오 비교 시뮬레이터
         </p>
       </div>
       <div id="engineStatus" class="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-400 border border-slate-700 flex items-center gap-2">
         <span id="statusDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-        <span id="statusText">Engine Standby</span>
+        <span id="statusText">대기 중</span>
       </div>
     </header>
 
@@ -93,7 +93,7 @@
           </select>
         </div>
         <div>
-          <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">과세/절세 엔진</label>
+          <label for="taxMode" class="block text-xs font-semibold text-slate-400 mb-1">과세/절세 적용</label>
           <select id="taxMode" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1.5 text-xs text-emerald-400">
             <option value="fifo">실제 세후 (22% 양도세 + 250만 공제)</option>
             <option value="disabled">세전 (Gross Aggregate)</option>
@@ -164,7 +164,7 @@
 
       <div class="flex justify-end pt-1">
         <button onclick="UIController.runBacktest()" id="runBtn" aria-label="시뮬레이션 실행" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-bold py-2.5 px-8 rounded-lg text-xs transition shadow-md flex items-center justify-center gap-2">
-          🚀 v14.0 시뮬레이션 실행
+          🚀 시뮬레이션 실행
         </button>
       </div>
     </div>
@@ -174,9 +174,9 @@
       <div class="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h3 class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-            ⚖️ 나만의 커스텀 믹스 전략 관리 & 백업
+            ⚖️ 포트폴리오 조합(믹스) 전략 관리
           </h3>
-          <p class="text-[11px] text-slate-400 mt-0.5">원하는 종목 비율을 조합하고 파일(JSON)로 저장하거나 글로벌 리더보드에 공유해보세요.</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">원하는 종목 비율을 조합하고 파일(JSON)로 저장하거나 리더보드에 공유해보세요.</p>
         </div>
         <div class="flex gap-1.5 flex-wrap">
           <button onclick="UIController.exportStrategies()" aria-label="전략 파일 저장" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-2.5 py-1.5 rounded border border-slate-700 transition">
@@ -200,15 +200,15 @@
       <div class="flex justify-between items-center flex-wrap gap-2">
         <div>
           <h3 class="text-xs font-bold text-amber-400 flex items-center gap-1.5">
-            🌐 전 세계 퀀트 DCA 명예의 전당 (기간별 글로벌 리더보드)
+            🏆 포트폴리오 전략 리더보드
           </h3>
           <p class="text-[11px] text-slate-400 mt-0.5">
-            서버 측 Edge Worker 재연산을 거친 제로 트러스트 랭킹입니다. 100점 만점 정밀 알고리즘으로 산출됩니다.
+            사용자들이 등록한 기간별 포트폴리오 성과 랭킹입니다.
           </p>
         </div>
 
         <div class="flex gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800 text-xs flex-wrap">
-          <button onclick="UIController.filterLeaderboard('all')" id="filterTabAll" aria-label="전체 리그 필터" class="px-2.5 py-1 rounded font-bold bg-amber-500 text-slate-950">전체 리그</button>
+          <button onclick="UIController.filterLeaderboard('all')" id="filterTabAll" aria-label="전체 리그 필터" class="px-2.5 py-1 rounded font-bold bg-amber-500 text-slate-950">전체</button>
           <button onclick="UIController.filterLeaderboard('long')" id="filterTabLong" aria-label="장기 리그 필터" class="px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-400 hover:text-slate-200">🏆 장기 (15년~)</button>
           <button onclick="UIController.filterLeaderboard('mid')" id="filterTabMid" aria-label="중기 리그 필터" class="px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-400 hover:text-slate-200">🥇 중기 (5~15년)</button>
           <button onclick="UIController.filterLeaderboard('short')" id="filterTabShort" aria-label="단기 리그 필터" class="px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-400 hover:text-slate-200">⚡ 단기 (&lt;5년)</button>
@@ -221,8 +221,8 @@
             <tr>
               <th class="px-3 py-2.5">순위</th>
               <th class="px-3 py-2.5">전략명 (리밸런싱) / 작성자</th>
-              <th class="px-3 py-2.5 text-amber-400">Quant Score 🏆</th>
-              <th class="px-3 py-2.5">검증 기간 (리그)</th>
+              <th class="px-3 py-2.5 text-amber-400">종합 점수 🏆</th>
+              <th class="px-3 py-2.5">검증 기간</th>
               <th class="px-3 py-2.5 text-cyan-400">XIRR</th>
               <th class="px-3 py-2.5 text-amber-300">Sortino</th>
               <th class="px-3 py-2.5 text-rose-400">MDD</th>
@@ -232,7 +232,7 @@
             </tr>
           </thead>
           <tbody id="leaderboardTableBody" class="divide-y divide-slate-800/60">
-            <tr><td colspan="10" class="px-4 py-6 text-center text-slate-500">글로벌 리더보드 동기화 중...</td></tr>
+            <tr><td colspan="10" class="px-4 py-6 text-center text-slate-500">리더보드 동기화 중...</td></tr>
           </tbody>
         </table>
       </div>
@@ -240,12 +240,12 @@
 
     <!-- 개별 자산 선택 칩 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-      <div class="flex justify-between items-center">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <span class="text-xs font-semibold text-slate-300">
           개별 비교 분석 대상 자산 (선택: <span id="selectedCount" class="text-emerald-400 font-bold">0</span>/20)
         </span>
-        <button onclick="UIController.toggleModal()" aria-label="단일 자산 선택 및 변경 모달 열기" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
-          ⚙️ 단일 자산 선택 및 변경
+        <button onclick="UIController.toggleModal()" aria-label="단일 자산 선택 및 변경 모달 열기" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center justify-center gap-1 w-full sm:w-auto">
+          ⚙️ 자산 선택 및 변경
         </button>
       </div>
       <div id="activeChips" class="flex flex-wrap gap-1.5"></div>
@@ -266,7 +266,7 @@
     <div id="assetModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900">
-          <h3 class="font-bold text-sm text-emerald-400">20개 주요 미국 ETF 목록</h3>
+          <h3 class="font-bold text-sm text-emerald-400">주요 미국 ETF 목록 (20종)</h3>
           <button onclick="UIController.toggleModal()" aria-label="모달 닫기" class="text-slate-400 hover:text-slate-100 text-lg font-bold px-2">&times;</button>
         </div>
         <div class="p-4 overflow-y-auto space-y-4 text-xs">
@@ -285,29 +285,29 @@
       </div>
     </div>
 
-    <!-- 요약 카드 영역 -->
-    <div id="summaryCards" class="grid grid-cols-2 lg:grid-cols-4 gap-3"></div>
+    <!-- 요약 카드 영역 (모바일 1열 반응형 레이아웃 개선) -->
+    <div id="summaryCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
 
     <!-- 차트 영역 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
       <div class="flex justify-between items-center flex-wrap gap-2">
-        <div class="flex gap-2">
+        <div class="flex gap-2 flex-wrap">
           <button onclick="UIController.switchChartTab('portfolio')" id="btnTabPortfolio" aria-label="포트폴리오 자산 추이 차트 보기" class="px-3 py-1 rounded text-xs font-bold bg-emerald-500 text-slate-950">포트폴리오 자산 추이</button>
           <button onclick="UIController.switchChartTab('rolling')" id="btnTabRolling" aria-label="3년 단위 가성비 변화 차트 보기" class="px-3 py-1 rounded text-xs font-bold bg-slate-800 text-slate-400 hover:text-slate-200">3년 단위 가성비 변화</button>
-          <button onclick="UIController.switchChartTab('montecarlo')" id="btnTabMonteCarlo" aria-label="미래 시뮬레이션 차트 보기" class="px-3 py-1 rounded text-xs font-bold bg-slate-800 text-slate-400 hover:text-slate-200">미래 시뮬레이션 (시퀀스 리스크)</button>
+          <button onclick="UIController.switchChartTab('montecarlo')" id="btnTabMonteCarlo" aria-label="미래 시뮬레이션 차트 보기" class="px-3 py-1 rounded text-xs font-bold bg-slate-800 text-slate-400 hover:text-slate-200">미래 시뮬레이션</button>
         </div>
         <div class="text-xs text-slate-400 flex items-center" id="chartTabDescription">시계열 평가금 로그 차트</div>
       </div>
-      <div class="relative h-[420px]">
+      <div class="relative h-[360px] sm:h-[420px]">
         <canvas id="quantChart"></canvas>
       </div>
     </div>
 
     <!-- 요인 분석 영역 -->
     <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
-      <div class="flex justify-between items-center">
-        <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor Matrix)</h3>
-        <span id="ffDataModeBadge" class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800 px-2 py-0.5 rounded font-semibold">공식 Kenneth French 팩터 연결 중...</span>
+      <div class="flex justify-between items-center flex-wrap gap-1">
+        <h3 class="text-xs font-bold text-purple-400 uppercase tracking-wider">📊 요인 분석 (Fama-French 4-Factor)</h3>
+        <span id="ffDataModeBadge" class="text-[10px] bg-purple-950 text-purple-300 border border-purple-800 px-2 py-0.5 rounded font-semibold">Fama-French 팩터 연결 중...</span>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-xs text-left text-slate-300 min-w-[1000px]">
@@ -329,17 +329,17 @@
       </div>
     </div>
 
-    <!-- 통합 성과 표 (오름차순/내림차순 정렬 지원) -->
+    <!-- 통합 성과 표 -->
     <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-x-auto">
-      <div class="p-3 bg-slate-950 border-b border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
-        <span>📋 기관급 통합 성과 및 위험 분석 표</span>
-        <span class="text-emerald-400 font-bold">👉 각 컬럼 헤더를 클릭하면 오름차순/내림차순으로 정렬됩니다.</span>
+      <div class="p-3 bg-slate-950 border-b border-slate-800 text-[11px] text-slate-400 flex justify-between items-center flex-wrap gap-1">
+        <span>📋 통합 성과 및 위험 분석 표</span>
+        <span class="text-emerald-400 font-bold">👉 각 컬럼 헤더를 클릭하면 정렬됩니다.</span>
       </div>
       <table class="w-full text-xs text-left text-slate-300 min-w-[1700px]">
         <thead class="bg-slate-950 text-slate-400 uppercase border-b border-slate-800">
           <tr>
             <th onclick="UIController.handleSort('ticker')" class="px-3 py-3 sortable-th">종목코드 / 전략 구분 <span id="sort-ticker"></span></th>
-            <th onclick="UIController.handleSort('score')" class="px-3 py-3 text-amber-400 sortable-th">Quant Score 🏆 <span id="sort-score">▼</span></th>
+            <th onclick="UIController.handleSort('score')" class="px-3 py-3 text-amber-400 sortable-th">종합 점수 🏆 <span id="sort-score">▼</span></th>
             <th onclick="UIController.handleSort('investedKrw')" class="px-3 py-3 sortable-th">총 원금 <span id="sort-investedKrw"></span></th>
             <th onclick="UIController.handleSort('finalVal')" class="px-3 py-3 text-emerald-400 sortable-th" id="thFinalVal">최종 평가금 <span id="sort-finalVal"></span></th>
             <th onclick="UIController.handleSort('annualizedXIRR')" class="px-3 py-3 text-cyan-400 sortable-th">실질 연수익률 (XIRR) <span id="sort-annualizedXIRR"></span></th>
@@ -366,7 +366,7 @@
   <script>
     'use strict';
 
-    // 1. 상수 분리 설정 (Constant Configuration)
+    // 1. 상수 설정
     const GLOBAL_QUANT_CONFIG = {
       TAX_RATE: 0.22,
       TAX_ALLOWANCE_KRW: 2500000.0,
@@ -384,6 +384,7 @@
         if (absVal >= 1e8) {
           const uk = Math.floor(absVal / 1e8);
           const man = Math.round((absVal % 1e8) / 1e4);
+          if (man === 0) return `${sign}${uk}억 원`;
           return `${sign}${uk}억 ${man.toLocaleString()}만 원`;
         } else if (absVal >= 1e4) {
           return `${sign}${Math.round(absVal / 1e4).toLocaleString()}만 원`;
@@ -412,7 +413,6 @@
         return Math.round(val * factor) / factor;
       }
 
-      // [보완 1] AbortController 타임아웃 헬퍼 함수
       static async fetchWithTimeout(resource, options = {}) {
         const { timeout = 8000 } = options;
         const controller = new AbortController();
@@ -540,7 +540,6 @@
 
         for (const url of urls) {
           try {
-            // [보완 1 적용] 타임아웃 8초 적용
             const res = await QuantUtils.fetchWithTimeout(url, { timeout: 8000, cache: "no-cache" });
             if (!res.ok) continue;
 
@@ -598,7 +597,6 @@
         }
 
         if (rawDatasets) {
-          console.log("[KennethFrenchFetcher] 대표 시세 기반 고정밀 Fama-French 팩터 맵 구성 중...");
           const spyPrices = rawDatasets['SPY']?.priceMap;
           const iwmPrices = rawDatasets['IWM']?.priceMap;
           const schdPrices = rawDatasets['SCHD']?.priceMap;
@@ -793,7 +791,6 @@
         return this.workerBlobUrl;
       }
 
-      // [보완 4 적용] Worker 리소스 정리 해제 헬퍼
       static cleanup() {
         if (this.workerBlobUrl) {
           URL.revokeObjectURL(this.workerBlobUrl);
@@ -943,7 +940,6 @@
 
         for (const proxyUrl of proxies) {
           try {
-            // [보완 1 적용] 타임아웃 10초 강제 적용
             const res = await QuantUtils.fetchWithTimeout(proxyUrl, { timeout: 10000 });
             if (!res.ok) continue;
             const json = await res.json();
@@ -993,7 +989,6 @@
     class BrentXIRRSolver {
       static computeXIRR(cashFlows, finalVal, dates) {
         const m = cashFlows.length;
-        // [보완 3 적용] 극단적 파산 및 -100% 수익률 안전 방어
         if (m === 0 || isNaN(finalVal) || finalVal <= 0.01) return -100.0;
 
         const t0 = QuantUtils.parseDateUTC(dates[0]);
@@ -1155,7 +1150,6 @@
     }
 
     class FamaFrenchEngine {
-      // DOM 조작 로직을 제거하여 회귀분석 연산 순수성 및 렌더링 성능 확보
       static solve(portDailyReturns, processedData, dates, ffOfficialMap) {
         const N = portDailyReturns.length;
         if (N < 30) return { alpha: 0, bMkt: 1, bSmb: 0, bHml: 0, bMom: 0, rSquared: 0 };
@@ -1530,9 +1524,8 @@
 
         const tasksForMonteCarlo = [];
 
-        // [보완 2 적용] 개별 종목 연산 루프에 Event Loop Yielding 적용
         for (let tIdx = 0; tIdx < tickers.length; tIdx++) {
-          await new Promise(resolve => setTimeout(resolve, 0)); // UI Repaint 허용
+          await new Promise(resolve => setTimeout(resolve, 0));
 
           const ticker = tickers[tIdx];
           if (onProgress) onProgress(70 + (tIdx / (tickers.length + customMixes.length)) * 10);
@@ -1686,7 +1679,6 @@
           results[ticker].score = QuantScoreEngine.calculateScore(results[ticker]);
         }
 
-        // [보완 2 적용] 커스텀 믹스 연산 루프에 Event Loop Yielding 적용
         for (let mIdx = 0; mIdx < customMixes.length; mIdx++) {
           await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -1751,7 +1743,6 @@
               if (mix.rebalanceFreq === 'monthly' || (mix.rebalanceFreq === 'yearly' && isYearEnd[i])) {
                 let currentVal = depositKrw + todayTotalValBeforeDeposit;
 
-                // [보완 적용] 리밸런싱 시 매수/매도 환전 수수료 우대율 분리 적용
                 mixTickers.forEach(t => {
                   const targetKrw = currentVal * normWeights[t];
                   const currentShareValKrw = mixShares[t] * (processedPrices[t] ? processedPrices[t][i] : 1.0) * fx;
@@ -1879,7 +1870,6 @@
         this.state = this._makeReactive(initialData);
       }
 
-      // [보완 5 적용] LocalStorage 저장 시 예외 처리 안전장치 강화
       _makeReactive(obj) {
         const self = this;
         return new Proxy(obj, {
@@ -2145,7 +2135,7 @@
                     <option value="monthly" ${mix.rebalanceFreq === 'monthly' ? 'selected' : ''}>매월 정기</option>
                     <option value="yearly" ${mix.rebalanceFreq === 'yearly' ? 'selected' : ''}>매년 정기</option>
                   </select>
-                  <button onclick="UIController.publishMixToLeaderboard('${mix.id}')" aria-label="글로벌 리더보드 공유" class="text-emerald-400 hover:text-emerald-300 text-xs font-bold px-2 py-1 bg-slate-900 rounded border border-slate-800 hover:border-emerald-700 transition">
+                  <button onclick="UIController.publishMixToLeaderboard('${mix.id}')" aria-label="리더보드 공유" class="text-emerald-400 hover:text-emerald-300 text-xs font-bold px-2 py-1 bg-slate-900 rounded border border-slate-800 hover:border-emerald-700 transition">
                     🏆 리더보드 공유
                   </button>
                   <button onclick="UIController.deleteMixStrategy('${mix.id}')" aria-label="믹스 전략 삭제" class="text-rose-400 hover:text-rose-300 text-xs font-bold px-2 py-1 bg-slate-900 rounded border border-slate-800 hover:border-rose-950 transition">&times; 삭제</button>
@@ -2224,7 +2214,7 @@
         const months = QuantScoreEngine.calculatePeriodMonths(startMonth, endMonth);
         const periodCat = QuantScoreEngine.getPeriodCategory(months);
 
-        const rawAuthor = prompt("리더보드에 보여줄 닉네임을 입력하세요:", "익명 퀀트") || "익명 퀀트";
+        const rawAuthor = prompt("리더보드에 보여줄 닉네임을 입력하세요:", "익명") || "익명";
         const author = QuantUtils.escapeHTML(rawAuthor);
         const quantScore = QuantScoreEngine.calculateScore(res);
 
@@ -2247,11 +2237,11 @@
           createdAt: new Date().toISOString().split('T')[0]
         };
 
-        this.setEngineStatus('loading', '글로벌 리더보드 업로드 중...');
+        this.setEngineStatus('loading', '리더보드 업로드 중...');
         await GlobalLeaderboardService.publishMix(payload);
-        this.setEngineStatus('success', '글로벌 공유 완료');
+        this.setEngineStatus('success', '공유 완료');
 
-        ToastNotifier.show(`'${mix.name}' 전략이 [${periodCat.label}] 리그에 Quant Score ${quantScore}점으로 공유되었습니다!`, "success");
+        ToastNotifier.show(`'${mix.name}' 전략이 [${periodCat.label}] 리그에 종합 점수 ${quantScore}점으로 공유되었습니다!`, "success");
         await this.syncAndRenderLeaderboard();
       }
 
@@ -2319,7 +2309,7 @@
             <td class="px-3 py-2.5 text-rose-300 font-semibold">${(item.ulcer || 0).toFixed(1)}</td>
             <td class="px-3 py-2.5 text-slate-400 text-[11px]">${allocDesc}</td>
             <td class="px-3 py-2.5 text-right">
-              <button onclick="UIController.copyLeaderboardMix('${item.id}')" aria-label="리더보드 전략 내 커스텀 믹스로 가져오기" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 text-[11px] px-2.5 py-1 rounded border border-slate-700 transition">
+              <button onclick="UIController.copyLeaderboardMix('${item.id}')" aria-label="리더보드 전략 가져오기" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 text-[11px] px-2.5 py-1 rounded border border-slate-700 transition">
                 📥 가져오기
               </button>
             </td>
@@ -2387,7 +2377,7 @@
           }`;
           
           const backfillTag = item.allowBackfill 
-            ? `<span class="text-[9px] bg-cyan-950 text-cyan-400 px-1 rounded font-semibold">${item.inceptYear}년전 전략지수 백필</span>`
+            ? `<span class="text-[9px] bg-cyan-950 text-cyan-400 px-1 rounded font-semibold">${item.inceptYear}년전 지수추종 백필</span>`
             : `<span class="text-[9px] bg-rose-950 text-rose-400 px-1 rounded font-semibold">${item.inceptYear}년전 현금보유</span>`;
 
           label.innerHTML = `
@@ -2493,7 +2483,6 @@
         const fxSpreadRate = parseFloat(document.getElementById('fxSpread').value);
         const taxEnabled = document.getElementById('taxMode').value === 'fifo';
 
-        // [보완 5 적용] 입력 검증 강화 (종료월 > 시작월)
         if (!startMonth || !endMonth || startMonth > endMonth) {
           ToastNotifier.show("종료 월은 시작 월과 같거나 이후여야 합니다.", "error");
           document.getElementById('endMonth').focus();
@@ -2526,8 +2515,8 @@
           return;
         }
 
-        this.setEngineStatus('loading', '데이터 검증 및 시세 수신 중...');
-        this.setProgress(10, '공식 Kenneth French 팩터 & 시세 수신 중...');
+        this.setEngineStatus('loading', '데이터 시세 수신 중...');
+        this.setProgress(10, 'Fama-French 팩터 & 시세 수신 중...');
 
         const requiredSet = new Set(this.selectedTickers);
         requiredSet.add('SPY');
@@ -2565,7 +2554,6 @@
 
         const ffOfficialMap = await KennethFrenchFetcher.fetchOfficialFactors(startYear, endYear, rawDatasets);
 
-        // Fama-French 뱃지 상태 UI 1회 업데이트 (DOM 경쟁 상태 해제)
         const badge = document.getElementById('ffDataModeBadge');
         if (badge) {
           const isOfficial = ffOfficialMap && ffOfficialMap.size > 0;
@@ -2575,7 +2563,7 @@
             : "text-[10px] bg-amber-950 text-amber-300 border border-amber-800 px-2 py-0.5 rounded font-semibold";
         }
 
-        this.setProgress(50, '통합 달력 인덱싱 중...');
+        this.setProgress(50, '데이터 인덱싱 중...');
 
         const allDatesSet = new Set();
         Object.values(rawDatasets).forEach(ds => {
@@ -2594,10 +2582,10 @@
           return;
         }
 
-        this.setProgress(70, 'Daily NAV 알고리즘 실행 중...');
+        this.setProgress(70, '성과 시뮬레이션 연산 중...');
         const processedData = MultiFactorSynthesisEngine.process(rawDatasets, sortedDates);
 
-        this.setEngineStatus('loading', '미래 시뮬레이션 멀티스레드 연산 중...');
+        this.setEngineStatus('loading', '미래 시뮬레이션 연산 중...');
         const results = await QuantBacktestEngine.runAsync(
           sortedDates,
           this.selectedTickers,
@@ -2608,7 +2596,7 @@
           fxSpreadRate,
           taxEnabled,
           ffOfficialMap,
-          (pct) => this.setProgress(pct, `Parallel Worker 연산 중... (${Math.round(pct)}%)`)
+          (pct) => this.setProgress(pct, `시뮬레이션 연산 중... (${Math.round(pct)}%)`)
         );
 
         this.currentResults = results;
@@ -2616,7 +2604,7 @@
 
         this.renderDashboard(results, sortedDates, taxEnabled);
         this.setProgress(100, '연산 완료');
-        this.setEngineStatus('success', 'Enterprise Engine v14.0 완료');
+        this.setEngineStatus('success', '시뮬레이션 연산 완료');
       }
 
       static switchChartTab(tab) {
@@ -2647,7 +2635,7 @@
       static updateMcDescription() {
         const desc = document.getElementById('chartTabDescription');
         if (!this.currentResults) {
-          desc.innerText = "10,000회 Stationary Bootstrap Monte Carlo (P5 / P50 / P95)";
+          desc.innerText = "10,000회 시뮬레이션 (P5 / P50 / P95)";
           return;
         }
 
@@ -2671,6 +2659,7 @@
         }
       }
 
+      // 모달/모바일 요약 카드 UI 렌더링 개선
       static renderDashboard(results, sortedDates, taxEnabled) {
         const startMonth = document.getElementById('startMonth').value;
         const startYear = parseInt(startMonth.split('-')[0], 10);
@@ -2685,35 +2674,42 @@
         const firstTicker = Object.keys(results)[0];
         if (!firstTicker) return;
 
+        // 투입 원금 카드
         const invCard = document.createElement('div');
-        invCard.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
+        invCard.className = 'bg-slate-900 p-3.5 sm:p-4 rounded-xl border border-slate-800 flex flex-col justify-between';
         invCard.innerHTML = `
-          <span class="text-xs text-slate-500 font-bold block">총 투입 원금 (Principal)</span>
-          <div class="text-lg sm:text-xl font-bold mt-1 text-slate-200">
-            ${QuantUtils.formatKRW(results[firstTicker].investedKrw)}
+          <div>
+            <span class="text-xs text-slate-400 font-semibold block">총 투입 원금 (Principal)</span>
+            <div class="text-lg sm:text-xl font-bold mt-1 text-slate-100">
+              ${QuantUtils.formatKRW(results[firstTicker].investedKrw)}
+            </div>
           </div>
-          <div class="text-[11px] text-slate-500 mt-1">
+          <div class="text-[11px] text-slate-500 mt-2">
             검증 기간: ${sortedDates[0]} ~ ${sortedDates[sortedDates.length - 1]}
           </div>
         `;
         cardFragment.appendChild(invCard);
 
+        // 자산 성과 카드 (모바일 요약 구조 교정)
         Object.entries(results).slice(0, 3).forEach(([ticker, res], idx) => {
           const card = document.createElement('div');
-          card.className = 'bg-slate-900 p-4 rounded-xl border border-slate-800';
+          card.className = 'bg-slate-900 p-3.5 sm:p-4 rounded-xl border border-slate-800 flex flex-col justify-between';
           const isMix = ticker.startsWith('[MIX]');
           const score = res.score;
           const safeName = QuantUtils.escapeHTML(res.name);
 
           card.innerHTML = `
-            <div class="flex justify-between items-center">
-              <span class="text-xs font-bold truncate ${isMix ? 'text-amber-400' : 'text-slate-400'}">${safeName}</span>
-              <span class="text-[10px] bg-amber-950 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-700/50">${score}점</span>
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="text-xs font-bold truncate ${isMix ? 'text-amber-400' : 'text-slate-200'}" title="${safeName}">${safeName}</span>
+                <span class="shrink-0 text-[10px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded border border-amber-500/30">${score}점</span>
+              </div>
+              <div class="text-base sm:text-lg font-bold mt-1 flex items-baseline gap-1.5 flex-wrap" style="color: ${isMix ? '#f59e0b' : palette[idx % palette.length]}">
+                <span>${QuantUtils.formatKRW(res.finalVal)}</span>
+                <span class="text-xs font-normal text-slate-300">(${res.cumulativeReturn >= 0 ? '+' : ''}${res.cumulativeReturn.toFixed(1)}%)</span>
+              </div>
             </div>
-            <div class="text-sm font-bold mt-1 truncate" style="color: ${isMix ? '#f59e0b' : palette[idx % palette.length]}">
-              ${QuantUtils.formatKRW(res.finalVal)} (${res.cumulativeReturn >= 0 ? '+' : ''}${res.cumulativeReturn.toFixed(1)}%)
-            </div>
-            <div class="grid grid-cols-2 gap-1 text-[11px] mt-2 pt-2 border-t border-slate-800/80">
+            <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-[11px] mt-3 pt-2.5 border-t border-slate-800">
               <span class="text-cyan-400 font-semibold">XIRR: ${res.annualizedXIRR >= 0 ? '+' : ''}${res.annualizedXIRR.toFixed(1)}%</span>
               <span class="text-amber-400 font-semibold">소티노: ${res.sortino.toFixed(2)}</span>
               <span class="text-rose-400 font-semibold">MDD: ${res.twrMdd.toFixed(1)}%</span>
@@ -2791,7 +2787,7 @@
           } else if (!isBackfilled) {
             backfillBadge = `<span class="text-[9px] bg-emerald-950/80 text-emerald-400 px-1 py-0.5 rounded border border-emerald-800/50">실제 데이터 100%</span>`;
           } else if (config.allowBackfill) {
-            backfillBadge = `<span class="text-[9px] bg-cyan-950/80 text-cyan-300 px-1 py-0.5 rounded border border-cyan-800/50">전략지수 백필 (${inceptYear}년전)</span>`;
+            backfillBadge = `<span class="text-[9px] bg-cyan-950/80 text-cyan-300 px-1 py-0.5 rounded border border-cyan-800/50">지수추종 백필 (${inceptYear}년전)</span>`;
           } else {
             backfillBadge = `<span class="text-[9px] bg-rose-950/80 text-rose-300 px-1 py-0.5 rounded border border-rose-800/50">⚠️ 백필 제한 (${inceptYear}년전 현금보유)</span>`;
           }
@@ -2926,7 +2922,7 @@
           labels = ['투입 원금', '하위 5% 최악', '중간 기대치 (평균)', '상위 5% 최선'];
           
           datasets = [{
-            label: `${targetTicker} 10,000회 시뮬레이션 예상 평가금 (원)`,
+            label: `${targetTicker} 시뮬레이션 예상 평가금 (원)`,
             data: [res.investedKrw, mc.p5, mc.p50, mc.p95],
             backgroundColor: ['#475569', '#f87171', '#34d399', '#60a5fa']
           }];
@@ -2940,7 +2936,6 @@
           };
         }
 
-        // [보완 4 적용] Chart.js 객체 참조 및 메모리 확실 해제
         if (this.chartInstance) {
           this.chartInstance.destroy();
           this.chartInstance = null;
